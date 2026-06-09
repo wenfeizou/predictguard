@@ -47,6 +47,32 @@ Stretch:
 - strategy backtest
 - external vol comparison
 
+## Local Development
+
+Requirements:
+
+- Node.js 24+
+- Bun 1.3+
+
+Run:
+
+```bash
+bun install
+bun run dev
+```
+
+Open <http://localhost:3000>.
+
+Quality checks:
+
+```bash
+bun run lint
+bun run typecheck
+bun run build
+```
+
+The current MVP path uses deterministic simulated market data and does not require a wallet, live testnet data, or an AI API key.
+
 ## Documents
 
 Read in this order:
@@ -64,6 +90,7 @@ Read in this order:
 10. [Risks, Assumptions, and Open Questions](docs/10-risks-assumptions-open-questions.md)
 11. [Official Track Requirements](docs/11-official-track-requirements.md)
 12. [MVP Implementation Spec](docs/12-mvp-implementation-spec.md)
+13. [Naming Conventions](docs/13-naming-conventions.md)
 
 ## Current Official References
 
