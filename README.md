@@ -73,7 +73,7 @@ bun run build
 
 The current MVP path uses deterministic simulated market data and does not require a wallet, live testnet data, or an AI API key.
 
-The app also includes a non-blocking DeepBook Predict testnet status adapter at `/api/predict/status`. If the public Predict server is reachable, the UI shows live indexer and vault summary context while keeping the PLP risk model on deterministic simulated exposure.
+The app also includes a non-blocking DeepBook Predict testnet adapter at `/api/predict/status`. If the public Predict server is reachable, the UI enters `mixed-live-and-simulated` mode: live status, vault summary, protocol state, and oracle context are shown while PLP exposure and scenario calculations remain deterministic until live exposure reconstruction is implemented.
 
 ## Documents
 

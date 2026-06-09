@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { predictTestnetConfig } from "@/lib/predict/config";
+import type { NormalizedPredictLiveContext } from "@/lib/predict/normalize";
 
 const pipelineSchema = z.object({
   pipeline: z.string(),
@@ -38,8 +39,33 @@ const vaultSummarySchema = z.object({
   total_withdrawn: z.number(),
 });
 
+const oracleSummarySchema = z.object({
+  predict_id: z.string(),
+  oracle_id: z.string(),
+  oracle_cap_id: z.string(),
+  underlying_asset: z.string(),
+  expiry: z.number(),
+  min_strike: z.number(),
+  tick_size: z.number(),
+  status: z.string(),
+  activated_at: z.number().nullable(),
+  settlement_price: z.number().nullable(),
+  settled_at: z.number().nullable(),
+  created_checkpoint: z.number(),
+});
+
+const protocolStateSchema = z.object({
+  predict_id: z.string(),
+  pricing: z.unknown().nullable(),
+  risk: z.unknown().nullable(),
+  trading_paused: z.boolean().nullable(),
+  quote_assets: z.array(z.string()),
+});
+
 export type PredictServerStatus = z.infer<typeof statusSchema>;
 export type PredictVaultSummary = z.infer<typeof vaultSummarySchema>;
+export type PredictOracleSummary = z.infer<typeof oracleSummarySchema>;
+export type PredictProtocolState = z.infer<typeof protocolStateSchema>;
 
 export type PredictLiveSnapshot = {
   reachable: boolean;
@@ -47,16 +73,27 @@ export type PredictLiveSnapshot = {
   config: typeof predictTestnetConfig;
   status?: PredictServerStatus;
   vaultSummary?: PredictVaultSummary;
+  oracles?: PredictOracleSummary[];
+  protocolState?: PredictProtocolState;
+  liveContext?: NormalizedPredictLiveContext;
   error?: string;
 };
 
 export async function fetchPredictLiveSnapshot(): Promise<PredictLiveSnapshot> {
   try {
-    const [status, vaultSummary] = await Promise.all([
+    const [status, vaultSummary, oracles, protocolState] = await Promise.all([
       fetchJson(`${predictTestnetConfig.apiBaseUrl}/status`, statusSchema),
       fetchJson(
         `${predictTestnetConfig.apiBaseUrl}/predicts/${predictTestnetConfig.predictObjectId}/vault/summary`,
         vaultSummarySchema,
+      ),
+      fetchJson(
+        `${predictTestnetConfig.apiBaseUrl}/predicts/${predictTestnetConfig.predictObjectId}/oracles`,
+        z.array(oracleSummarySchema),
+      ),
+      fetchJson(
+        `${predictTestnetConfig.apiBaseUrl}/predicts/${predictTestnetConfig.predictObjectId}/state`,
+        protocolStateSchema,
       ),
     ]);
 
@@ -66,6 +103,11 @@ export async function fetchPredictLiveSnapshot(): Promise<PredictLiveSnapshot> {
       config: predictTestnetConfig,
       status,
       vaultSummary,
+      oracles: oracles
+        .filter((oracle) => oracle.underlying_asset === "BTC")
+        .sort((a, b) => b.expiry - a.expiry)
+        .slice(0, 32),
+      protocolState,
     };
   } catch (error) {
     return {

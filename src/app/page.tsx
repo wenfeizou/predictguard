@@ -64,8 +64,9 @@ export default function Home() {
         scenarios,
         results: allResults,
         recommendation,
+        liveContext: liveSnapshot?.liveContext,
       }),
-    [metrics, allResults, recommendation],
+    [metrics, allResults, recommendation, liveSnapshot?.liveContext],
   );
 
   useEffect(() => {
@@ -124,7 +125,9 @@ export default function Home() {
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#dce3dd] bg-[#f5f7f4] px-3 py-1 text-sm font-medium text-[#1f8a70]">
                 <ShieldCheck className="h-4 w-4" />
-                Simulated market data
+                {liveSnapshot?.liveContext?.dataSource === "mixed-live-and-simulated"
+                  ? "Mixed: live testnet context + simulated exposure"
+                  : "Simulated market data"}
               </div>
               <h1 className="text-4xl font-semibold tracking-normal text-[#17211d] md:text-6xl">
                 PredictGuard
@@ -437,7 +440,7 @@ function TestnetStatusPanel({
     : snapshot?.reachable
       ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
       : "border-[#c75c48] bg-[#fff1ed] text-[#c75c48]";
-  const vaultSummary = snapshot?.vaultSummary;
+  const liveContext = snapshot?.liveContext;
 
   return (
     <Panel title="DeepBook Predict Testnet" icon={<Signal className="h-5 w-5" />}>
@@ -455,7 +458,9 @@ function TestnetStatusPanel({
         <div className="text-sm text-[#52615a]">
           Risk model mode:{" "}
           <span className="font-semibold text-[#17211d]">
-            simulated exposure with live status context
+            {liveContext?.dataSource === "mixed-live-and-simulated"
+              ? "mixed live context + simulated exposure"
+              : "simulated fallback"}
           </span>
         </div>
       </div>
@@ -476,14 +481,26 @@ function TestnetStatusPanel({
         <SummaryTile
           label="Live vault value"
           value={
-            vaultSummary
-              ? `${formatDUsdc(vaultSummary.vault_value)} dUSDC`
+            liveContext?.vault
+              ? `${formatNumber(liveContext.vault.valueDUsdc)} dUSDC`
               : "N/A"
           }
         />
         <SummaryTile
           label="Live utilization"
-          value={vaultSummary ? formatPct(vaultSummary.utilization) : "N/A"}
+          value={liveContext?.vault ? formatPct(liveContext.vault.utilization) : "N/A"}
+        />
+        <SummaryTile
+          label="Active BTC oracles"
+          value={liveContext ? String(liveContext.activeOracleCount) : "N/A"}
+        />
+        <SummaryTile
+          label="Live max payout"
+          value={
+            liveContext?.vault
+              ? `${formatNumber(liveContext.vault.totalMaxPayoutDUsdc)} dUSDC`
+              : "N/A"
+          }
         />
       </div>
 
@@ -499,12 +516,24 @@ function TestnetStatusPanel({
           </dl>
         </div>
         <div className="rounded-md border border-[#dce3dd] bg-white p-4">
-          <div className="text-sm font-semibold text-[#17211d]">Integration status</div>
+          <div className="text-sm font-semibold text-[#17211d]">Mixed data context</div>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-[#52615a]">
             <li>Public Predict server adapter is active.</li>
-            <li>Vault summary is validated with Zod before rendering.</li>
+            <li>Status, vault summary, protocol state, and oracle list are validated with Zod.</li>
             <li>PLP risk simulation still uses deterministic fallback exposure.</li>
-            <li>Next step: normalize live oracle / vault fields into mixed data mode.</li>
+            <li>
+              Latest active oracle:{" "}
+              {liveContext?.latestActiveOracle
+                ? `${liveContext.latestActiveOracle.underlyingAsset} / ${liveContext.latestActiveOracle.minutesToExpiry}m to expiry`
+                : "N/A"}
+            </li>
+            <li>
+              Quote assets:{" "}
+              {liveContext && liveContext.quoteAssets.length > 0
+                ? liveContext.quoteAssets.length
+                : "N/A"}
+            </li>
+            <li>Next step: wire live data into scenario assumptions and PTB builder inputs.</li>
             {snapshot?.error ? (
               <li className="text-[#c75c48]">Error: {snapshot.error}</li>
             ) : null}
@@ -731,10 +760,4 @@ function formatNumber(value: number) {
 
 function formatPct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatDUsdc(value: number) {
-  return (value / 1_000_000).toLocaleString("en-US", {
-    maximumFractionDigits: 2,
-  });
 }

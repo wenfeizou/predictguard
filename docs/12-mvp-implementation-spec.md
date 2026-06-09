@@ -57,6 +57,12 @@ UI labels:
 - `Live testnet data`
 - `Mixed: live prices + simulated exposure`
 
+Current implementation note:
+
+- `mixed-live-and-simulated` is active through `/api/predict/status`.
+- Live context currently includes public server health, vault summary, protocol state, quote assets, and active BTC oracle count.
+- PLP exposure and scenario PnL still use deterministic simulated data until live exposure reconstruction is implemented.
+
 ## Core Types
 
 Use these types as the first implementation contract.
