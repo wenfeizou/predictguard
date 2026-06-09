@@ -62,6 +62,8 @@ Read in this order:
 8. [UI and Demo Flow](docs/08-ui-and-demo-flow.md)
 9. [Three-Week Build Plan](docs/09-three-week-build-plan.md)
 10. [Risks, Assumptions, and Open Questions](docs/10-risks-assumptions-open-questions.md)
+11. [Official Track Requirements](docs/11-official-track-requirements.md)
+12. [MVP Implementation Spec](docs/12-mvp-implementation-spec.md)
 
 ## Current Official References
 
