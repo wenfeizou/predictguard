@@ -11,6 +11,7 @@ import {
   FileText,
   Layers,
   ShieldCheck,
+  Signal,
   WalletCards,
 } from "lucide-react";
 import {
@@ -29,6 +30,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
+import type { PredictLiveSnapshot } from "@/lib/predict/client";
 import { buildPtbPreviewSteps, buildSuiSdkSkeleton } from "@/lib/ptb/preview";
 import { buildMarkdownReport } from "@/lib/report/markdown";
 import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
@@ -38,6 +40,8 @@ const market = seedMarketState;
 
 export default function Home() {
   const [selectedScenarioId, setSelectedScenarioId] = useState("btc-up-5");
+  const [liveSnapshot, setLiveSnapshot] = useState<PredictLiveSnapshot | null>(null);
+  const [liveLoading, setLiveLoading] = useState(true);
   const selectedScenario =
     scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
 
@@ -63,6 +67,44 @@ export default function Home() {
       }),
     [metrics, allResults, recommendation],
   );
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/predict/status")
+      .then(async (response) => {
+        const snapshot = (await response.json()) as PredictLiveSnapshot;
+        if (active) {
+          setLiveSnapshot(snapshot);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setLiveSnapshot({
+            reachable: false,
+            fetchedAt: new Date().toISOString(),
+            config: {
+              network: "testnet",
+              apiBaseUrl: "https://predict-server.testnet.mystenlabs.com",
+              packageId: "unavailable",
+              predictObjectId: "unavailable",
+              dusdcType: "unavailable",
+              plpType: "unavailable",
+            },
+            error: error instanceof Error ? error.message : "Failed to load testnet status",
+          });
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLiveLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function exportReport() {
     const blob = new Blob([markdownReport], { type: "text/markdown" });
@@ -103,6 +145,7 @@ export default function Home() {
           <nav className="flex gap-2 overflow-x-auto pb-1 text-sm font-medium">
             {[
               "Overview",
+              "Testnet",
               "Exposure",
               "Vol Surface",
               "Simulator",
@@ -167,6 +210,10 @@ export default function Home() {
               </div>
             ) : null}
           </Panel>
+        </section>
+
+        <section id="testnet">
+          <TestnetStatusPanel snapshot={liveSnapshot} loading={liveLoading} />
         </section>
 
         <section id="exposure" className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -378,6 +425,105 @@ export default function Home() {
   );
 }
 
+function TestnetStatusPanel({
+  snapshot,
+  loading,
+}: {
+  snapshot: PredictLiveSnapshot | null;
+  loading: boolean;
+}) {
+  const statusTone = loading
+    ? "border-[#dce3dd] bg-[#f5f7f4] text-[#52615a]"
+    : snapshot?.reachable
+      ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
+      : "border-[#c75c48] bg-[#fff1ed] text-[#c75c48]";
+  const vaultSummary = snapshot?.vaultSummary;
+
+  return (
+    <Panel title="DeepBook Predict Testnet" icon={<Signal className="h-5 w-5" />}>
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div
+          className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-sm font-semibold ${statusTone}`}
+        >
+          <Signal className="h-4 w-4" />
+          {loading
+            ? "Checking live testnet"
+            : snapshot?.reachable
+              ? "Live testnet reachable"
+              : "Live testnet unavailable"}
+        </div>
+        <div className="text-sm text-[#52615a]">
+          Risk model mode:{" "}
+          <span className="font-semibold text-[#17211d]">
+            simulated exposure with live status context
+          </span>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryTile
+          label="Server status"
+          value={snapshot?.status?.status ?? (loading ? "Checking" : "Unavailable")}
+        />
+        <SummaryTile
+          label="Checkpoint lag"
+          value={
+            snapshot?.status
+              ? `${snapshot.status.max_checkpoint_lag} checkpoints`
+              : "N/A"
+          }
+        />
+        <SummaryTile
+          label="Live vault value"
+          value={
+            vaultSummary
+              ? `${formatDUsdc(vaultSummary.vault_value)} dUSDC`
+              : "N/A"
+          }
+        />
+        <SummaryTile
+          label="Live utilization"
+          value={vaultSummary ? formatPct(vaultSummary.utilization) : "N/A"}
+        />
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4">
+          <div className="text-sm font-semibold text-[#17211d]">Official testnet config</div>
+          <dl className="mt-3 space-y-2 text-xs text-[#52615a]">
+            <ConfigRow label="API" value={snapshot?.config.apiBaseUrl} />
+            <ConfigRow label="Predict object" value={snapshot?.config.predictObjectId} />
+            <ConfigRow label="Package" value={snapshot?.config.packageId} />
+            <ConfigRow label="dUSDC" value={snapshot?.config.dusdcType} />
+            <ConfigRow label="PLP" value={snapshot?.config.plpType} />
+          </dl>
+        </div>
+        <div className="rounded-md border border-[#dce3dd] bg-white p-4">
+          <div className="text-sm font-semibold text-[#17211d]">Integration status</div>
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-[#52615a]">
+            <li>Public Predict server adapter is active.</li>
+            <li>Vault summary is validated with Zod before rendering.</li>
+            <li>PLP risk simulation still uses deterministic fallback exposure.</li>
+            <li>Next step: normalize live oracle / vault fields into mixed data mode.</li>
+            {snapshot?.error ? (
+              <li className="text-[#c75c48]">Error: {snapshot.error}</li>
+            ) : null}
+          </ul>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function ConfigRow({ label, value }: { label: string; value?: string }) {
+  return (
+    <div>
+      <dt className="font-semibold text-[#17211d]">{label}</dt>
+      <dd className="mt-1 break-all">{value ?? "Unavailable"}</dd>
+    </div>
+  );
+}
+
 function ChartFrame({
   children,
   className = "",
@@ -585,4 +731,10 @@ function formatNumber(value: number) {
 
 function formatPct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatDUsdc(value: number) {
+  return (value / 1_000_000).toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  });
 }

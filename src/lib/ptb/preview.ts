@@ -1,24 +1,5 @@
 import type { HedgeCandidate } from "@/lib/types";
-
-export type PredictConfig = {
-  network: "testnet";
-  packageId: string;
-  predictObjectId: string;
-  managerObjectId?: string;
-  dusdcType: string;
-  apiBaseUrl: string;
-};
-
-export const predictConfig: PredictConfig = {
-  network: "testnet",
-  packageId: process.env.NEXT_PUBLIC_PREDICT_PACKAGE_ID ?? "TODO",
-  predictObjectId: process.env.NEXT_PUBLIC_PREDICT_OBJECT_ID ?? "TODO",
-  managerObjectId: undefined,
-  dusdcType: process.env.NEXT_PUBLIC_PREDICT_DUSDC_TYPE ?? "TODO",
-  apiBaseUrl:
-    process.env.NEXT_PUBLIC_PREDICT_API_BASE_URL ??
-    "https://predict-server.testnet.mystenlabs.com",
-};
+import { predictTestnetConfig } from "@/lib/predict/config";
 
 export function buildPtbPreviewSteps(hedge?: HedgeCandidate): string[] {
   if (!hedge) {
@@ -44,6 +25,8 @@ export function buildSuiSdkSkeleton(hedge?: HedgeCandidate): string {
   return `import { Transaction } from "@mysten/sui/transactions";
 
 const tx = new Transaction();
+
+const predictConfig = ${JSON.stringify(predictTestnetConfig, null, 2)};
 
 tx.moveCall({
   target: \`\${predictConfig.packageId}::predict::mint\`,
