@@ -70,3 +70,17 @@ bun run build
 
 Use small commits for independent milestones, especially config, docs, Sui
 integration, and UI changes.
+
+## Project Evolution Log
+
+Maintain `docs/15-project-evolution-log.md` after each meaningful planning or
+implementation round.
+
+When updating it, record:
+
+- completed task or round
+- commit hash, if a commit was created
+- key protocol or product concepts explained during the work
+- important technical decisions or corrected assumptions
+- updated completion estimate, when meaningful
+- next concrete task

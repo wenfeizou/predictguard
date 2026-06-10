@@ -98,6 +98,7 @@ Read in this order:
 12. [MVP Implementation Spec](docs/12-mvp-implementation-spec.md)
 13. [Naming Conventions](docs/13-naming-conventions.md)
 14. [Commercial Analysis](docs/14-commercial-analysis.md)
+15. [Project Evolution Log](docs/15-project-evolution-log.md)
 
 ## Current Official References
 
