@@ -91,7 +91,7 @@ export function WalletReadinessClient({
       >
         {connected ? (onTestnet ? "Testnet ready" : "Wrong network") : "Not connected"}
       </div>
-      <div className="overflow-hidden rounded-md border border-[#dce3dd] bg-white text-sm font-semibold text-[#17211d]">
+      <div className="rounded-md border border-[#dce3dd] bg-white text-sm font-semibold text-[#17211d]">
         <ConnectButton />
       </div>
       {connected && onTestnet ? (
