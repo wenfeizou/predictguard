@@ -254,7 +254,7 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
   const missing: string[] = [];
   const warnings = [
     "Predict mint signature is aligned with predict-testnet-4-16, but package IDs remain provisional until mainnet.",
-    "Wallet connection, PredictManager discovery, and dUSDC coin selection are not wired in the UI yet.",
+    "Wallet execution is user-gated; the wallet owns gas selection and must confirm before submission.",
   ];
 
   if (!input.hedge) {

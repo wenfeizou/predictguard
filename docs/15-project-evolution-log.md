@@ -7,7 +7,7 @@ understandable without rereading the chat.
 
 ## Current Status Snapshot
 
-As of the latest implementation round, PredictGuard is roughly 38-40% complete
+As of the latest implementation round, PredictGuard is roughly 45-48% complete
 against the final hackathon target.
 
 Completed:
@@ -25,12 +25,13 @@ Completed:
 - Connected-account dUSDC coin detection
 - Connected-account `PredictManager` discovery through the Predict testnet
   server
+- Signable PTB execution control through dApp Kit when readiness reaches
+  `ready-to-sign`
 
 Still missing before the 55% milestone:
 
 - `PredictManager` creation guidance when the user does not already have one
 - dUSDC faucet/acquisition guidance when the user has no coin object
-- Signable transaction readiness using real user objects
 - First real testnet transaction attempt
 
 Still missing before the 75%+ competitive target:
@@ -313,6 +314,7 @@ Current estimated completion:
 - Before PTB signature alignment: about 25%
 - After official signature alignment: about 30-32%
 - After wallet connection plus user dUSDC/manager detection: about 38-40%
+- After wallet-gated PTB signing control: about 45-48%
 
 Milestone estimates:
 
@@ -414,6 +416,10 @@ acquisition flow.
 
 ### Round D: Signable Transaction Preparation
 
+Status: completed.
+
+Commit: current round commit `feat: add wallet-gated Predict PTB execution`
+
 Goal:
 
 - Combine hedge, live oracle, wallet, manager, and dUSDC coin into final PTB
@@ -425,6 +431,29 @@ Acceptance:
 - `buildPredictHedgeTransactionPreview()` returns a `Transaction` when all
   required inputs are present.
 - UI clearly blocks signing when any required input is missing.
+
+Implementation outcome:
+
+- Added `src/app/ptb-execute.tsx` as a client-only wallet execution component.
+- It rebuilds the current Predict hedge `Transaction` from the same PTB input
+  used by the readiness panel.
+- It calls `dAppKit.signAndExecuteTransaction({ transaction })`, leaving gas
+  selection and final confirmation to the user's wallet.
+- It checks wallet failure responses, waits for transaction indexing through
+  `client.core.waitForTransaction`, invalidates dUSDC/manager queries, and shows
+  a SuiVision testnet digest link on success.
+- The button remains disabled unless readiness reaches `ready-to-sign`.
+
+Important nuance:
+
+This round creates a signable path, but it does not prove the protocol call
+succeeds on-chain. The next meaningful milestone is a real testnet attempt with
+an actual connected wallet that has dUSDC and an existing `PredictManager`.
+
+Next implementation step:
+
+- Add no-manager / no-dUSDC user guidance and attempt a real testnet transaction
+  to capture either a success digest or the exact protocol/runtime error.
 
 ## Documentation Maintenance Rule
 

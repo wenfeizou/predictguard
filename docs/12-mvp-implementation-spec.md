@@ -353,7 +353,8 @@ Current implementation:
 
 - `src/lib/ptb/hedgeTransaction.ts` builds a structured PTB plan and can construct a `Transaction` when all required object inputs are supplied.
 - `src/app/page.tsx` shows `preview-ready` versus `ready-to-sign` readiness, missing object inputs, and guardrails.
-- Execution remains blocked by design until wallet connection, dUSDC coin selection, and `PredictManager` discovery are complete.
+- `src/app/ptb-execute.tsx` hands the built `Transaction` instance to the connected wallet through `@mysten/dapp-kit-react`.
+- Execution remains blocked by design while wallet, dUSDC coin, `PredictManager`, or oracle inputs are missing.
 - Current `predict-testnet-4-16` flow is `predict_manager::deposit<dUSDC>`, `market_key::new`, then `predict::mint<dUSDC>`.
 
 Create a config shape like:

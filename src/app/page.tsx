@@ -40,6 +40,17 @@ import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/r
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
 
 const market = seedMarketState;
+const PtbExecuteClient = dynamic(
+  () => import("@/app/ptb-execute").then((mod) => mod.PtbExecuteClient),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4 text-sm text-[#52615a]">
+        Loading wallet execution
+      </div>
+    ),
+  },
+);
 const WalletReadinessClient = dynamic(
   () => import("@/app/wallet-readiness").then((mod) => mod.WalletReadinessClient),
   {
@@ -74,15 +85,14 @@ export default function Home() {
     () => runScenarioSet(market, scenarios, recommendation.recommendedHedge),
     [recommendation.recommendedHedge],
   );
-  const ptbPlan = useMemo(
-    () =>
-      buildPredictHedgePtbPlan({
-        hedge: recommendation.recommendedHedge,
-        wallet: walletReadiness,
-        account: walletReadiness.account,
-        oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
-        oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
-      }),
+  const ptbInput = useMemo(
+    () => ({
+      hedge: recommendation.recommendedHedge,
+      wallet: walletReadiness,
+      account: walletReadiness.account,
+      oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
+      oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
+    }),
     [
       recommendation.recommendedHedge,
       walletReadiness,
@@ -90,6 +100,7 @@ export default function Home() {
       liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
     ],
   );
+  const ptbPlan = useMemo(() => buildPredictHedgePtbPlan(ptbInput), [ptbInput]);
   const markdownReport = useMemo(
     () =>
       buildMarkdownReport({
@@ -421,6 +432,7 @@ export default function Home() {
           <Panel title="PTB Preview" icon={<WalletCards className="h-5 w-5" />}>
             <WalletReadinessPanel plan={ptbPlan} onChange={setWalletReadiness} />
             <PtbReadinessPanel plan={ptbPlan} />
+            <PtbExecuteClient input={ptbInput} plan={ptbPlan} />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">
@@ -450,7 +462,8 @@ export default function Home() {
             </div>
             <pre className="max-h-96 overflow-auto rounded-md bg-[#17211d] p-4 text-xs leading-5 text-[#e8f4ef]">
               {buildPredictHedgeSdkSkeleton({
-                hedge: recommendation.recommendedHedge,
+                hedge: ptbInput.hedge,
+                account: ptbInput.account,
                 oracleObjectId: ptbPlan.inputs.oracleObjectId,
                 oracleExpiryMs: ptbPlan.inputs.oracleExpiryMs,
               })}
