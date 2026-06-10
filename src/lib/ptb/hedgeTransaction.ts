@@ -309,6 +309,7 @@ function getExecutionSizing(input: PredictHedgeMintInput) {
   if (askPrice === undefined || askPrice <= 0 || maxBudgetDusdc <= 0) {
     return {
       mode: "probe" as const,
+      maxBudgetDusdc,
       quantityDusdc: PROBE_QUANTITY_DUSDC,
       depositDusdc: PROBE_DEPOSIT_DUSDC,
       estimatedCostDusdc: PROBE_QUANTITY_DUSDC,
@@ -332,6 +333,7 @@ function getExecutionSizing(input: PredictHedgeMintInput) {
 
   return {
     mode: "quote-aware" as const,
+    maxBudgetDusdc,
     quantityDusdc,
     depositDusdc,
     estimatedCostDusdc,
@@ -413,6 +415,11 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
 
   if (input.account?.dusdcBalanceMist && BigInt(input.account.dusdcBalanceMist) < BigInt(depositAmountMist)) {
     missing.push("sufficient dUSDC balance for hedge cost");
+  }
+
+  const maxBudgetMist = dusdcToMist(sizing.maxBudgetDusdc);
+  if (input.account?.dusdcBalanceMist && BigInt(input.account.dusdcBalanceMist) < BigInt(maxBudgetMist)) {
+    missing.push("sufficient dUSDC balance for selected max budget");
   }
 
   if (!executionStrike) {

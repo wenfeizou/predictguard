@@ -32,7 +32,11 @@ import { useEffect, useMemo, useState } from "react";
 import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
 import type { PredictLiveSnapshot } from "@/lib/predict/client";
-import type { PredictMintExecutionSummary } from "@/lib/predict/execution";
+import {
+  loadStoredMintExecution,
+  storeMintExecution,
+  type PredictMintExecutionSummary,
+} from "@/lib/predict/execution";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
 import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
 import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
@@ -72,7 +76,10 @@ export default function Home() {
   const [selectedScenarioId, setSelectedScenarioId] = useState("btc-up-5");
   const [liveSnapshot, setLiveSnapshot] = useState<PredictLiveSnapshot | null>(null);
   const [liveLoading, setLiveLoading] = useState(true);
-  const [mintExecution, setMintExecution] = useState<PredictMintExecutionSummary | null>(null);
+  const [mintExecution, setMintExecution] = useState<PredictMintExecutionSummary | null>(() =>
+    loadStoredMintExecution(),
+  );
+  const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
   const selectedScenario =
     scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
 
@@ -98,7 +105,7 @@ export default function Home() {
       oracleTickSize: liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
       oracleReferencePrice: liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
       quoteAskPrice: mintExecution?.askPrice,
-      maxHedgeBudgetDusdc: 2,
+      maxHedgeBudgetDusdc,
     }),
     [
       recommendation.recommendedHedge,
@@ -109,6 +116,7 @@ export default function Home() {
       liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
       liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
       mintExecution?.askPrice,
+      maxHedgeBudgetDusdc,
     ],
   );
   const ptbPlan = useMemo(() => buildPredictHedgePtbPlan(ptbInput), [ptbInput]);
@@ -163,6 +171,11 @@ export default function Home() {
       active = false;
     };
   }, []);
+
+  function handleExecution(execution: PredictMintExecutionSummary) {
+    setMintExecution(execution);
+    storeMintExecution(execution);
+  }
 
   function exportReport() {
     const blob = new Blob([markdownReport], { type: "text/markdown" });
@@ -447,7 +460,9 @@ export default function Home() {
             <PtbExecuteClient
               input={ptbInput}
               plan={ptbPlan}
-              onExecution={setMintExecution}
+              maxHedgeBudgetDusdc={maxHedgeBudgetDusdc}
+              onBudgetChange={setMaxHedgeBudgetDusdc}
+              onExecution={handleExecution}
             />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (

@@ -18,10 +18,14 @@ import {
 export function PtbExecuteClient({
   input,
   plan,
+  maxHedgeBudgetDusdc,
+  onBudgetChange,
   onExecution,
 }: {
   input: PredictHedgeMintInput;
   plan: PredictHedgePtbPlan;
+  maxHedgeBudgetDusdc: number;
+  onBudgetChange: (budget: number) => void;
   onExecution?: (execution: PredictMintExecutionSummary) => void;
 }) {
   const dAppKit = useDAppKit();
@@ -106,6 +110,48 @@ export function PtbExecuteClient({
           <Send className="h-4 w-4" />
           {pending ? "Waiting" : plan.readiness.canBuildTransaction ? "Sign PTB" : "Blocked"}
         </button>
+      </div>
+
+      <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold text-[#17211d]">Max hedge budget</div>
+            <p className="mt-1 text-xs leading-5 text-[#52615a]">
+              Quote-aware sizing uses this budget minus a buffer to estimate quantity.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {[1, 2, 5, 10].map((budget) => (
+              <button
+                key={budget}
+                type="button"
+                onClick={() => onBudgetChange(budget)}
+                className={`rounded-md border px-3 py-1 text-xs font-semibold transition ${
+                  maxHedgeBudgetDusdc === budget
+                    ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
+                    : "border-[#dce3dd] bg-white text-[#52615a] hover:border-[#1f8a70]"
+                }`}
+              >
+                {budget}
+              </button>
+            ))}
+            <input
+              type="number"
+              min="0.5"
+              max="50"
+              step="0.5"
+              value={maxHedgeBudgetDusdc}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                if (Number.isFinite(next) && next > 0) {
+                  onBudgetChange(next);
+                }
+              }}
+              className="h-8 w-24 rounded-md border border-[#dce3dd] bg-white px-2 text-xs font-semibold text-[#17211d] outline-none focus:border-[#1f8a70]"
+            />
+            <span className="text-xs font-semibold text-[#52615a]">dUSDC</span>
+          </div>
+        </div>
       </div>
 
       <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">

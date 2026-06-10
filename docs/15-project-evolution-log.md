@@ -745,6 +745,47 @@ Next implementation step:
 - Persist the latest execution digest and sizing evidence across refreshes, then
   expose the max hedge budget as a user-editable control.
 
+### Round I: Persistent Execution Evidence And Budget Control
+
+Status: completed.
+
+Goal:
+
+- Keep the latest verified mint evidence available after page refresh.
+- Let the user edit the max hedge budget instead of relying on a hard-coded
+  `2 dUSDC` value.
+
+Implementation outcome:
+
+- Added localStorage helpers for `PredictMintExecutionSummary`.
+- The app now initializes the latest mint execution evidence from localStorage.
+- Successful mints update both page state and localStorage.
+- The risk report can include the latest stored execution evidence after a
+  refresh.
+- Added max hedge budget controls in the wallet execution panel:
+  - preset buttons: `1`, `2`, `5`, `10`
+  - numeric input with `0.5` dUSDC step
+- The selected budget feeds the PTB plan and quote-aware sizing calculation.
+- Readiness now checks both required deposit amount and selected max budget
+  against the connected wallet's dUSDC balance.
+
+Concept explanation:
+
+Persistent execution evidence makes the demo more stable: a verified digest,
+position, cost, and ask price survive refreshes in the same browser. Editable
+budget makes quote-aware sizing user-directed instead of hard-coded.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Add a small UI action to clear stored execution evidence, then improve manager
+  balance/readback so leftover deposited dUSDC is visible.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

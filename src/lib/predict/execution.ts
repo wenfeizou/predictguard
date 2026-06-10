@@ -4,6 +4,7 @@ import { predictTestnetConfig } from "@/lib/predict/config";
 
 const DUSDC_DECIMALS = 1_000_000;
 const ORACLE_PRICE_DECIMALS = 1_000_000_000;
+const EXECUTION_STORAGE_KEY = "predictguard.latestMintExecution";
 
 type TransactionWithExecutionData = SuiClientTypes.Transaction<{
   events: true;
@@ -29,6 +30,40 @@ export type PredictMintExecutionSummary = {
   dusdcBalanceChange?: number;
   gasMist?: string;
 };
+
+export function loadStoredMintExecution(): PredictMintExecutionSummary | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(EXECUTION_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as PredictMintExecutionSummary;
+    return parsed.digest ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeMintExecution(execution: PredictMintExecutionSummary) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(EXECUTION_STORAGE_KEY, JSON.stringify(execution));
+}
+
+export function clearStoredMintExecution() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(EXECUTION_STORAGE_KEY);
+}
 
 export function summarizePredictMintExecution(
   transaction: TransactionWithExecutionData,
