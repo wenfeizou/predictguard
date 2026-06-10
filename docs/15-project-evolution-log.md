@@ -450,10 +450,55 @@ This round creates a signable path, but it does not prove the protocol call
 succeeds on-chain. The next meaningful milestone is a real testnet attempt with
 an actual connected wallet that has dUSDC and an existing `PredictManager`.
 
+### Round E: Wallet Setup And PredictManager Creation
+
+Status: completed.
+
+Commit: current round commit `feat: add PredictManager creation readiness`
+
+Goal:
+
+- Get a browser wallet connected through Slush extension.
+- Detect dUSDC and `PredictManager` for the connected account.
+- Create a `PredictManager` from the app when missing.
+- Fix manager lookup so the UI reflects newly indexed managers quickly.
+
+Implementation outcome:
+
+- Imported the local testnet key into Slush so the browser wallet controls the
+  address with dUSDC.
+- Added a temporary wallet diagnostics panel that appears when no account is
+  connected or a detected wallet exposes zero accounts.
+- Added a `Create PredictManager` button when the connected testnet wallet has
+  dUSDC but no manager.
+- The button calls the official public entry point:
+  `predict::create_manager(ctx): ID`.
+- Changed `/api/predict/manager` to dynamic, no-store fetching so it does not
+  serve stale manager data after creation.
+- Added short manager-query polling after manager creation.
+
+Verified testnet evidence:
+
+- Wallet address:
+  `0x5e2a28ff382ab6858588dba9d5ed8e21fc59908c295ced2124f87b1cdb4cefb6`
+- dUSDC coin:
+  `0x54b1b826e57038cb0de56d1b5b1e5ed518d9b003052554a0688b05f90f5b7e26`
+- Manager creation digest:
+  `8FYwweyfCm42Ar6rhGYzp6bNMRCjpH4xuGipgh213zaT`
+- Created `PredictManager`:
+  `0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2`
+
+Important nuance:
+
+The `PredictManager` is created by `predict::create_manager`, while the lower
+`predict_manager::new` function is `public(package)` and cannot be called
+directly from the dApp.
+
 Next implementation step:
 
-- Add no-manager / no-dUSDC user guidance and attempt a real testnet transaction
-  to capture either a success digest or the exact protocol/runtime error.
+- Attempt the actual hedge mint PTB with the connected wallet, dUSDC coin,
+  manager, and live oracle. Capture either a success digest or the exact
+  protocol/runtime error.
 
 ## Documentation Maintenance Rule
 

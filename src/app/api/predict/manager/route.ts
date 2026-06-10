@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { predictTestnetConfig } from "@/lib/predict/config";
 
+export const dynamic = "force-dynamic";
+
 const managerSchema = z.object({
   manager_id: z.string(),
   owner: z.string(),
@@ -27,9 +29,7 @@ export async function GET(request: Request) {
       headers: {
         accept: "application/json",
       },
-      next: {
-        revalidate: 30,
-      },
+      cache: "no-store",
     });
 
     if (!response.ok) {
