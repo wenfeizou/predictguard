@@ -1,5 +1,8 @@
 import type { HedgeCandidate } from "@/lib/types";
-import { predictTestnetConfig } from "@/lib/predict/config";
+import {
+  buildPredictHedgeSdkSkeleton,
+  type PredictHedgePtbPlan,
+} from "@/lib/ptb/hedgeTransaction";
 
 export function buildPtbPreviewSteps(hedge?: HedgeCandidate): string[] {
   if (!hedge) {
@@ -18,29 +21,18 @@ export function buildPtbPreviewSteps(hedge?: HedgeCandidate): string[] {
 }
 
 export function buildSuiSdkSkeleton(hedge?: HedgeCandidate): string {
-  if (!hedge) {
-    return "Select a hedge to generate a Sui SDK skeleton.";
+  return buildPredictHedgeSdkSkeleton({ hedge });
+}
+
+export function formatPtbReadinessLabel(plan: PredictHedgePtbPlan): string {
+  switch (plan.readiness.status) {
+    case "no-hedge":
+      return "No hedge";
+    case "blocked":
+      return "Blocked";
+    case "preview-ready":
+      return "Preview ready";
+    case "ready-to-sign":
+      return "Ready to sign";
   }
-
-  return `import { Transaction } from "@mysten/sui/transactions";
-
-const tx = new Transaction();
-
-const predictConfig = ${JSON.stringify(predictTestnetConfig, null, 2)};
-
-tx.moveCall({
-  target: \`\${predictConfig.packageId}::predict::mint\`,
-  arguments: [
-    tx.object(predictConfig.predictObjectId),
-    tx.object(managerObjectId),
-    tx.pure.u64(${hedge.strike}),
-    tx.pure.string("${hedge.expiryId}"),
-    tx.pure.string("${hedge.side}"),
-    tx.pure.u64(${hedge.notional}),
-    tx.object(dusdcCoinObjectId),
-  ],
-});
-
-// Entry point and argument order are placeholders until current testnet
-// package signatures are verified from predict-testnet-4-16.`;
 }

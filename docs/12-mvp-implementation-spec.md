@@ -345,9 +345,15 @@ Never block the demo on AI availability.
 First version:
 
 - human-readable PTB steps
-- code-like Sui SDK skeleton
+- typed Sui SDK `Transaction` builder preview
 - config placeholders for mutable IDs
 - disabled or clearly labeled execution button
+
+Current implementation:
+
+- `src/lib/ptb/hedgeTransaction.ts` builds a structured PTB plan and can construct a `Transaction` when all required object inputs are supplied.
+- `src/app/page.tsx` shows `preview-ready` versus `ready-to-sign` readiness, missing object inputs, and guardrails.
+- Execution remains blocked by design until wallet connection, dUSDC coin selection, `PredictManager` discovery, and official entrypoint signature verification are complete.
 
 Create a config shape like:
 

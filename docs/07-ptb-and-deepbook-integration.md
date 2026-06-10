@@ -9,9 +9,17 @@ The project should be useful even before full testnet execution works. Build in 
 3. Testnet package/object IDs wired by config.
 4. Optional real hedge mint.
 
+Current implementation status:
+
+- `src/lib/ptb/hedgeTransaction.ts` builds a typed Predict hedge mint transaction preview using `@mysten/sui/transactions`.
+- The UI shows readiness state, missing inputs, guardrails, live oracle candidate, and the target `package::module::function`.
+- The builder can return a `Transaction` only when hedge, `PredictManager`, `OracleSVI`, dUSDC coin object, and max cost inputs are present.
+- Real wallet signing is still intentionally blocked until the current `predict::mint` entrypoint signature is verified against the testnet source package.
+
 ## Official References
 
 - DeepBook Predict docs: <https://docs.sui.io/onchain-finance/deepbook-predict/>
+- DeepBook Predict contract information: <https://docs.sui.io/onchain-finance/deepbook-predict/contract-information>
 - Predict package branch: <https://github.com/MystenLabs/deepbookv3/tree/predict-testnet-4-16/packages/predict>
 
 Important notes from official materials:
@@ -23,20 +31,9 @@ Important notes from official materials:
 
 ## Config File
 
-Create a config file like:
-
-```ts
-export const predictConfig = {
-  network: "testnet",
-  packageId: "TODO",
-  predictObjectId: "TODO",
-  dusdcType: "TODO",
-  managerObjectId: "TODO",
-  apiBaseUrl: "https://predict-server.testnet.mystenlabs.com",
-};
-```
-
-Do not hardcode mutable IDs throughout the app.
+The current config lives in `src/lib/predict/config.ts` and is mirrored by `.env.example`.
+Do not hardcode mutable IDs throughout the app. Package IDs, object IDs, and coin types
+must remain configurable through `NEXT_PUBLIC_PREDICT_*` values.
 
 ## PTB Preview
 
@@ -54,25 +51,27 @@ The MVP PTB preview should be human-readable:
 5. Show expected risk effect in report.
 ```
 
-## Sui SDK Skeleton
+## Sui SDK Transaction Preview
 
-Pseudo-code:
+Current preview shape:
 
 ```ts
 import { Transaction } from "@mysten/sui/transactions";
 
-export function buildHedgePreviewTx(input: HedgeTxInput) {
+export function buildHedgePreviewTx(input: HedgeTxInput): Transaction {
   const tx = new Transaction();
 
-  // TODO: wire real Predict entrypoints after confirming current package API.
   tx.moveCall({
     target: `${input.packageId}::predict::mint`,
     arguments: [
       tx.object(input.predictObjectId),
       tx.object(input.managerObjectId),
+      tx.object(input.oracleObjectId),
       tx.pure.u64(input.strike),
-      tx.pure.u64(input.expiryTimestamp),
+      tx.pure.string(input.expiryId),
+      tx.pure.string(input.side),
       tx.pure.u64(input.notional),
+      tx.pure.u64(input.maxCostMist),
       tx.object(input.dusdcCoinObjectId),
     ],
   });
@@ -81,7 +80,7 @@ export function buildHedgePreviewTx(input: HedgeTxInput) {
 }
 ```
 
-Treat this as a skeleton until function signatures are verified from the current branch/docs.
+Treat this as execution-blocked until function signatures are verified from the current branch/docs.
 
 ## Real Execution Stretch Checklist
 
@@ -102,4 +101,3 @@ If real execution is blocked:
 - show config placeholders
 - document exact integration blockers
 - keep the risk simulator and report fully functional
-

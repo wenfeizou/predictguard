@@ -31,7 +31,9 @@ import { useEffect, useMemo, useState } from "react";
 import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
 import type { PredictLiveSnapshot } from "@/lib/predict/client";
-import { buildPtbPreviewSteps, buildSuiSdkSkeleton } from "@/lib/ptb/preview";
+import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
+import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
+import type { PredictHedgePtbPlan } from "@/lib/ptb/hedgeTransaction";
 import { buildMarkdownReport } from "@/lib/report/markdown";
 import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
@@ -55,6 +57,17 @@ export default function Home() {
   const allResults = useMemo(
     () => runScenarioSet(market, scenarios, recommendation.recommendedHedge),
     [recommendation.recommendedHedge],
+  );
+  const ptbPlan = useMemo(
+    () =>
+      buildPredictHedgePtbPlan({
+        hedge: recommendation.recommendedHedge,
+        oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
+      }),
+    [
+      recommendation.recommendedHedge,
+      liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
+    ],
   );
   const markdownReport = useMemo(
     () =>
@@ -385,8 +398,9 @@ export default function Home() {
 
         <section id="ptb" className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <Panel title="PTB Preview" icon={<WalletCards className="h-5 w-5" />}>
-            <ol className="space-y-3 text-sm text-[#52615a]">
-              {buildPtbPreviewSteps(recommendation.recommendedHedge).map((step, index) => (
+            <PtbReadinessPanel plan={ptbPlan} />
+            <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
+              {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#17211d] text-xs font-semibold text-white">
                     {index + 1}
@@ -396,9 +410,18 @@ export default function Home() {
               ))}
             </ol>
           </Panel>
-          <Panel title="Sui SDK Skeleton" icon={<FileText className="h-5 w-5" />}>
+          <Panel title="Sui SDK Transaction" icon={<FileText className="h-5 w-5" />}>
+            <div className="mb-4 grid gap-3 text-xs text-[#52615a] md:grid-cols-2">
+              <ConfigRow label="Target" value={ptbPlan.target} />
+              <ConfigRow label="Oracle" value={ptbPlan.inputs.oracleObjectId} />
+              <ConfigRow label="Manager" value={ptbPlan.inputs.managerObjectId} />
+              <ConfigRow label="dUSDC coin" value={ptbPlan.inputs.dusdcCoinObjectId} />
+            </div>
             <pre className="max-h-96 overflow-auto rounded-md bg-[#17211d] p-4 text-xs leading-5 text-[#e8f4ef]">
-              {buildSuiSdkSkeleton(recommendation.recommendedHedge)}
+              {buildPredictHedgeSdkSkeleton({
+                hedge: recommendation.recommendedHedge,
+                oracleObjectId: ptbPlan.inputs.oracleObjectId,
+              })}
             </pre>
           </Panel>
         </section>
@@ -541,6 +564,56 @@ function TestnetStatusPanel({
         </div>
       </div>
     </Panel>
+  );
+}
+
+function PtbReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
+  const tone =
+    plan.readiness.status === "ready-to-sign"
+      ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
+      : "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]";
+
+  return (
+    <div className="rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[#17211d]">Execution readiness</div>
+          <p className="mt-2 text-sm leading-6 text-[#52615a]">
+            PredictGuard can build the transaction shape, but keeps execution gated until wallet,
+            coin, manager, and current package signature checks are satisfied.
+          </p>
+        </div>
+        <div className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${tone}`}>
+          {formatPtbReadinessLabel(plan)}
+        </div>
+      </div>
+
+      {plan.readiness.missing.length > 0 ? (
+        <div className="mt-4">
+          <div className="text-xs font-semibold uppercase tracking-normal text-[#17211d]">
+            Missing inputs
+          </div>
+          <ul className="mt-2 flex flex-wrap gap-2 text-xs text-[#52615a]">
+            {plan.readiness.missing.map((item) => (
+              <li key={item} className="rounded-full border border-[#dce3dd] bg-[#f5f7f4] px-3 py-1">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <div className="mt-4">
+        <div className="text-xs font-semibold uppercase tracking-normal text-[#17211d]">
+          Guardrails
+        </div>
+        <ul className="mt-2 space-y-2 text-xs leading-5 text-[#52615a]">
+          {plan.readiness.warnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 
