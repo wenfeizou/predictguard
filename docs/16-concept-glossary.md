@@ -90,6 +90,30 @@ whether and how much to buy.
 Without quote awareness, the app may submit a transaction that fails protocol
 checks such as `assert_mintable_ask`, or it may buy protection at a bad price.
 
+In PredictGuard, `quote-aware sizing` means:
+
+```text
+available budget = max hedge budget - safety buffer
+quantity = available budget / ask price
+```
+
+Current v1 example:
+
+```text
+max budget = 2 dUSDC
+safety buffer = 0.25 dUSDC
+available budget = 1.75 dUSDC
+ask price ~= 0.24
+quantity ~= 7.3 dUSDC
+```
+
+Why it matters: this is the first step from "always mint a fixed 1 dUSDC probe"
+to "choose trade size from price and budget."
+
+Important limitation: v1 uses the most recent successful mint's ask price as a
+practical quote estimate. A later version should use a direct live quote or
+market pricing source when available.
+
 ### Hedge
 
 Chinese: 对冲。
@@ -112,6 +136,49 @@ and maximum acceptable cost.
 Current state: PredictGuard uses a fixed small probe for live execution. The
 next deeper version should calculate real hedge size from quotes and risk
 reduction.
+
+Current updated state: PredictGuard now has quote-aware sizing v1. If no quote
+is available, it falls back to probe mode. If a recent ask price is available,
+it estimates quantity from max budget and ask price.
+
+### Deposit
+
+Chinese: 存入、充值到 PredictManager。
+
+In PredictGuard's mint PTB, `deposit` is the amount of dUSDC split from the
+wallet coin and moved into `PredictManager` before minting.
+
+Deposit is not the same as trading cost. For example:
+
+```text
+deposit = 2 dUSDC
+actual cost = 1.782642 dUSDC
+```
+
+The remaining amount is expected to stay on the manager side as available
+balance, subject to protocol accounting.
+
+### Actual Cost
+
+Chinese: 实际成交成本。
+
+`Actual cost` is the amount of dUSDC consumed by the mint, parsed from the
+`PositionMinted` event. It may differ slightly from `estimated cost` because the
+app estimates from the last known quote while the chain computes the current
+mint price at execution time.
+
+### Estimated Cost
+
+Chinese: 预估成本。
+
+`Estimated cost` is the app's pre-signing cost estimate. In quote-aware sizing
+v1, it is based on:
+
+```text
+estimated cost = planned quantity * latest known ask price
+```
+
+It is a planning number, not a guaranteed final chain result.
 
 ### Error Handling
 
@@ -308,6 +375,11 @@ liquidity.
 
 The earlier `assert_mintable_ask` failure happened because the submitted mint
 parameters were outside the acceptable ask boundary.
+
+The ask price can change between transactions. After a quote-aware mint
+succeeds, PredictGuard uses the new executed ask price to recalculate the next
+plan. That is why the "planned quantity" shown after a successful transaction
+can differ from the quantity that was just minted.
 
 ### dUSDC
 

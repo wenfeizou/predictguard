@@ -713,6 +713,33 @@ the most recent successful mint ask price as a practical estimate. The next
 deeper version should query live market pricing directly when the Predict API or
 contract read path exposes it reliably.
 
+Concept explanation added after verification:
+
+Quote-aware sizing means choosing the mint quantity from price and budget:
+
+```text
+available budget = max budget - safety buffer
+quantity = available budget / ask price
+```
+
+The second `Sign PTB` proved that the calculation affected real chain execution:
+the first probe minted `1 dUSDC`, while the quote-aware transaction minted
+`7.31435 dUSDC`.
+
+The planned numbers shown after the transaction can differ from the confirmed
+mint numbers because the app updates the plan with the latest executed ask
+price. In the verified case:
+
+- confirmed mint quantity: `7.31435 dUSDC`
+- confirmed actual cost: `1.782642 dUSDC`
+- new ask price after execution: `0.243718479`
+- next displayed planned quantity: `7.180415 dUSDC`
+
+`Deposit` is also different from `actual cost`: the PTB deposited `2 dUSDC`
+into `PredictManager`, while the mint consumed `1.782642 dUSDC`. The difference
+is expected to remain as manager-side available balance, subject to protocol
+accounting.
+
 Next implementation step:
 
 - Persist the latest execution digest and sizing evidence across refreshes, then
