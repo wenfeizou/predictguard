@@ -11,6 +11,7 @@ export type SuiDappNetwork = keyof typeof grpcUrls;
 export const dAppKit = createDAppKit({
   networks: ["testnet", "mainnet"],
   defaultNetwork: "testnet",
+  slushWalletConfig: null,
   createClient: (network) =>
     new SuiGrpcClient({
       network,
