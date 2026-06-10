@@ -108,6 +108,7 @@ Read in this order:
 14. [Commercial Analysis](docs/14-commercial-analysis.md)
 15. [Project Evolution Log](docs/15-project-evolution-log.md)
 16. [Concept Glossary](docs/16-concept-glossary.md)
+17. [Depth Roadmap](docs/17-depth-roadmap.md)
 
 ## Current Official References
 
