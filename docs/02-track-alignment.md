@@ -24,7 +24,7 @@ The DeepBook Predict track rewards projects around:
 | Volatility surface | Uses surface/smile data to explain pricing and risk concentration. |
 | Bots/tools | AI copilot recommends hedge actions. |
 | Simulation result | Compares unhedged vs hedged PnL under stress scenarios. |
-| Composability/PTB | Generates PTB preview for minting hedge positions; real execution is stretch. |
+| Composability/PTB | Generates and executes wallet-signed PTBs for minting hedge positions. |
 
 ## Source Ideas Combined
 
@@ -35,7 +35,10 @@ PredictGuard combines:
 - `038 PLP Risk Dashboard`: PLP exposure, utilization, and stress dashboard
 - `047 Strategy Backtest Framework`: before/after simulation and metrics
 
-This is deliberately scoped below a full automated vault. It is an actionable risk layer first.
+This is deliberately scoped below a full automated vault. It is an actionable
+risk management workflow first: identify risk, recommend a hedge, execute an
+on-chain Predict position, and show whether the resulting position improves the
+risk profile.
 
 ## Why This Can Win
 
@@ -46,8 +49,7 @@ PredictGuard answers a real protocol adoption problem:
 The project is stronger than a single dashboard because it connects:
 
 ```text
-surface data -> PLP exposure -> stress loss -> hedge recommendation -> PTB preview
+surface data -> PLP exposure -> stress loss -> hedge recommendation -> PTB execution -> position readback -> risk report
 ```
 
 That chain demonstrates understanding of DeepBook Predict's financial primitive, not just UI skill.
-

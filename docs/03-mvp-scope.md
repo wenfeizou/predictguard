@@ -70,15 +70,23 @@ The AI should recommend:
 - expected loss reduction
 - trade-off between lower APY and lower tail risk
 
-### 6. PTB Preview
+### 6. PTB Preview And Execution
 
 Minimum:
 
 - human-readable PTB preview for minting the hedge
+- wallet-gated execution state
+- clear readiness checks for wallet, dUSDC, `PredictManager`, oracle, and coin
+  inputs
 
-Stretch:
+Current live milestone:
 
-- real DeepBook Predict testnet mint
+- small wallet-signed DeepBook Predict testnet mint probe
+
+Next required depth:
+
+- post-mint position and manager readback
+- quote-aware hedge sizing instead of a fixed probe
 
 ### 7. Risk Report
 
@@ -87,6 +95,8 @@ Export or render:
 - current exposure
 - stress scenarios
 - hedge recommendation
+- on-chain transaction result when available
+- executed position summary when readback is available
 - before/after PnL
 - assumptions
 
@@ -101,10 +111,10 @@ Export or render:
 ## Stretch
 
 - real testnet Predict data from public API
-- real testnet hedge transaction
 - strategy backtest
 - Polymarket / Hyperliquid comparison
 - full vault share token
+- settlement follow-up after expiry
 
 ## Avoid
 
@@ -113,4 +123,3 @@ Export or render:
 - cross-protocol margin loop
 - complex real-money trading claims
 - profitability marketing
-

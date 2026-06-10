@@ -6,7 +6,8 @@
 - Public API/indexer data can be accessed or approximated.
 - dUSDC can be requested for testnet execution.
 - The hackathon accepts simulation results for strategy-like projects.
-- PTB preview is valuable even if full execution is stretch.
+- PTB preview remains valuable, but the current app has also proven a small
+  wallet-signed testnet mint probe.
 
 ## Major Risks
 
@@ -15,7 +16,7 @@
 | Predict integration changes | High | Keep IDs and entrypoints in config; verify docs late. |
 | Sparse testnet data | Medium | Use deterministic simulator and label data clearly. |
 | Financial concepts confuse judges | High | Use before/after PnL charts and plain-English AI explanations. |
-| Project looks like generic dashboard | High | Include hedge recommendation, PTB preview, and risk report. |
+| Project looks like generic dashboard | High | Include hedge recommendation, wallet execution, position readback, and risk report. |
 | Scope expands into full vault | High | Keep vault execution as future work. |
 | AI overclaims strategy quality | Medium | Add guardrails and assumptions. |
 
@@ -57,4 +58,3 @@ Do not say:
 Say:
 
 > We built the risk layer for DeepBook Predict: a PLP exposure dashboard, stress simulator, AI hedge copilot, and PTB preview system that helps LPs and vault builders understand and manage vol-surface-driven tail risk.
-

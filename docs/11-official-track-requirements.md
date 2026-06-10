@@ -141,10 +141,10 @@ Because the exact scoring weights were not exposed through the public Notion fet
 | Real-world application | Risk dashboards, stress tests, hedge workflows, and reports are credible needs for serious liquidity providers. | Show deterministic risk numbers and assumptions. |
 | Long-term ecosystem growth | Makes DeepBook Predict safer to adopt by making PLP economics and tail risk legible. | Explain how the adapter can switch from simulated data to live Predict server data. |
 | DeepBook track relevance | Uses PLP, binary positions, rolling expiries, SVI/IV, dUSDC, PredictManager, and PTB concepts. | README and demo must name these protocol primitives explicitly. |
-| Functional application | Current MVP already runs end to end with simulated data. | Protect the offline flow and add live/testnet adapter where feasible. |
+| Functional application | Current MVP runs the simulated workflow and has a verified wallet-signed testnet mint probe. | Protect the offline flow and add position readback. |
 | Product or analytics category | Fits analytics/developer tooling and PLP risk dashboard categories. | Present as "PLP risk and hedge workflow", not generic analytics. |
 | Vault strategy simulation | Simulates PLP + hedge behavior and before/after PnL. | Include reproducible sample data and scenario assumptions. |
-| Testnet Predict contract integration | Official minimum requirement says integrate DeepBook Predict contract on testnet. | Add config, Sui SDK skeleton, public API adapter, and ideally one real testnet tx digest. |
+| Testnet Predict contract integration | Official minimum requirement says integrate DeepBook Predict contract on testnet. | A real mint digest now exists; next step is readback and quote-aware sizing. |
 | Mainnet deployment incentive | Prize payout is tied partly to successful mainnet deployment. | Keep IDs configurable and document the path to mainnet redeploy. |
 | Demo Day readiness | Shortlisted teams present live to judges. | Prepare a 5-7 minute script around exposure -> stress -> hedge -> PTB -> report. |
 
@@ -152,33 +152,35 @@ Current assessment:
 
 - Strong conceptual fit.
 - Strong product narrative.
-- MVP now proves an end-to-end simulated workflow.
-- Biggest remaining scoring risk is the official minimum testnet integration requirement.
+- MVP now proves an end-to-end simulated workflow plus a successful testnet
+  Predict mint probe.
+- Biggest remaining scoring risk is product depth: position readback,
+  quote-aware sizing, and judge-facing demo polish.
 
 Therefore the next implementation priority is not more UI polish. It is:
 
-1. Add a public Predict server adapter.
-2. Add Sui SDK PTB builder placeholders using `@mysten/sui`.
-3. Add config-driven testnet IDs.
-4. Attempt a tiny real testnet mint/supply/redeem or clearly document blockers.
-5. Prepare submission assets: README, demo script, screenshots, video, and assumptions.
+1. Add post-mint position and manager readback.
+2. Upgrade fixed probe sizing to quote-aware hedge sizing.
+3. Link the executed transaction result into the risk report.
+4. Prepare submission assets: README, demo script, screenshots, video, and assumptions.
 
 ## Current Gaps Against Official Requirements
 
-The current repository now has a simulation-first MVP. Against the official requirements and handbook signals, the biggest remaining gaps are:
+The current repository now has a simulation-first MVP and a verified testnet
+mint probe. Against the official requirements and handbook signals, the biggest
+remaining gaps are:
 
-1. No testnet Predict contract integration yet.
-2. No public Predict server adapter yet.
-3. No real package IDs, object IDs, or `dUSDC` configuration yet.
-4. No verified Sui SDK transaction against current Predict entrypoints yet.
-5. No real testnet transaction digest yet.
-6. No final submission README, demo script, screenshots, or recorded end-to-end video yet.
+1. No post-mint position readback yet.
+2. Fixed probe sizing is not yet quote-aware hedge sizing.
+3. Risk report does not yet include transaction and position evidence.
+4. No final submission README, demo script, screenshots, or recorded end-to-end video yet.
 
-The concept and first MVP are aligned, but the implementation must still prove official testnet integration.
+The concept and implementation are now aligned on core testnet integration, but
+the app must still turn that proof into a polished risk management workflow.
 
 ## Winning Probability Assessment
 
-Assessment as of 2026-06-09:
+Assessment as of 2026-06-10:
 
 | State | Expected competitiveness |
 | --- | --- |
@@ -192,10 +194,12 @@ Assessment as of 2026-06-09:
 Estimated probability bands:
 
 - Previous planning-only state: 5-10%.
-- Current simulation-first MVP with no testnet contract call: 25-35%.
-- Current MVP plus public API data and Sui SDK PTB skeleton: 40-55%.
-- Complete MVP with at least one real testnet Predict transaction: 60-75%.
-- Complete MVP plus polished UX, risk report, and strong demo video: 70-85%.
+- Historical simulation-first MVP with no testnet contract call: 25-35%.
+- Current MVP plus public API data and Sui SDK PTB skeleton: completed.
+- Complete MVP with at least one real testnet Predict transaction: currently
+  achieved at the probe level; competitiveness around 60-70%.
+- Complete MVP plus readback, quote-aware sizing, polished UX, risk report, and
+  strong demo video: 70-85%.
 
 These are relative estimates, not guarantees. Actual odds depend on competitor quality and judging emphasis.
 
@@ -208,14 +212,17 @@ To become clearly competitive, PredictGuard should prioritize:
 3. Add a public Predict server adapter.
 4. Add config-based testnet integration.
 5. Implement at least one Sui SDK transaction skeleton.
-6. Attempt a tiny testnet transaction late, after the demo works offline.
+6. Use the verified tiny testnet transaction as demo evidence.
 7. Make the submission narrative explicitly reference PLP risk, SVI surface, OTM hedge, `dUSDC`, `PredictManager`, and PTB composability.
 
 ## Recommended Submission Positioning
 
 Use:
 
-> PredictGuard is the PLP risk and hedge workflow for DeepBook Predict. It helps LPs and vault builders inspect vault exposure, simulate tail losses, compare unhedged and hedged outcomes, and turn an OTM binary hedge into a Sui PTB preview or testnet action.
+> PredictGuard is a DeepBook Predict risk management workflow for PLP providers,
+> LPs, vault builders, and strategy developers. It identifies Predict exposure,
+> recommends hedges, executes on-chain Predict positions, and shows whether risk
+> improves after execution.
 
 Avoid:
 

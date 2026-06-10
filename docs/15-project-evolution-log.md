@@ -7,8 +7,10 @@ understandable without rereading the chat.
 
 ## Current Status Snapshot
 
-As of the latest implementation round, PredictGuard is roughly 45-48% complete
-against the final hackathon target.
+As of the latest implementation round, PredictGuard is roughly 60-63% complete
+against the final hackathon target. The main technical risk dropped after a
+successful wallet-signed DeepBook Predict testnet mint probe, but product depth
+still needs position readback, quote-aware sizing, and demo/report polish.
 
 Completed:
 
@@ -27,18 +29,23 @@ Completed:
   server
 - Signable PTB execution control through dApp Kit when readiness reaches
   `ready-to-sign`
+- Connected-account `PredictManager` creation
+- Wallet-signed DeepBook Predict mint probe
+- Verified successful transaction digest:
+  `2N7TpuBGod9sebHQBpQT5YtSKujWZqFLpf9HcR5hLGag`
+- Project concept glossary
 
-Still missing before the 55% milestone:
+Still missing before the 70% milestone:
 
-- `PredictManager` creation guidance when the user does not already have one
 - dUSDC faucet/acquisition guidance when the user has no coin object
-- First real testnet transaction attempt
+- post-mint position and manager readback
+- transaction evidence linked into the risk report
 
 Still missing before the 75%+ competitive target:
 
-- Real testnet transaction attempt
-- Transaction digest capture
-- Report/demo integration of real transaction evidence
+- quote-aware hedge sizing instead of fixed probe sizing
+- richer PLP/LP risk metrics
+- lightweight scenario comparison, backtest, or stress-test depth
 - Final UI polish, video, and submission package
 
 ## Development Rounds Completed
@@ -315,12 +322,15 @@ Current estimated completion:
 - After official signature alignment: about 30-32%
 - After wallet connection plus user dUSDC/manager detection: about 38-40%
 - After wallet-gated PTB signing control: about 45-48%
+- After successful live mint probe: about 60-63%
 
 Milestone estimates:
 
 - 55%: wallet connection, user object readiness, dUSDC/manager detection, and a
   signable transaction preview
-- 60-75%: at least one real testnet transaction digest plus report/demo evidence
+- 60-65%: at least one real testnet transaction digest and `PositionMinted`
+  evidence
+- 70-75%: position readback, quote-aware sizing, and report/demo integration
 - 75-90%: polished demo flow, video, submission assets, and robust UX
 
 ## Roadmap To 55%

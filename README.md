@@ -2,7 +2,10 @@
 
 **PredictGuard: The Risk Layer for DeepBook Predict**
 
-PredictGuard is a DeepBook Predict project for the Sui hackathon. It helps PLP providers, vault builders, and strategy developers understand Predict exposure, simulate tail events, and convert volatility-surface risk into hedge recommendations and PTB previews.
+PredictGuard is a DeepBook Predict risk management workflow for PLP providers,
+LPs, vault builders, and strategy developers. It identifies Predict exposure,
+recommends hedges, executes on-chain Predict positions, and shows whether risk
+improves after execution.
 
 ## Why This Project
 
@@ -19,15 +22,17 @@ PredictGuard answers:
 
 ## MVP
 
-The MVP is not a full vault and not a trading bot. It is a risk workflow:
+The MVP is not a full vault and not a trading bot. It is a risk management
+workflow:
 
 ```text
 Observe exposure
   -> interpret surface risk
   -> run stress scenarios
   -> receive AI hedge recommendation
-  -> preview hedge PTB
-  -> export risk report
+  -> execute or preview hedge PTB
+  -> confirm position
+  -> update risk report
 ```
 
 Must build:
@@ -38,6 +43,8 @@ Must build:
 - stress scenario simulator
 - AI hedge recommendation
 - human-readable PTB preview
+- wallet-signed Predict mint probe
+- post-mint position and manager readback
 - exportable risk report
 
 Stretch:
@@ -100,6 +107,7 @@ Read in this order:
 13. [Naming Conventions](docs/13-naming-conventions.md)
 14. [Commercial Analysis](docs/14-commercial-analysis.md)
 15. [Project Evolution Log](docs/15-project-evolution-log.md)
+16. [Concept Glossary](docs/16-concept-glossary.md)
 
 ## Current Official References
 

@@ -7,7 +7,9 @@ The project should be useful even before full testnet execution works. Build in 
 1. PTB preview with documented placeholders.
 2. Sui SDK transaction skeleton.
 3. Testnet package/object IDs wired by config.
-4. Optional real hedge mint.
+4. Wallet-gated manager and dUSDC readiness.
+5. Small real hedge mint probe.
+6. Position and manager readback.
 
 Current implementation status:
 
@@ -15,7 +17,20 @@ Current implementation status:
 - The UI shows readiness state, missing inputs, guardrails, live oracle candidate, and the target `package::module::function`.
 - The builder is aligned with `predict-testnet-4-16`: `predict_manager::deposit<dUSDC>`, `market_key::new`, then `predict::mint<dUSDC>`.
 - The builder can return a `Transaction` only when hedge, `PredictManager`, `OracleSVI`, oracle expiry, and dUSDC coin object inputs are present.
-- Real wallet signing is still intentionally blocked until wallet connection, manager discovery, and coin selection are wired.
+- Wallet signing is enabled when readiness reaches `ready-to-sign`.
+- A live testnet mint probe has succeeded on-chain.
+- Current execution deliberately uses a small probe size while quote-aware hedge
+  sizing remains future work.
+
+Verified live mint probe:
+
+- digest: `2N7TpuBGod9sebHQBpQT5YtSKujWZqFLpf9HcR5hLGag`
+- effects status: `success`
+- event: `predict::PositionMinted`
+- deposit: `2 dUSDC`
+- quantity: `1 dUSDC`
+- execution strike: `63,187`
+- cost: about `0.232220 dUSDC`
 
 ## Official References
 
@@ -117,17 +132,24 @@ public fun mint<Quote>(
 
 ## Real Execution Stretch Checklist
 
-- Join DeepBook builder group if needed.
-- Request dUSDC through the official form.
-- Confirm latest package IDs and object IDs.
-- Create or load a PredictManager.
-- Execute a tiny mint transaction on testnet.
-- Capture transaction digest.
-- Link transaction in the PTB preview/report.
+Completed:
 
-## Fallback
+- Confirmed current package IDs and object IDs from official docs.
+- Imported a testnet wallet with dUSDC into Slush.
+- Created and discovered a `PredictManager`.
+- Executed a tiny mint transaction on testnet.
+- Captured transaction digest and `PositionMinted` event.
 
-If real execution is blocked:
+Still needed:
+
+- Read back minted position and manager balances after execution.
+- Replace fixed probe sizing with quote-aware hedge sizing.
+- Link transaction and position evidence into the risk report.
+
+## Fallback For Future Testnet Breakage
+
+Real execution currently works at the small probe level. If a future DeepBook
+Predict testnet package, object, or API change blocks execution:
 
 - ship PTB preview
 - show code skeleton

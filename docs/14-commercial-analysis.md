@@ -22,8 +22,18 @@ PredictGuard creates value by turning opaque PLP risk into an actionable workflo
 PLP exposure
   -> scenario loss
   -> hedge recommendation
-  -> PTB preview / execution path
-  -> risk report
+  -> wallet-signed Predict execution
+  -> position readback
+  -> updated risk report
+```
+
+Current product positioning:
+
+```text
+PredictGuard is a DeepBook Predict risk management workflow for PLP providers,
+LPs, vault builders, and strategy developers. It identifies Predict exposure,
+recommends hedges, executes on-chain Predict positions, and shows whether risk
+improves after execution.
 ```
 
 ## Target Users

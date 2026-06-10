@@ -61,9 +61,21 @@ Show:
 - required objects/assets
 - max cost
 - expected output
-- execution status if real testnet tx works
+- wallet readiness
+- execution strike, deposit, quantity, reference price, and oracle grid
+- transaction digest when execution succeeds
 
-### 7. Risk Report
+### 7. Position Readback
+
+Show:
+
+- minted position summary
+- manager balance/status
+- actual cost
+- link to SuiVision
+- whether the executed hedge matches the recommendation
+
+### 8. Risk Report
 
 Show:
 
@@ -71,6 +83,7 @@ Show:
 - metrics table
 - charts
 - recommendation
+- transaction and position evidence when available
 - assumptions
 - export button
 
@@ -85,7 +98,10 @@ Show:
 7. Show OTM hedge recommendation.
 8. Compare unhedged vs hedged PnL.
 9. Open PTB preview.
-10. Export risk report.
+10. Connect wallet and show readiness.
+11. Execute the small Predict mint probe or show the verified digest.
+12. Read back position/manager status when available.
+13. Export risk report.
 
 ## Example Demo Numbers
 
@@ -105,7 +121,6 @@ The three most important visuals:
 
 1. exposure heatmap
 2. before/after stress PnL
-3. PTB preview
+3. wallet execution plus transaction/position evidence
 
 If time is limited, prioritize these over fancy 3D charts.
-

@@ -12,7 +12,10 @@ Chinese:
 
 ## One-Line Pitch
 
-PredictGuard is a risk layer for DeepBook Predict that helps PLP providers, vault builders, and strategy developers understand exposure, simulate tail events, and convert volatility-surface risk into hedge recommendations and PTB previews.
+PredictGuard is a DeepBook Predict risk management workflow for PLP providers,
+LPs, vault builders, and strategy developers. It identifies Predict exposure,
+recommends hedges, executes on-chain Predict positions, and shows whether risk
+improves after execution.
 
 ## Product Positioning
 
@@ -28,7 +31,7 @@ PredictGuard is:
 - a volatility-surface interpretation layer
 - a stress-test simulator
 - an AI hedge copilot
-- a PTB preview generator
+- a wallet-signed Predict hedge execution workflow
 - a risk report exporter
 
 PredictGuard is not:
@@ -85,5 +88,5 @@ The demo must prove four things:
 1. **Risk is visible:** PLP exposure is shown by strike and expiry.
 2. **Risk is quantified:** stress tests show unhedged loss.
 3. **Risk is actionable:** AI recommends a hedge with cost and expected loss reduction.
-4. **Risk is composable:** the hedge becomes a PTB preview or testnet action.
-
+4. **Risk is executable:** the hedge becomes a wallet-signed Predict mint.
+5. **Risk is reviewable:** the app shows the resulting position and updated risk report.
