@@ -26,6 +26,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 
 import { scenarios } from "@/lib/data/scenarios";
@@ -33,14 +34,29 @@ import { seedMarketState } from "@/lib/data/seed";
 import type { PredictLiveSnapshot } from "@/lib/predict/client";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
 import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
-import type { PredictHedgePtbPlan } from "@/lib/ptb/hedgeTransaction";
+import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
 import { buildMarkdownReport } from "@/lib/report/markdown";
 import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
 
 const market = seedMarketState;
+const WalletReadinessClient = dynamic(
+  () => import("@/app/wallet-readiness").then((mod) => mod.WalletReadinessClient),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-fit rounded-full border border-[#dce3dd] bg-white px-3 py-1 text-xs font-semibold text-[#52615a]">
+        Loading wallet
+      </div>
+    ),
+  },
+);
 
 export default function Home() {
+  const [walletReadiness, setWalletReadiness] = useState<WalletReadinessInput>({
+    connected: false,
+    network: "testnet",
+  });
   const [selectedScenarioId, setSelectedScenarioId] = useState("btc-up-5");
   const [liveSnapshot, setLiveSnapshot] = useState<PredictLiveSnapshot | null>(null);
   const [liveLoading, setLiveLoading] = useState(true);
@@ -62,15 +78,13 @@ export default function Home() {
     () =>
       buildPredictHedgePtbPlan({
         hedge: recommendation.recommendedHedge,
-        wallet: {
-          connected: false,
-          network: "testnet",
-        },
+        wallet: walletReadiness,
         oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
         oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
       }),
     [
       recommendation.recommendedHedge,
+      walletReadiness,
       liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
       liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
     ],
@@ -404,7 +418,7 @@ export default function Home() {
 
         <section id="ptb" className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <Panel title="PTB Preview" icon={<WalletCards className="h-5 w-5" />}>
-            <WalletReadinessPanel plan={ptbPlan} />
+            <WalletReadinessPanel plan={ptbPlan} onChange={setWalletReadiness} />
             <PtbReadinessPanel plan={ptbPlan} />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
@@ -634,7 +648,13 @@ function PtbReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
   );
 }
 
-function WalletReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
+function WalletReadinessPanel({
+  plan,
+  onChange,
+}: {
+  plan: PredictHedgePtbPlan;
+  onChange: (wallet: WalletReadinessInput) => void;
+}) {
   const connected = Boolean(plan.inputs.walletConnected && plan.inputs.walletAddress);
 
   return (
@@ -643,19 +663,11 @@ function WalletReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
         <div>
           <div className="text-sm font-semibold text-[#17211d]">Wallet readiness</div>
           <p className="mt-2 text-sm leading-6 text-[#52615a]">
-            Wallet connection is the next integration step. The PTB builder already accepts
-            sender address and network state, so dApp Kit can feed readiness directly.
+            Connect a Sui wallet on testnet before building a signable Predict hedge PTB.
+            The wallet owns gas selection; PredictGuard passes the Transaction instance.
           </p>
         </div>
-        <div
-          className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
-            connected
-              ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
-              : "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]"
-          }`}
-        >
-          {connected ? "Connected" : "Not connected"}
-        </div>
+        <WalletReadinessClient onChange={onChange} />
       </div>
       <dl className="mt-4 grid gap-3 text-xs text-[#52615a] sm:grid-cols-2">
         <ConfigRow label="Address" value={plan.inputs.walletAddress} />

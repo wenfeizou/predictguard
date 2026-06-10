@@ -345,11 +345,24 @@ Current partial progress:
 - The PTB readiness model now lists `Sui wallet connection` and `Sui testnet
   network` as explicit missing inputs.
 - The PTB page shows a Wallet Readiness panel, currently disconnected by design.
+- `@mysten/dapp-kit-react` and `@tanstack/react-query` are installed.
+- The app is wrapped with `createDAppKit` + `DAppKitProvider`.
+- The PTB page reads real connected account and current network through dApp Kit.
+- The wallet panel renders the official `ConnectButton`.
+- Wallet hooks and `ConnectButton` are isolated in a dynamic client-only component
+  to avoid Next.js prerender failures.
+
+Build note:
+
+- `next build` passes. dApp Kit still prints a non-fatal prerender warning:
+  `Skipping wallet initializer: "ReferenceError: document is not defined"`.
+  This is from wallet detection in a server build context and does not fail the
+  build. If it becomes noisy or problematic, further lazy-load the provider.
 
 Next implementation step:
 
-- Install and wire `@mysten/dapp-kit-react` using `createDAppKit` and
-  `DAppKitProvider`, then feed the connected account/network into the PTB plan.
+- Query the connected account for dUSDC coin candidates and `PredictManager`
+  objects, then feed real object IDs into the PTB plan.
 
 ### Round C: User Object And dUSDC Detection
 
