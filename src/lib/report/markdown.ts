@@ -6,6 +6,7 @@ import type {
   ScenarioResult,
 } from "@/lib/types";
 import type { NormalizedPredictLiveContext } from "@/lib/predict/normalize";
+import type { PredictMintExecutionSummary } from "@/lib/predict/execution";
 
 export function buildMarkdownReport(input: {
   market: MarketState;
@@ -14,8 +15,17 @@ export function buildMarkdownReport(input: {
   results: ScenarioResult[];
   recommendation: HedgeRecommendation;
   liveContext?: NormalizedPredictLiveContext;
+  mintExecution?: PredictMintExecutionSummary | null;
 }): string {
-  const { market, metrics, scenarios, results, recommendation, liveContext } = input;
+  const {
+    market,
+    metrics,
+    scenarios,
+    results,
+    recommendation,
+    liveContext,
+    mintExecution,
+  } = input;
 
   return [
     "# PredictGuard Risk Report",
@@ -71,9 +81,35 @@ export function buildMarkdownReport(input: {
       ? `Buy ${recommendation.recommendedHedge.notional} ${recommendation.recommendedHedge.side} notional at strike ${recommendation.recommendedHedge.strike.toLocaleString("en-US")} for expiry ${recommendation.recommendedHedge.expiryId}. Estimated cost: ${recommendation.recommendedHedge.estimatedCost.toFixed(2)} dUSDC.`
       : "No hedge recommended.",
     "",
+    "## On-Chain Execution",
+    "",
+    ...(mintExecution
+      ? [
+          `- Status: ${mintExecution.status}`,
+          `- Digest: ${mintExecution.digest}`,
+          `- SuiVision: https://testnet.suivision.xyz/txblock/${mintExecution.digest}`,
+          `- Position: ${mintExecution.side ?? "N/A"} ${mintExecution.strike?.toLocaleString("en-US") ?? "N/A"}`,
+          `- Quantity: ${formatDusdc(mintExecution.quantityDusdc)}`,
+          `- Actual cost: ${formatDusdc(mintExecution.costDusdc)}`,
+          `- Ask price: ${mintExecution.askPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 }) ?? "N/A"}`,
+          `- Manager: ${mintExecution.managerId ?? "N/A"}`,
+          `- Oracle: ${mintExecution.oracleId ?? "N/A"}`,
+          "- Note: current execution is a small live mint probe; full hedge sizing remains pending quote-aware sizing.",
+        ]
+      : [
+          "- No wallet-signed Predict mint has been executed in this browser session.",
+          "- Latest verified testnet evidence is tracked in the project evolution log.",
+        ]),
+    "",
     "## Assumptions",
     "",
     ...recommendation.assumptions.map((assumption) => `- ${assumption}`),
     ...(liveContext?.assumptions ?? []).map((assumption) => `- ${assumption}`),
   ].join("\n");
+}
+
+function formatDusdc(value?: number) {
+  return value === undefined
+    ? "N/A"
+    : `${value.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC`;
 }

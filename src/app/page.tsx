@@ -32,6 +32,7 @@ import { useEffect, useMemo, useState } from "react";
 import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
 import type { PredictLiveSnapshot } from "@/lib/predict/client";
+import type { PredictMintExecutionSummary } from "@/lib/predict/execution";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
 import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
 import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
@@ -71,6 +72,7 @@ export default function Home() {
   const [selectedScenarioId, setSelectedScenarioId] = useState("btc-up-5");
   const [liveSnapshot, setLiveSnapshot] = useState<PredictLiveSnapshot | null>(null);
   const [liveLoading, setLiveLoading] = useState(true);
+  const [mintExecution, setMintExecution] = useState<PredictMintExecutionSummary | null>(null);
   const selectedScenario =
     scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
 
@@ -116,8 +118,9 @@ export default function Home() {
         results: allResults,
         recommendation,
         liveContext: liveSnapshot?.liveContext,
+        mintExecution,
       }),
-    [metrics, allResults, recommendation, liveSnapshot?.liveContext],
+    [metrics, allResults, recommendation, liveSnapshot?.liveContext, mintExecution],
   );
 
   useEffect(() => {
@@ -438,7 +441,11 @@ export default function Home() {
           <Panel title="PTB Preview" icon={<WalletCards className="h-5 w-5" />}>
             <WalletReadinessPanel plan={ptbPlan} onChange={setWalletReadiness} />
             <PtbReadinessPanel plan={ptbPlan} />
-            <PtbExecuteClient input={ptbInput} plan={ptbPlan} />
+            <PtbExecuteClient
+              input={ptbInput}
+              plan={ptbPlan}
+              onExecution={setMintExecution}
+            />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">

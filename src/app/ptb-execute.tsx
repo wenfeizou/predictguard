@@ -6,6 +6,10 @@ import { ExternalLink, Send } from "lucide-react";
 import { useState } from "react";
 
 import {
+  summarizePredictMintExecution,
+  type PredictMintExecutionSummary,
+} from "@/lib/predict/execution";
+import {
   buildPredictHedgeTransactionPreview,
   type PredictHedgeMintInput,
   type PredictHedgePtbPlan,
@@ -14,16 +18,18 @@ import {
 export function PtbExecuteClient({
   input,
   plan,
+  onExecution,
 }: {
   input: PredictHedgeMintInput;
   plan: PredictHedgePtbPlan;
+  onExecution?: (execution: PredictMintExecutionSummary) => void;
 }) {
   const dAppKit = useDAppKit();
   const account = useCurrentAccount();
   const client = useCurrentClient();
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
-  const [digest, setDigest] = useState<string | null>(null);
+  const [execution, setExecution] = useState<PredictMintExecutionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const disabled = pending || !account || !plan.readiness.canBuildTransaction;
@@ -34,7 +40,7 @@ export function PtbExecuteClient({
     }
 
     setPending(true);
-    setDigest(null);
+    setExecution(null);
     setError(null);
 
     try {
@@ -54,8 +60,24 @@ export function PtbExecuteClient({
       }
 
       const txDigest = result.Transaction.digest;
-      await client.core.waitForTransaction({ digest: txDigest });
-      setDigest(txDigest);
+      const transaction = await client.core.waitForTransaction({
+        digest: txDigest,
+        include: {
+          balanceChanges: true,
+          effects: true,
+          events: true,
+        },
+      });
+
+      if (transaction.FailedTransaction) {
+        throw new Error(
+          transaction.FailedTransaction.status.error?.message ?? "Transaction failed on-chain",
+        );
+      }
+
+      const summary = summarizePredictMintExecution(transaction.Transaction);
+      setExecution(summary);
+      onExecution?.(summary);
       await queryClient.invalidateQueries({ queryKey: ["dusdc-coins", account.address] });
       await queryClient.invalidateQueries({ queryKey: ["predict-manager", account.address] });
     } catch (caught) {
@@ -127,16 +149,52 @@ export function PtbExecuteClient({
         </div>
       ) : null}
 
-      {digest ? (
-        <a
-          href={`https://testnet.suivision.xyz/txblock/${digest}`}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#1f8a70] underline-offset-4 hover:underline"
-        >
-          <ExternalLink className="h-4 w-4" />
-          View transaction digest
-        </a>
+      {execution ? (
+        <div className="mt-3 rounded-md border border-[#1f8a70] bg-[#e8f4ef] p-3">
+          <div className="text-sm font-semibold text-[#17211d]">Mint confirmed</div>
+          <dl className="mt-2 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+            <div>
+              <dt className="font-semibold text-[#17211d]">Position</dt>
+              <dd>
+                {execution.side ?? "Unknown"}{" "}
+                {execution.strike ? execution.strike.toLocaleString("en-US") : "unknown strike"}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-[#17211d]">Quantity</dt>
+              <dd>{formatOptionalDusdc(execution.quantityDusdc)}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-[#17211d]">Actual cost</dt>
+              <dd>{formatOptionalDusdc(execution.costDusdc)}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-[#17211d]">Ask price</dt>
+              <dd>{formatOptionalNumber(execution.askPrice, 9)}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-[#17211d]">dUSDC wallet change</dt>
+              <dd>{formatSignedDusdc(execution.dusdcBalanceChange)}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-[#17211d]">Expiry</dt>
+              <dd>{formatExpiry(execution.expiryMs)}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="font-semibold text-[#17211d]">Manager</dt>
+              <dd className="break-all">{execution.managerId ?? "Unavailable"}</dd>
+            </div>
+          </dl>
+          <a
+            href={`https://testnet.suivision.xyz/txblock/${execution.digest}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-2 break-all text-sm font-semibold text-[#1f8a70] underline-offset-4 hover:underline"
+          >
+            <ExternalLink className="h-4 w-4 shrink-0" />
+            View transaction digest
+          </a>
+        </div>
       ) : null}
     </div>
   );
@@ -150,4 +208,34 @@ function formatDusdcBaseUnits(value?: string) {
   return `${(Number(value) / 1_000_000).toLocaleString("en-US", {
     maximumFractionDigits: 6,
   })} dUSDC`;
+}
+
+function formatOptionalDusdc(value?: number) {
+  return value === undefined
+    ? "Unavailable"
+    : `${value.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC`;
+}
+
+function formatSignedDusdc(value?: number) {
+  if (value === undefined) {
+    return "Unavailable";
+  }
+
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC`;
+}
+
+function formatOptionalNumber(value?: number, maximumFractionDigits = 6) {
+  return value === undefined
+    ? "Unavailable"
+    : value.toLocaleString("en-US", { maximumFractionDigits });
+}
+
+function formatExpiry(value?: string) {
+  if (!value) {
+    return "Unavailable";
+  }
+
+  const date = new Date(Number(value));
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("en-US");
 }

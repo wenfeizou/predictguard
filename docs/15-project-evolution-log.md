@@ -580,6 +580,98 @@ Next implementation step:
 - Add post-mint position/readiness display by reading the manager or minted
   market position state after a successful transaction.
 
+## Next Priority Plan
+
+Recorded before starting the next implementation round.
+
+Recommended priority order:
+
+1. **Post-mint position and manager readback.**
+   After a wallet-signed mint, the page should show what the user actually
+   bought: digest, minted position, strike, expiry, direction, quantity, cost,
+   and manager evidence.
+2. **Risk report binding.**
+   The risk report should connect the simulated recommendation with the actual
+   on-chain transaction result.
+3. **Quote-aware sizing.**
+   Replace the fixed small probe with sizing based on live ask/cost, max user
+   budget, and expected risk reduction.
+4. **Demo flow polish.**
+   Make the story easy to follow: risk diagnosis, hedge recommendation, wallet
+   execution, position confirmation, and risk report.
+
+Current round selected:
+
+- Round G: post-mint readback through transaction event parsing and execution
+  result display.
+
+### Round G: Post-Mint Execution Readback
+
+Status: completed.
+
+Commit: pending for this round.
+
+Goal:
+
+- Turn the wallet mint result from a plain digest link into a readable execution
+  summary.
+- Start binding the live chain result into the risk report.
+
+Implementation outcome:
+
+- Added `src/lib/predict/execution.ts` to normalize Sui transaction data into a
+  `PredictMintExecutionSummary`.
+- After `signAndExecuteTransaction`, the wallet execution component now waits
+  for the transaction with events, effects, and balance changes included.
+- The component parses the `predict::PositionMinted` event and displays:
+  - side
+  - strike
+  - quantity
+  - actual cost
+  - ask price
+  - dUSDC wallet balance change
+  - expiry
+  - manager object
+  - SuiVision digest link
+- The parsed execution summary is lifted into the page state.
+- The Markdown risk report now includes an `On-Chain Execution` section when a
+  mint has been executed in the browser session.
+
+Concept explanation:
+
+Post-mint readback means the app does not stop at "transaction submitted." It
+reads the confirmed transaction and explains what position was minted. This is
+the first product-loop step from wallet execution toward "did my risk actually
+change?"
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+- Browser verification confirmed the `Mint confirmed` panel and risk report
+  `On-Chain Execution` section with digest:
+  `C5GGJd33UhraMqUt3VWQk3XxHwdYFXVPXjAyC9JGXz7N`
+- Verified parsed execution values:
+  - position: `YES 63,187`
+  - quantity: `1 dUSDC`
+  - actual cost: `0.244788 dUSDC`
+  - ask price: `0.244788469`
+  - dUSDC wallet change: `-2 dUSDC`
+
+Remaining gap:
+
+This round reads the transaction event and wallet balance changes. It does not
+yet reconstruct all open positions directly from manager dynamic fields or
+Predict server indexes. Full manager/position inventory remains a later depth
+task.
+
+Next implementation step:
+
+- Add a persistent execution evidence panel or report state so the latest known
+  verified digest can be shown even after page refresh, then move to
+  quote-aware sizing.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
