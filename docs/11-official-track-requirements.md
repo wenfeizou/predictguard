@@ -5,6 +5,7 @@ Source reviewed:
 - Sui Overflow 2026 Hackathon Participant Handbook: <https://mystenlabs.notion.site/overflow-2026-handbook>
 - DeepBook Predict Problem Statement: <https://mystenlabs.notion.site/deepbook-predict-problem-statement>
 - Sui DeepBook Predict docs: <https://docs.sui.io/onchain-finance/deepbook-predict/>
+- Sui DeepBook Predict contract information: <https://docs.sui.io/onchain-finance/deepbook-predict/contract-information>
 - Sui DeepBook Predict design docs: <https://docs.sui.io/onchain-finance/deepbook-predict/design>
 
 Date reviewed: 2026-06-09.
@@ -73,6 +74,7 @@ The official track statement and docs describe Predict as live on Sui testnet wi
 - `OracleSVI` volatility-surface state
 - shared vault liquidity and `PLP` shares
 - public docs and source branch pinned to `predict-testnet-4-16`
+- current official testnet package ID `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138`
 
 Important: `dUSDC` is not official USDC. Package IDs, object IDs, and entrypoints are testnet integration targets and may change before mainnet.
 

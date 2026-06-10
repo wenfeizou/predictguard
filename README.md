@@ -100,6 +100,7 @@ Read in this order:
 - Sui Overflow 2026 handbook: <https://mystenlabs.notion.site/overflow-2026-handbook>
 - DeepBook Predict problem statement: <https://mystenlabs.notion.site/deepbook-predict-problem-statement>
 - DeepBook Predict docs: <https://docs.sui.io/onchain-finance/deepbook-predict/>
+- DeepBook Predict contract information: <https://docs.sui.io/onchain-finance/deepbook-predict/contract-information>
 - DeepBook Predict code branch: <https://github.com/MystenLabs/deepbookv3/tree/predict-testnet-4-16/packages/predict>
 - DeepBook v3 docs: <https://docs.sui.io/onchain-finance/deepbookv3/deepbook>
 - DeepBook margin docs: <https://docs.sui.io/onchain-finance/deepbook-margin>
