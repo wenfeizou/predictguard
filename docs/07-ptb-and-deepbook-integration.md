@@ -13,8 +13,9 @@ Current implementation status:
 
 - `src/lib/ptb/hedgeTransaction.ts` builds a typed Predict hedge mint transaction preview using `@mysten/sui/transactions`.
 - The UI shows readiness state, missing inputs, guardrails, live oracle candidate, and the target `package::module::function`.
-- The builder can return a `Transaction` only when hedge, `PredictManager`, `OracleSVI`, dUSDC coin object, and max cost inputs are present.
-- Real wallet signing is still intentionally blocked until the current `predict::mint` entrypoint signature is verified against the testnet source package.
+- The builder is aligned with `predict-testnet-4-16`: `predict_manager::deposit<dUSDC>`, `market_key::new`, then `predict::mint<dUSDC>`.
+- The builder can return a `Transaction` only when hedge, `PredictManager`, `OracleSVI`, oracle expiry, and dUSDC coin object inputs are present.
+- Real wallet signing is still intentionally blocked until wallet connection, manager discovery, and coin selection are wired.
 
 ## Official References
 
@@ -40,15 +41,18 @@ must remain configurable through `NEXT_PUBLIC_PREDICT_*` values.
 The MVP PTB preview should be human-readable:
 
 ```text
-1. Select dUSDC coin for hedge cost.
+1. Select dUSDC coin for manager deposit.
 2. Load user's PredictManager.
-3. Mint OTM YES binary:
+3. Build MarketKey:
+   - oracle ID
+   - expiry timestamp
    - strike: 73,000
-   - expiry: 15m
+   - side: UP
+4. Mint OTM YES binary:
    - notional: 100
-   - max cost: 12 dUSDC
-4. Return hedge position to manager.
-5. Show expected risk effect in report.
+   - quantity: 100 dUSDC base units
+5. Position quantity is recorded in PredictManager.
+6. Show expected risk effect in report.
 ```
 
 ## Sui SDK Transaction Preview
@@ -62,17 +66,34 @@ export function buildHedgePreviewTx(input: HedgeTxInput): Transaction {
   const tx = new Transaction();
 
   tx.moveCall({
+    target: `${input.packageId}::predict_manager::deposit`,
+    typeArguments: [input.dusdcType],
+    arguments: [
+      tx.object(input.managerObjectId),
+      tx.object(input.dusdcCoinObjectId),
+    ],
+  });
+
+  const key = tx.moveCall({
+    target: `${input.packageId}::market_key::new`,
+    arguments: [
+      tx.pure.id(input.oracleObjectId),
+      tx.pure.u64(input.oracleExpiryMs),
+      tx.pure.u64(input.strikeScaled),
+      tx.pure.bool(input.isUp),
+    ],
+  });
+
+  tx.moveCall({
     target: `${input.packageId}::predict::mint`,
+    typeArguments: [input.dusdcType],
     arguments: [
       tx.object(input.predictObjectId),
       tx.object(input.managerObjectId),
       tx.object(input.oracleObjectId),
-      tx.pure.u64(input.strike),
-      tx.pure.string(input.expiryId),
-      tx.pure.string(input.side),
-      tx.pure.u64(input.notional),
-      tx.pure.u64(input.maxCostMist),
-      tx.object(input.dusdcCoinObjectId),
+      key,
+      tx.pure.u64(input.quantity),
+      tx.object.clock(),
     ],
   });
 
@@ -80,7 +101,19 @@ export function buildHedgePreviewTx(input: HedgeTxInput): Transaction {
 }
 ```
 
-Treat this as execution-blocked until function signatures are verified from the current branch/docs.
+This signature is verified from `predict-testnet-4-16`:
+
+```move
+public fun mint<Quote>(
+    predict: &mut Predict,
+    manager: &mut PredictManager,
+    oracle: &OracleSVI,
+    key: MarketKey,
+    quantity: u64,
+    clock: &Clock,
+    ctx: &mut TxContext,
+)
+```
 
 ## Real Execution Stretch Checklist
 

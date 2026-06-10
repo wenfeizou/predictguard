@@ -63,9 +63,11 @@ export default function Home() {
       buildPredictHedgePtbPlan({
         hedge: recommendation.recommendedHedge,
         oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
+        oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
       }),
     [
       recommendation.recommendedHedge,
+      liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
       liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
     ],
   );
@@ -414,13 +416,23 @@ export default function Home() {
             <div className="mb-4 grid gap-3 text-xs text-[#52615a] md:grid-cols-2">
               <ConfigRow label="Target" value={ptbPlan.target} />
               <ConfigRow label="Oracle" value={ptbPlan.inputs.oracleObjectId} />
+              <ConfigRow
+                label="Oracle expiry"
+                value={
+                  ptbPlan.inputs.oracleExpiryMs
+                    ? String(ptbPlan.inputs.oracleExpiryMs)
+                    : undefined
+                }
+              />
               <ConfigRow label="Manager" value={ptbPlan.inputs.managerObjectId} />
               <ConfigRow label="dUSDC coin" value={ptbPlan.inputs.dusdcCoinObjectId} />
+              <ConfigRow label="Strike scaled" value={ptbPlan.inputs.strikeScaled} />
             </div>
             <pre className="max-h-96 overflow-auto rounded-md bg-[#17211d] p-4 text-xs leading-5 text-[#e8f4ef]">
               {buildPredictHedgeSdkSkeleton({
                 hedge: recommendation.recommendedHedge,
                 oracleObjectId: ptbPlan.inputs.oracleObjectId,
+                oracleExpiryMs: ptbPlan.inputs.oracleExpiryMs,
               })}
             </pre>
           </Panel>

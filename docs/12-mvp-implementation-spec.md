@@ -353,7 +353,8 @@ Current implementation:
 
 - `src/lib/ptb/hedgeTransaction.ts` builds a structured PTB plan and can construct a `Transaction` when all required object inputs are supplied.
 - `src/app/page.tsx` shows `preview-ready` versus `ready-to-sign` readiness, missing object inputs, and guardrails.
-- Execution remains blocked by design until wallet connection, dUSDC coin selection, `PredictManager` discovery, and official entrypoint signature verification are complete.
+- Execution remains blocked by design until wallet connection, dUSDC coin selection, and `PredictManager` discovery are complete.
+- Current `predict-testnet-4-16` flow is `predict_manager::deposit<dUSDC>`, `market_key::new`, then `predict::mint<dUSDC>`.
 
 Create a config shape like:
 
@@ -373,7 +374,7 @@ The preview must mention:
 - `dUSDC`
 - `PredictManager`
 - `predict::mint`
-- selected side, strike, expiry, notional, max cost
+- selected side, scaled strike, expiry, notional, and deposit amount
 - expected risk effect
 
 ## UI Sections

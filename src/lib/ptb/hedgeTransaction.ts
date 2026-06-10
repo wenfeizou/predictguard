@@ -9,9 +9,11 @@ export type PredictHedgeMintInput = {
   hedge?: HedgeCandidate;
   managerObjectId?: string;
   oracleObjectId?: string;
+  oracleExpiryMs?: number;
   dusdcCoinObjectId?: string;
   recipientAddress?: string;
-  maxCostMist?: string;
+  depositAmountMist?: string;
+  quantityMist?: string;
   config?: PredictTestnetConfig;
 };
 
@@ -37,9 +39,13 @@ export type PredictHedgePtbPlan = {
     estimatedCostDusdc?: number;
     managerObjectId?: string;
     oracleObjectId?: string;
+    oracleExpiryMs?: number;
     dusdcCoinObjectId?: string;
     recipientAddress?: string;
-    maxCostMist?: string;
+    depositAmountMist?: string;
+    quantityMist?: string;
+    strikeScaled?: string;
+    isUp?: boolean;
   };
   steps: string[];
 };
@@ -63,26 +69,47 @@ export function buildPredictHedgeTransactionPreview(
   const managerObjectId = input.managerObjectId;
   const oracleObjectId = input.oracleObjectId;
   const dusdcCoinObjectId = input.dusdcCoinObjectId;
-  const maxCostMist = input.maxCostMist;
+  const oracleExpiryMs = input.oracleExpiryMs;
+  const depositAmountMist = input.depositAmountMist ?? dusdcToMist(input.hedge.estimatedCost);
+  const quantityMist = input.quantityMist ?? dusdcToMist(input.hedge.notional);
 
-  if (!managerObjectId || !oracleObjectId || !dusdcCoinObjectId || !maxCostMist) {
+  if (!managerObjectId || !oracleObjectId || !dusdcCoinObjectId || !oracleExpiryMs) {
     return plan;
   }
 
   const transaction = new Transaction();
+  const isUp = input.hedge.side === "YES";
+  const strikeScaled = priceToOracleScale(input.hedge.strike);
+
+  transaction.moveCall({
+    target: `${config.packageId}::predict_manager::deposit`,
+    typeArguments: [config.dusdcType],
+    arguments: [
+      transaction.object(managerObjectId),
+      transaction.object(dusdcCoinObjectId),
+    ],
+  });
+
+  const marketKey = transaction.moveCall({
+    target: `${config.packageId}::market_key::new`,
+    arguments: [
+      transaction.pure.id(oracleObjectId),
+      transaction.pure.u64(oracleExpiryMs),
+      transaction.pure.u64(strikeScaled),
+      transaction.pure.bool(isUp),
+    ],
+  });
 
   transaction.moveCall({
     target,
+    typeArguments: [config.dusdcType],
     arguments: [
       transaction.object(config.predictObjectId),
       transaction.object(managerObjectId),
       transaction.object(oracleObjectId),
-      transaction.pure.u64(input.hedge.strike),
-      transaction.pure.string(input.hedge.expiryId),
-      transaction.pure.string(input.hedge.side),
-      transaction.pure.u64(input.hedge.notional),
-      transaction.pure.u64(maxCostMist),
-      transaction.object(dusdcCoinObjectId),
+      marketKey,
+      transaction.pure.u64(quantityMist),
+      transaction.object.clock(),
     ],
   });
 
@@ -99,6 +126,11 @@ export function buildPredictHedgePtbPlan(
   config = input.config ?? predictTestnetConfig,
 ): PredictHedgePtbPlan {
   const hedge = input.hedge;
+  const strikeScaled = hedge ? priceToOracleScale(hedge.strike) : undefined;
+  const quantityMist = hedge ? (input.quantityMist ?? dusdcToMist(hedge.notional)) : undefined;
+  const depositAmountMist = hedge
+    ? (input.depositAmountMist ?? dusdcToMist(hedge.estimatedCost))
+    : undefined;
 
   return {
     target,
@@ -112,9 +144,13 @@ export function buildPredictHedgePtbPlan(
       estimatedCostDusdc: hedge?.estimatedCost,
       managerObjectId: input.managerObjectId,
       oracleObjectId: input.oracleObjectId,
+      oracleExpiryMs: input.oracleExpiryMs,
       dusdcCoinObjectId: input.dusdcCoinObjectId,
       recipientAddress: input.recipientAddress,
-      maxCostMist: input.maxCostMist,
+      depositAmountMist,
+      quantityMist,
+      strikeScaled,
+      isUp: hedge ? hedge.side === "YES" : undefined,
     },
     steps: buildExecutionSteps(input, readiness),
   };
@@ -128,7 +164,10 @@ export function buildPredictHedgeSdkSkeleton(input: PredictHedgeMintInput): stri
     return "Select a hedge to generate a Sui SDK transaction skeleton.";
   }
 
-  const maxCostMist = input.maxCostMist ?? dusdcToMist(hedge.estimatedCost);
+  const depositAmountMist = input.depositAmountMist ?? dusdcToMist(hedge.estimatedCost);
+  const quantityMist = input.quantityMist ?? dusdcToMist(hedge.notional);
+  const strikeScaled = priceToOracleScale(hedge.strike);
+  const isUp = hedge.side === "YES";
 
   return `import { Transaction } from "@mysten/sui/transactions";
 
@@ -137,35 +176,57 @@ const tx = new Transaction();
 const predictConfig = ${JSON.stringify(config, null, 2)};
 
 tx.moveCall({
-  target: \`\${predictConfig.packageId}::predict::mint\`,
+  target: \`\${predictConfig.packageId}::predict_manager::deposit\`,
+  typeArguments: [predictConfig.dusdcType],
   arguments: [
-    tx.object(predictConfig.predictObjectId),
     tx.object(managerObjectId),
-    tx.object(oracleObjectId),
-    tx.pure.u64(${hedge.strike}),
-    tx.pure.string("${hedge.expiryId}"),
-    tx.pure.string("${hedge.side}"),
-    tx.pure.u64(${hedge.notional}),
-    tx.pure.u64("${maxCostMist}"),
     tx.object(dusdcCoinObjectId),
   ],
 });
 
+const marketKey = tx.moveCall({
+  target: \`\${predictConfig.packageId}::market_key::new\`,
+  arguments: [
+    tx.pure.id(oracleObjectId),
+    tx.pure.u64(oracleExpiryMs),
+    tx.pure.u64("${strikeScaled}"),
+    tx.pure.bool(${isUp}),
+  ],
+});
+
+tx.moveCall({
+  target: \`\${predictConfig.packageId}::predict::mint\`,
+  typeArguments: [predictConfig.dusdcType],
+  arguments: [
+    tx.object(predictConfig.predictObjectId),
+    tx.object(managerObjectId),
+    tx.object(oracleObjectId),
+    marketKey,
+    tx.pure.u64("${quantityMist}"),
+    tx.object.clock(),
+  ],
+});
+
+// Deposit amount preview: ${depositAmountMist} dUSDC base units.
 // Wallet flow: pass the Transaction instance to signAndExecuteTransaction.
 // Do not set gas budget, gas price, or gas payment in the app.
-// Execution remains blocked until the current Predict mint signature is
-// verified against the predict-testnet-4-16 package source.`;
+// This signature is aligned with predict-testnet-4-16:
+// mint<Quote>(&mut Predict, &mut PredictManager, &OracleSVI, MarketKey, u64, &Clock).`;
 }
 
 export function dusdcToMist(amountDusdc: number): string {
   return Math.ceil(amountDusdc * 1_000_000).toString();
 }
 
+export function priceToOracleScale(price: number): string {
+  return Math.round(price * 1_000_000_000).toString();
+}
+
 function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
   const missing: string[] = [];
   const warnings = [
-    "Predict mint entrypoint signature still needs final verification against the current testnet package.",
-    "Wallet connection and dUSDC coin selection are not wired in the UI yet.",
+    "Predict mint signature is aligned with predict-testnet-4-16, but package IDs remain provisional until mainnet.",
+    "Wallet connection, PredictManager discovery, and dUSDC coin selection are not wired in the UI yet.",
   ];
 
   if (!input.hedge) {
@@ -186,12 +247,16 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
     missing.push("OracleSVI object ID");
   }
 
-  if (!isObjectId(input.dusdcCoinObjectId)) {
-    missing.push("dUSDC coin object ID");
+  if (!input.oracleExpiryMs) {
+    missing.push("oracle expiry timestamp");
   }
 
-  if (!input.maxCostMist) {
-    missing.push("max cost in dUSDC base units");
+  if (!isObjectId(input.dusdcCoinObjectId)) {
+    missing.push("dUSDC coin object ID for manager deposit");
+  }
+
+  if (!input.depositAmountMist && !input.hedge.estimatedCost) {
+    missing.push("deposit amount in dUSDC base units");
   }
 
   if (missing.length > 0) {
@@ -220,12 +285,13 @@ function buildExecutionSteps(input: PredictHedgeMintInput, readiness: PtbReadine
 
   return [
     "Connect a Sui testnet wallet.",
-    "Load or create the user's PredictManager.",
+    "Load an existing PredictManager for the connected wallet.",
     "Select an active OracleSVI object for the target expiry and strike.",
-    "Select a dUSDC coin object that covers the hedge max cost.",
-    `Build a Predict mint PTB for ${input.hedge.side} ${input.hedge.notional} notional at ${input.hedge.strike.toLocaleString("en-US")}.`,
+    "Deposit selected dUSDC into the PredictManager.",
+    "Construct a MarketKey with oracle ID, expiry, scaled strike, and direction.",
+    `Call predict::mint for ${input.hedge.side} ${input.hedge.notional} notional at ${input.hedge.strike.toLocaleString("en-US")}.`,
     readiness.canBuildTransaction
-      ? "Hand the Transaction instance to the wallet for signing after signature verification."
+      ? "Hand the Transaction instance to the wallet for signing."
       : "Keep execution blocked and show the missing inputs before wallet signing.",
     "Refresh Predict server manager, market, and vault data after confirmation.",
   ];
