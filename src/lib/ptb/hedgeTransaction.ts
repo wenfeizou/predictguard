@@ -8,6 +8,7 @@ const OBJECT_ID_PATTERN = /^0x[a-fA-F0-9]{64}$/;
 export type PredictHedgeMintInput = {
   hedge?: HedgeCandidate;
   wallet?: WalletReadinessInput;
+  account?: PredictAccountReadinessInput;
   managerObjectId?: string;
   oracleObjectId?: string;
   oracleExpiryMs?: number;
@@ -22,6 +23,14 @@ export type WalletReadinessInput = {
   address?: string;
   network?: string;
   connected?: boolean;
+  account?: PredictAccountReadinessInput;
+};
+
+export type PredictAccountReadinessInput = {
+  dusdcCoinObjectId?: string;
+  dusdcBalanceMist?: string;
+  managerObjectId?: string;
+  managerFound?: boolean;
 };
 
 export type PtbReadinessStatus = "no-hedge" | "blocked" | "preview-ready" | "ready-to-sign";
@@ -42,6 +51,8 @@ export type PredictHedgePtbPlan = {
     walletAddress?: string;
     walletNetwork?: string;
     walletConnected?: boolean;
+    dusdcBalanceMist?: string;
+    managerFound?: boolean;
     side?: Side;
     strike?: number;
     expiryId?: string;
@@ -76,9 +87,9 @@ export function buildPredictHedgeTransactionPreview(
     return plan;
   }
 
-  const managerObjectId = input.managerObjectId;
+  const managerObjectId = input.managerObjectId ?? input.account?.managerObjectId;
   const oracleObjectId = input.oracleObjectId;
-  const dusdcCoinObjectId = input.dusdcCoinObjectId;
+  const dusdcCoinObjectId = input.dusdcCoinObjectId ?? input.account?.dusdcCoinObjectId;
   const oracleExpiryMs = input.oracleExpiryMs;
   const depositAmountMist = input.depositAmountMist ?? dusdcToMist(input.hedge.estimatedCost);
   const quantityMist = input.quantityMist ?? dusdcToMist(input.hedge.notional);
@@ -136,6 +147,8 @@ export function buildPredictHedgePtbPlan(
   config = input.config ?? predictTestnetConfig,
 ): PredictHedgePtbPlan {
   const hedge = input.hedge;
+  const managerObjectId = input.managerObjectId ?? input.account?.managerObjectId;
+  const dusdcCoinObjectId = input.dusdcCoinObjectId ?? input.account?.dusdcCoinObjectId;
   const strikeScaled = hedge ? priceToOracleScale(hedge.strike) : undefined;
   const quantityMist = hedge ? (input.quantityMist ?? dusdcToMist(hedge.notional)) : undefined;
   const depositAmountMist = hedge
@@ -151,14 +164,16 @@ export function buildPredictHedgePtbPlan(
       walletAddress: input.wallet?.address,
       walletNetwork: input.wallet?.network,
       walletConnected: input.wallet?.connected,
+      dusdcBalanceMist: input.account?.dusdcBalanceMist,
+      managerFound: input.account?.managerFound,
       strike: hedge?.strike,
       expiryId: hedge?.expiryId,
       notional: hedge?.notional,
       estimatedCostDusdc: hedge?.estimatedCost,
-      managerObjectId: input.managerObjectId,
+      managerObjectId,
       oracleObjectId: input.oracleObjectId,
       oracleExpiryMs: input.oracleExpiryMs,
-      dusdcCoinObjectId: input.dusdcCoinObjectId,
+      dusdcCoinObjectId,
       recipientAddress: input.recipientAddress,
       depositAmountMist,
       quantityMist,
@@ -260,7 +275,10 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
     missing.push("Sui testnet network");
   }
 
-  if (!isObjectId(input.managerObjectId)) {
+  const managerObjectId = input.managerObjectId ?? input.account?.managerObjectId;
+  const dusdcCoinObjectId = input.dusdcCoinObjectId ?? input.account?.dusdcCoinObjectId;
+
+  if (!isObjectId(managerObjectId)) {
     missing.push("PredictManager object ID");
   }
 
@@ -272,7 +290,7 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
     missing.push("oracle expiry timestamp");
   }
 
-  if (!isObjectId(input.dusdcCoinObjectId)) {
+  if (!isObjectId(dusdcCoinObjectId)) {
     missing.push("dUSDC coin object ID for manager deposit");
   }
 

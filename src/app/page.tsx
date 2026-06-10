@@ -79,6 +79,7 @@ export default function Home() {
       buildPredictHedgePtbPlan({
         hedge: recommendation.recommendedHedge,
         wallet: walletReadiness,
+        account: walletReadiness.account,
         oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
         oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
       }),
@@ -672,6 +673,17 @@ function WalletReadinessPanel({
       <dl className="mt-4 grid gap-3 text-xs text-[#52615a] sm:grid-cols-2">
         <ConfigRow label="Address" value={plan.inputs.walletAddress} />
         <ConfigRow label="Network" value={plan.inputs.walletNetwork} />
+        <ConfigRow label="dUSDC balance" value={plan.inputs.dusdcBalanceMist} />
+        <ConfigRow
+          label="PredictManager"
+          value={
+            plan.inputs.managerFound === undefined
+              ? undefined
+              : plan.inputs.managerFound
+                ? "Found"
+                : "Missing"
+          }
+        />
       </dl>
     </div>
   );

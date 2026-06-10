@@ -7,7 +7,7 @@ understandable without rereading the chat.
 
 ## Current Status Snapshot
 
-As of the latest implementation round, PredictGuard is roughly 30-32% complete
+As of the latest implementation round, PredictGuard is roughly 38-40% complete
 against the final hackathon target.
 
 Completed:
@@ -21,14 +21,17 @@ Completed:
 - Typed PTB readiness preview
 - PTB builder aligned with the official `predict-testnet-4-16` `predict::mint`
   signature
+- Sui wallet connection through dApp Kit
+- Connected-account dUSDC coin detection
+- Connected-account `PredictManager` discovery through the Predict testnet
+  server
 
 Still missing before the 55% milestone:
 
-- Sui wallet connection
-- Connected wallet testnet/network readiness
-- User `PredictManager` discovery or creation flow
-- dUSDC coin discovery and selection
+- `PredictManager` creation guidance when the user does not already have one
+- dUSDC faucet/acquisition guidance when the user has no coin object
 - Signable transaction readiness using real user objects
+- First real testnet transaction attempt
 
 Still missing before the 75%+ competitive target:
 
@@ -309,6 +312,7 @@ Current estimated completion:
 
 - Before PTB signature alignment: about 25%
 - After official signature alignment: about 30-32%
+- After wallet connection plus user dUSDC/manager detection: about 38-40%
 
 Milestone estimates:
 
@@ -366,6 +370,10 @@ Next implementation step:
 
 ### Round C: User Object And dUSDC Detection
 
+Status: completed.
+
+Commit: current round commit `feat: add Predict account readiness checks`
+
 Goal:
 
 - Query user owned objects / coins.
@@ -377,6 +385,32 @@ Acceptance:
 - UI shows dUSDC balance / selected coin object.
 - UI shows `PredictManager` found or missing.
 - PTB skeleton uses real object IDs when available.
+
+Implementation outcome:
+
+- Added `/api/predict/manager` to query the public Predict testnet server's
+  `/managers` endpoint and select the latest manager for a connected owner.
+- Added connected-account dUSDC lookup through the Sui gRPC Core client via
+  `client.core.listCoins`.
+- Selected the largest detected dUSDC coin as the default deposit candidate.
+- Fed detected dUSDC coin ID, dUSDC balance, and `PredictManager` object ID into
+  the PTB readiness model.
+- Updated the wallet panel to show account readiness below the wallet connect
+  button.
+
+Important nuance:
+
+`PredictManager` is treated as protocol account state and can be a shared object,
+so plain owned-object lookup is not sufficient. PredictGuard currently uses the
+Predict public server's indexed `/managers` view for discovery. dUSDC coin
+objects are still owned by the user, so the Sui client coin query is appropriate
+there.
+
+Remaining gap:
+
+If the user has no manager or no dUSDC, the UI can now identify the missing
+state, but it does not yet provide a one-click manager creation or testnet dUSDC
+acquisition flow.
 
 ### Round D: Signable Transaction Preparation
 
