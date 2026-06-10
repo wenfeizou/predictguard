@@ -97,6 +97,8 @@ export default function Home() {
       oracleMinStrike: liveSnapshot?.liveContext?.latestActiveOracle?.minStrike,
       oracleTickSize: liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
       oracleReferencePrice: liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
+      quoteAskPrice: mintExecution?.askPrice,
+      maxHedgeBudgetDusdc: 2,
     }),
     [
       recommendation.recommendedHedge,
@@ -106,6 +108,7 @@ export default function Home() {
       liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
       liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
       liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
+      mintExecution?.askPrice,
     ],
   );
   const ptbPlan = useMemo(() => buildPredictHedgePtbPlan(ptbInput), [ptbInput]);
@@ -480,6 +483,17 @@ export default function Home() {
                 }
               />
               <ConfigRow label="Strike scaled" value={ptbPlan.inputs.strikeScaled} />
+              <ConfigRow label="Sizing mode" value={ptbPlan.inputs.sizingMode} />
+              <ConfigRow
+                label="Estimated cost"
+                value={
+                  ptbPlan.inputs.estimatedExecutionCostDusdc === undefined
+                    ? undefined
+                    : `${ptbPlan.inputs.estimatedExecutionCostDusdc.toLocaleString("en-US", {
+                        maximumFractionDigits: 6,
+                      })} dUSDC`
+                }
+              />
             </div>
             <pre className="max-h-96 overflow-auto rounded-md bg-[#17211d] p-4 text-xs leading-5 text-[#e8f4ef]">
               {buildPredictHedgeSdkSkeleton({

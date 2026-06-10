@@ -672,6 +672,52 @@ Next implementation step:
   verified digest can be shown even after page refresh, then move to
   quote-aware sizing.
 
+### Round H: Quote-Aware Sizing V1
+
+Status: completed.
+
+Goal:
+
+- Replace the purely fixed `1 dUSDC` probe plan with a conservative sizing plan
+  that can use a known ask price and max budget.
+
+Implementation outcome so far:
+
+- Added `quoteAskPrice` and `maxHedgeBudgetDusdc` inputs to the PTB plan.
+- The latest successful mint ask price can feed the next execution plan.
+- The plan now records:
+  - sizing mode: `probe` or `quote-aware`
+  - max budget
+  - estimated execution cost
+  - budget usage
+  - cost-to-protection ratio
+- If no quote is available, execution stays in safe `probe` mode.
+- If a quote is available, execution uses budget-aware quantity sizing with a
+  conservative buffer instead of spending the full budget.
+- The wallet execution panel and SDK preview show the sizing mode and estimated
+  execution cost.
+- Browser verification confirmed a second wallet-signed mint in `quote-aware`
+  mode:
+  - max budget: `2 dUSDC`
+  - planned estimated cost: `1.75 dUSDC`
+  - planned budget usage: `87.5%`
+  - minted position: `YES 63,187`
+  - minted quantity: `7.31435 dUSDC`
+  - actual cost: `1.782642 dUSDC`
+  - resulting ask price: `0.243718479`
+
+Important nuance:
+
+This is quote-aware sizing v1, not a full live order book quote system. It uses
+the most recent successful mint ask price as a practical estimate. The next
+deeper version should query live market pricing directly when the Predict API or
+contract read path exposes it reliably.
+
+Next implementation step:
+
+- Persist the latest execution digest and sizing evidence across refreshes, then
+  expose the max hedge budget as a user-editable control.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

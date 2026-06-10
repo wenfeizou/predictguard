@@ -110,6 +110,14 @@ export function PtbExecuteClient({
 
       <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
         <div>
+          <dt className="font-semibold text-[#17211d]">Sizing mode</dt>
+          <dd>{formatSizingMode(plan.inputs.sizingMode)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Max budget</dt>
+          <dd>{formatOptionalDusdc(plan.inputs.maxHedgeBudgetDusdc)}</dd>
+        </div>
+        <div>
           <dt className="font-semibold text-[#17211d]">Deposit</dt>
           <dd>{formatDusdcBaseUnits(plan.inputs.depositAmountMist)}</dd>
         </div>
@@ -124,6 +132,18 @@ export function PtbExecuteClient({
               ? plan.inputs.executionStrike.toLocaleString("en-US")
               : "Unavailable"}
           </dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Estimated cost</dt>
+          <dd>{formatOptionalDusdc(plan.inputs.estimatedExecutionCostDusdc)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Budget usage</dt>
+          <dd>{formatOptionalPct(plan.inputs.budgetUsagePct)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Cost / protection</dt>
+          <dd>{formatOptionalPct(plan.inputs.costToProtectionRatio, true)}</dd>
         </div>
         <div>
           <dt className="font-semibold text-[#17211d]">Reference price</dt>
@@ -229,6 +249,19 @@ function formatOptionalNumber(value?: number, maximumFractionDigits = 6) {
   return value === undefined
     ? "Unavailable"
     : value.toLocaleString("en-US", { maximumFractionDigits });
+}
+
+function formatOptionalPct(value?: number, valueIsRatio = false) {
+  if (value === undefined) {
+    return "Unavailable";
+  }
+
+  const pct = valueIsRatio ? value * 100 : value;
+  return `${pct.toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
+}
+
+function formatSizingMode(value?: "probe" | "quote-aware") {
+  return value === "quote-aware" ? "Quote-aware" : "Probe";
 }
 
 function formatExpiry(value?: string) {
