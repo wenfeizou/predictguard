@@ -62,6 +62,10 @@ export default function Home() {
     () =>
       buildPredictHedgePtbPlan({
         hedge: recommendation.recommendedHedge,
+        wallet: {
+          connected: false,
+          network: "testnet",
+        },
         oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
         oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
       }),
@@ -400,6 +404,7 @@ export default function Home() {
 
         <section id="ptb" className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <Panel title="PTB Preview" icon={<WalletCards className="h-5 w-5" />}>
+            <WalletReadinessPanel plan={ptbPlan} />
             <PtbReadinessPanel plan={ptbPlan} />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
@@ -625,6 +630,37 @@ function PtbReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function WalletReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
+  const connected = Boolean(plan.inputs.walletConnected && plan.inputs.walletAddress);
+
+  return (
+    <div className="mb-4 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[#17211d]">Wallet readiness</div>
+          <p className="mt-2 text-sm leading-6 text-[#52615a]">
+            Wallet connection is the next integration step. The PTB builder already accepts
+            sender address and network state, so dApp Kit can feed readiness directly.
+          </p>
+        </div>
+        <div
+          className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
+            connected
+              ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
+              : "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]"
+          }`}
+        >
+          {connected ? "Connected" : "Not connected"}
+        </div>
+      </div>
+      <dl className="mt-4 grid gap-3 text-xs text-[#52615a] sm:grid-cols-2">
+        <ConfigRow label="Address" value={plan.inputs.walletAddress} />
+        <ConfigRow label="Network" value={plan.inputs.walletNetwork} />
+      </dl>
     </div>
   );
 }

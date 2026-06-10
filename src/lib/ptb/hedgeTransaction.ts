@@ -7,6 +7,7 @@ const OBJECT_ID_PATTERN = /^0x[a-fA-F0-9]{64}$/;
 
 export type PredictHedgeMintInput = {
   hedge?: HedgeCandidate;
+  wallet?: WalletReadinessInput;
   managerObjectId?: string;
   oracleObjectId?: string;
   oracleExpiryMs?: number;
@@ -15,6 +16,12 @@ export type PredictHedgeMintInput = {
   depositAmountMist?: string;
   quantityMist?: string;
   config?: PredictTestnetConfig;
+};
+
+export type WalletReadinessInput = {
+  address?: string;
+  network?: string;
+  connected?: boolean;
 };
 
 export type PtbReadinessStatus = "no-hedge" | "blocked" | "preview-ready" | "ready-to-sign";
@@ -32,6 +39,9 @@ export type PredictHedgePtbPlan = {
   readiness: PtbReadiness;
   config: PredictTestnetConfig;
   inputs: {
+    walletAddress?: string;
+    walletNetwork?: string;
+    walletConnected?: boolean;
     side?: Side;
     strike?: number;
     expiryId?: string;
@@ -138,6 +148,9 @@ export function buildPredictHedgePtbPlan(
     config,
     inputs: {
       side: hedge?.side,
+      walletAddress: input.wallet?.address,
+      walletNetwork: input.wallet?.network,
+      walletConnected: input.wallet?.connected,
       strike: hedge?.strike,
       expiryId: hedge?.expiryId,
       notional: hedge?.notional,
@@ -239,6 +252,14 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
     };
   }
 
+  if (!input.wallet?.connected || !input.wallet.address) {
+    missing.push("Sui wallet connection");
+  }
+
+  if (input.wallet?.connected && input.wallet.network !== "testnet") {
+    missing.push("Sui testnet network");
+  }
+
   if (!isObjectId(input.managerObjectId)) {
     missing.push("PredictManager object ID");
   }
@@ -284,7 +305,9 @@ function buildExecutionSteps(input: PredictHedgeMintInput, readiness: PtbReadine
   }
 
   return [
-    "Connect a Sui testnet wallet.",
+    input.wallet?.connected
+      ? "Use the connected Sui testnet wallet as transaction sender."
+      : "Connect a Sui testnet wallet.",
     "Load an existing PredictManager for the connected wallet.",
     "Select an active OracleSVI object for the target expiry and strike.",
     "Deposit selected dUSDC into the PredictManager.",

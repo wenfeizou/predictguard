@@ -75,7 +75,7 @@ The current MVP path uses deterministic simulated market data and does not requi
 
 The app also includes a non-blocking DeepBook Predict testnet adapter at `/api/predict/status`. If the public Predict server is reachable, the UI enters `mixed-live-and-simulated` mode: live status, vault summary, protocol state, and oracle context are shown while PLP exposure and scenario calculations remain deterministic until live exposure reconstruction is implemented.
 
-The PTB panel now uses a typed Sui `Transaction` builder preview in `src/lib/ptb/hedgeTransaction.ts`. It can show the Predict mint target, live oracle candidate, missing wallet/manager/coin inputs, scaled strike, and an SDK transaction skeleton. The preview is aligned with the `predict-testnet-4-16` flow: deposit dUSDC into `PredictManager`, construct `MarketKey`, then call `predict::mint<dUSDC>`. Execution is intentionally blocked until wallet connection, dUSDC coin selection, and `PredictManager` discovery are complete.
+The PTB panel now uses a typed Sui `Transaction` builder preview in `src/lib/ptb/hedgeTransaction.ts`. It can show wallet readiness, the Predict mint target, live oracle candidate, missing wallet/manager/coin inputs, scaled strike, and an SDK transaction skeleton. The preview is aligned with the `predict-testnet-4-16` flow: deposit dUSDC into `PredictManager`, construct `MarketKey`, then call `predict::mint<dUSDC>`. Execution is intentionally blocked until wallet connection, dUSDC coin selection, and `PredictManager` discovery are complete.
 
 Project-specific agent rules live in `AGENTS.md`. Sui agent skills are vendored under `.agents/skills` with `skills-lock.json` for reproducible project-level context.
 

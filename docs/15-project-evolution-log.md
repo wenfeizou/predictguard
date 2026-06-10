@@ -338,6 +338,19 @@ Acceptance:
 - Readiness shows wallet missing when disconnected.
 - Readiness improves after connecting a testnet wallet.
 
+Current partial progress:
+
+- `src/lib/ptb/hedgeTransaction.ts` now accepts wallet readiness input:
+  connected state, wallet address, and network name.
+- The PTB readiness model now lists `Sui wallet connection` and `Sui testnet
+  network` as explicit missing inputs.
+- The PTB page shows a Wallet Readiness panel, currently disconnected by design.
+
+Next implementation step:
+
+- Install and wire `@mysten/dapp-kit-react` using `createDAppKit` and
+  `DAppKitProvider`, then feed the connected account/network into the PTB plan.
+
 ### Round C: User Object And dUSDC Detection
 
 Goal:
