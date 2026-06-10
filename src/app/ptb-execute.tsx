@@ -71,8 +71,8 @@ export function PtbExecuteClient({
         <div>
           <div className="text-sm font-semibold text-[#17211d]">Wallet execution</div>
           <p className="mt-1 text-sm leading-6 text-[#52615a]">
-            Build the current Predict hedge PTB and hand the Transaction instance to the
-            connected wallet.
+            Build a small live Predict mint probe and hand the Transaction instance to the
+            connected wallet. Full hedge sizing stays simulated until live quote checks pass.
           </p>
         </div>
         <button
@@ -85,6 +85,41 @@ export function PtbExecuteClient({
           {pending ? "Waiting" : plan.readiness.canBuildTransaction ? "Sign PTB" : "Blocked"}
         </button>
       </div>
+
+      <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+        <div>
+          <dt className="font-semibold text-[#17211d]">Deposit</dt>
+          <dd>{formatDusdcBaseUnits(plan.inputs.depositAmountMist)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Quantity</dt>
+          <dd>{formatDusdcBaseUnits(plan.inputs.quantityMist)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Execution strike</dt>
+          <dd>
+            {plan.inputs.executionStrike
+              ? plan.inputs.executionStrike.toLocaleString("en-US")
+              : "Unavailable"}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Reference price</dt>
+          <dd>
+            {plan.inputs.oracleReferencePrice
+              ? plan.inputs.oracleReferencePrice.toLocaleString("en-US")
+              : "Unavailable"}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Oracle grid</dt>
+          <dd>
+            {plan.inputs.oracleMinStrike && plan.inputs.oracleTickSize
+              ? `${plan.inputs.oracleMinStrike.toLocaleString("en-US")} / ${plan.inputs.oracleTickSize.toLocaleString("en-US")}`
+              : "Unavailable"}
+          </dd>
+        </div>
+      </dl>
 
       {error ? (
         <div className="mt-3 rounded-md border border-[#c75c48] bg-[#fff1ed] p-3 text-sm leading-6 text-[#8f3325]">
@@ -105,4 +140,14 @@ export function PtbExecuteClient({
       ) : null}
     </div>
   );
+}
+
+function formatDusdcBaseUnits(value?: string) {
+  if (!value) {
+    return "Unavailable";
+  }
+
+  return `${(Number(value) / 1_000_000).toLocaleString("en-US", {
+    maximumFractionDigits: 6,
+  })} dUSDC`;
 }

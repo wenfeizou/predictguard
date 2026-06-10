@@ -92,12 +92,18 @@ export default function Home() {
       account: walletReadiness.account,
       oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
       oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
+      oracleMinStrike: liveSnapshot?.liveContext?.latestActiveOracle?.minStrike,
+      oracleTickSize: liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
+      oracleReferencePrice: liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
     }),
     [
       recommendation.recommendedHedge,
       walletReadiness,
       liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
+      liveSnapshot?.liveContext?.latestActiveOracle?.minStrike,
       liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
+      liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
+      liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
     ],
   );
   const ptbPlan = useMemo(() => buildPredictHedgePtbPlan(ptbInput), [ptbInput]);
@@ -458,6 +464,14 @@ export default function Home() {
               />
               <ConfigRow label="Manager" value={ptbPlan.inputs.managerObjectId} />
               <ConfigRow label="dUSDC coin" value={ptbPlan.inputs.dusdcCoinObjectId} />
+              <ConfigRow
+                label="Execution strike"
+                value={
+                  ptbPlan.inputs.executionStrike
+                    ? ptbPlan.inputs.executionStrike.toLocaleString("en-US")
+                    : undefined
+                }
+              />
               <ConfigRow label="Strike scaled" value={ptbPlan.inputs.strikeScaled} />
             </div>
             <pre className="max-h-96 overflow-auto rounded-md bg-[#17211d] p-4 text-xs leading-5 text-[#e8f4ef]">
@@ -466,6 +480,9 @@ export default function Home() {
                 account: ptbInput.account,
                 oracleObjectId: ptbPlan.inputs.oracleObjectId,
                 oracleExpiryMs: ptbPlan.inputs.oracleExpiryMs,
+                oracleMinStrike: ptbPlan.inputs.oracleMinStrike,
+                oracleTickSize: ptbPlan.inputs.oracleTickSize,
+                oracleReferencePrice: ptbPlan.inputs.oracleReferencePrice,
               })}
             </pre>
           </Panel>

@@ -500,6 +500,76 @@ Next implementation step:
   manager, and live oracle. Capture either a success digest or the exact
   protocol/runtime error.
 
+### Round F: Live Predict Mint Probe
+
+Status: completed.
+
+Commit: pending for this round.
+
+Goal:
+
+- Turn the previously signable PTB into a real testnet Predict mint that can
+  pass protocol checks.
+- Diagnose and fix the `assert_mintable_ask` abort observed during the first
+  full-size hedge attempt.
+
+Problem found:
+
+- The first signed PTB reached `predict::mint`, but failed with Move abort code
+  `7` in `predict::assert_mintable_ask`.
+- This proved wallet connection, `PredictManager`, dUSDC deposit, and
+  `MarketKey` construction were structurally valid, but the mint parameters
+  were outside the live ask boundary.
+
+Implementation outcome:
+
+- Changed wallet execution from full simulated hedge sizing to a small live
+  mint probe.
+- Split the selected dUSDC coin before deposit, so only `2 dUSDC` is deposited
+  into the manager instead of moving the whole selected coin.
+- Mint quantity now defaults to `1 dUSDC` base unit scale for the live probe.
+- Execution strike is selected from the latest reference price and aligned to
+  the active oracle grid using the oracle's min strike and tick size.
+- The wallet execution panel now shows deposit, quantity, execution strike,
+  reference price, and oracle grid before signing.
+- The SDK skeleton uses the same execution inputs as the real wallet
+  transaction.
+
+Verified testnet evidence:
+
+- Successful mint transaction:
+  `2N7TpuBGod9sebHQBpQT5YtSKujWZqFLpf9HcR5hLGag`
+- Sui effects status: `success`
+- Emitted event: `predict::PositionMinted`
+- Wallet:
+  `0x5e2a28ff382ab6858588dba9d5ed8e21fc59908c295ced2124f87b1cdb4cefb6`
+- Manager:
+  `0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2`
+- Oracle used:
+  `0x195833aeee071530d2bdcd2e03916b7458d57c81ed540b82d6e1cb594bdf41f2`
+- Probe values:
+  - deposit: `2 dUSDC`
+  - quantity: `1 dUSDC`
+  - execution strike: `63,187`
+  - ask price: `232220614`
+  - cost: `0.232220 dUSDC`
+
+Important nuance:
+
+The MVP now has a proven wallet-signed, on-chain DeepBook Predict mint path.
+This is still a probe path, not final production hedge sizing. The next step is
+to read back the manager/position state and graduate from fixed small probe
+execution to quote-aware sizing.
+
+Updated estimate:
+
+- Project completion toward final competition target: about `62-65%`.
+
+Next implementation step:
+
+- Add post-mint position/readiness display by reading the manager or minted
+  market position state after a successful transaction.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

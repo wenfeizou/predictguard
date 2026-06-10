@@ -21,6 +21,7 @@ export type NormalizedPredictLiveContext = {
     minutesToExpiry: number;
     minStrike: number;
     tickSize: number;
+    referencePrice?: number;
     status: string;
   };
   vault?: {
@@ -50,6 +51,9 @@ export function normalizePredictLiveContext(input: {
     .filter((oracle) => oracle.status === "active")
     .sort((a, b) => a.expiry - b.expiry);
   const latestActiveOracle = activeOracles[0];
+  const latestReferencePrice = (input.oracles ?? [])
+    .filter((oracle) => oracle.settlement_price)
+    .sort((a, b) => (b.settled_at ?? 0) - (a.settled_at ?? 0))[0]?.settlement_price;
 
   return {
     dataSource: input.reachable ? "mixed-live-and-simulated" : "simulated",
@@ -70,6 +74,9 @@ export function normalizePredictLiveContext(input: {
           ),
           minStrike: latestActiveOracle.min_strike / 1_000_000_000,
           tickSize: latestActiveOracle.tick_size / 1_000_000_000,
+          referencePrice: latestReferencePrice
+            ? latestReferencePrice / 1_000_000_000
+            : undefined,
           status: latestActiveOracle.status,
         }
       : undefined,

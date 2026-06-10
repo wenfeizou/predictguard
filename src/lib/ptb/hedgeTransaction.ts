@@ -4,6 +4,8 @@ import { predictTestnetConfig, type PredictTestnetConfig } from "@/lib/predict/c
 import type { HedgeCandidate, Side } from "@/lib/types";
 
 const OBJECT_ID_PATTERN = /^0x[a-fA-F0-9]{64}$/;
+const PROBE_DEPOSIT_DUSDC = 2;
+const PROBE_QUANTITY_DUSDC = 1;
 
 export type PredictHedgeMintInput = {
   hedge?: HedgeCandidate;
@@ -12,6 +14,9 @@ export type PredictHedgeMintInput = {
   managerObjectId?: string;
   oracleObjectId?: string;
   oracleExpiryMs?: number;
+  oracleMinStrike?: number;
+  oracleTickSize?: number;
+  oracleReferencePrice?: number;
   dusdcCoinObjectId?: string;
   recipientAddress?: string;
   depositAmountMist?: string;
@@ -61,10 +66,14 @@ export type PredictHedgePtbPlan = {
     managerObjectId?: string;
     oracleObjectId?: string;
     oracleExpiryMs?: number;
+    oracleMinStrike?: number;
+    oracleTickSize?: number;
+    oracleReferencePrice?: number;
     dusdcCoinObjectId?: string;
     recipientAddress?: string;
     depositAmountMist?: string;
     quantityMist?: string;
+    executionStrike?: number;
     strikeScaled?: string;
     isUp?: boolean;
   };
@@ -91,23 +100,34 @@ export function buildPredictHedgeTransactionPreview(
   const oracleObjectId = input.oracleObjectId;
   const dusdcCoinObjectId = input.dusdcCoinObjectId ?? input.account?.dusdcCoinObjectId;
   const oracleExpiryMs = input.oracleExpiryMs;
-  const depositAmountMist = input.depositAmountMist ?? dusdcToMist(input.hedge.estimatedCost);
-  const quantityMist = input.quantityMist ?? dusdcToMist(input.hedge.notional);
+  const depositAmountMist = input.depositAmountMist ?? dusdcToMist(PROBE_DEPOSIT_DUSDC);
+  const quantityMist = input.quantityMist ?? dusdcToMist(PROBE_QUANTITY_DUSDC);
+  const executionStrike = getExecutionStrike(input);
 
-  if (!managerObjectId || !oracleObjectId || !dusdcCoinObjectId || !oracleExpiryMs) {
+  if (
+    !managerObjectId ||
+    !oracleObjectId ||
+    !dusdcCoinObjectId ||
+    !oracleExpiryMs ||
+    !executionStrike
+  ) {
     return plan;
   }
 
   const transaction = new Transaction();
   const isUp = input.hedge.side === "YES";
-  const strikeScaled = priceToOracleScale(input.hedge.strike);
+  const strikeScaled = priceToOracleScale(executionStrike);
+
+  const [depositCoin] = transaction.splitCoins(transaction.object(dusdcCoinObjectId), [
+    transaction.pure.u64(depositAmountMist),
+  ]);
 
   transaction.moveCall({
     target: `${config.packageId}::predict_manager::deposit`,
     typeArguments: [config.dusdcType],
     arguments: [
       transaction.object(managerObjectId),
-      transaction.object(dusdcCoinObjectId),
+      depositCoin,
     ],
   });
 
@@ -149,10 +169,11 @@ export function buildPredictHedgePtbPlan(
   const hedge = input.hedge;
   const managerObjectId = input.managerObjectId ?? input.account?.managerObjectId;
   const dusdcCoinObjectId = input.dusdcCoinObjectId ?? input.account?.dusdcCoinObjectId;
-  const strikeScaled = hedge ? priceToOracleScale(hedge.strike) : undefined;
-  const quantityMist = hedge ? (input.quantityMist ?? dusdcToMist(hedge.notional)) : undefined;
+  const executionStrike = getExecutionStrike(input);
+  const strikeScaled = executionStrike ? priceToOracleScale(executionStrike) : undefined;
+  const quantityMist = hedge ? (input.quantityMist ?? dusdcToMist(PROBE_QUANTITY_DUSDC)) : undefined;
   const depositAmountMist = hedge
-    ? (input.depositAmountMist ?? dusdcToMist(hedge.estimatedCost))
+    ? (input.depositAmountMist ?? dusdcToMist(PROBE_DEPOSIT_DUSDC))
     : undefined;
 
   return {
@@ -173,10 +194,14 @@ export function buildPredictHedgePtbPlan(
       managerObjectId,
       oracleObjectId: input.oracleObjectId,
       oracleExpiryMs: input.oracleExpiryMs,
+      oracleMinStrike: input.oracleMinStrike,
+      oracleTickSize: input.oracleTickSize,
+      oracleReferencePrice: input.oracleReferencePrice,
       dusdcCoinObjectId,
       recipientAddress: input.recipientAddress,
       depositAmountMist,
       quantityMist,
+      executionStrike,
       strikeScaled,
       isUp: hedge ? hedge.side === "YES" : undefined,
     },
@@ -192,9 +217,10 @@ export function buildPredictHedgeSdkSkeleton(input: PredictHedgeMintInput): stri
     return "Select a hedge to generate a Sui SDK transaction skeleton.";
   }
 
-  const depositAmountMist = input.depositAmountMist ?? dusdcToMist(hedge.estimatedCost);
-  const quantityMist = input.quantityMist ?? dusdcToMist(hedge.notional);
-  const strikeScaled = priceToOracleScale(hedge.strike);
+  const depositAmountMist = input.depositAmountMist ?? dusdcToMist(PROBE_DEPOSIT_DUSDC);
+  const quantityMist = input.quantityMist ?? dusdcToMist(PROBE_QUANTITY_DUSDC);
+  const executionStrike = getExecutionStrike(input) ?? hedge.strike;
+  const strikeScaled = priceToOracleScale(executionStrike);
   const isUp = hedge.side === "YES";
 
   return `import { Transaction } from "@mysten/sui/transactions";
@@ -203,12 +229,16 @@ const tx = new Transaction();
 
 const predictConfig = ${JSON.stringify(config, null, 2)};
 
+const [depositCoin] = tx.splitCoins(tx.object(dusdcCoinObjectId), [
+  tx.pure.u64("${depositAmountMist}"),
+]);
+
 tx.moveCall({
   target: \`\${predictConfig.packageId}::predict_manager::deposit\`,
   typeArguments: [predictConfig.dusdcType],
   arguments: [
     tx.object(managerObjectId),
-    tx.object(dusdcCoinObjectId),
+    depositCoin,
   ],
 });
 
@@ -235,7 +265,8 @@ tx.moveCall({
   ],
 });
 
-// Deposit amount preview: ${depositAmountMist} dUSDC base units.
+// Split selected dUSDC coin by ${depositAmountMist} base units before deposit.
+// Execution strike: ${executionStrike.toLocaleString("en-US")}.
 // Wallet flow: pass the Transaction instance to signAndExecuteTransaction.
 // Do not set gas budget, gas price, or gas payment in the app.
 // This signature is aligned with predict-testnet-4-16:
@@ -248,6 +279,24 @@ export function dusdcToMist(amountDusdc: number): string {
 
 export function priceToOracleScale(price: number): string {
   return Math.round(price * 1_000_000_000).toString();
+}
+
+function getExecutionStrike(input: PredictHedgeMintInput): number | undefined {
+  if (!input.hedge) {
+    return undefined;
+  }
+
+  const minStrike = input.oracleMinStrike;
+  const tickSize = input.oracleTickSize;
+  const targetStrike = input.oracleReferencePrice ?? input.hedge.strike;
+
+  if (!minStrike || !tickSize || tickSize <= 0) {
+    return targetStrike;
+  }
+
+  const ticksFromMin = Math.round((targetStrike - minStrike) / tickSize);
+  const aligned = minStrike + Math.max(0, ticksFromMin) * tickSize;
+  return Number(aligned.toFixed(8));
 }
 
 function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
@@ -277,6 +326,8 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
 
   const managerObjectId = input.managerObjectId ?? input.account?.managerObjectId;
   const dusdcCoinObjectId = input.dusdcCoinObjectId ?? input.account?.dusdcCoinObjectId;
+  const depositAmountMist = input.depositAmountMist ?? dusdcToMist(PROBE_DEPOSIT_DUSDC);
+  const executionStrike = getExecutionStrike(input);
 
   if (!isObjectId(managerObjectId)) {
     missing.push("PredictManager object ID");
@@ -294,8 +345,16 @@ function getPtbReadiness(input: PredictHedgeMintInput): PtbReadiness {
     missing.push("dUSDC coin object ID for manager deposit");
   }
 
-  if (!input.depositAmountMist && !input.hedge.estimatedCost) {
+  if (!depositAmountMist) {
     missing.push("deposit amount in dUSDC base units");
+  }
+
+  if (input.account?.dusdcBalanceMist && BigInt(input.account.dusdcBalanceMist) < BigInt(depositAmountMist)) {
+    missing.push("sufficient dUSDC balance for hedge cost");
+  }
+
+  if (!executionStrike) {
+    missing.push("execution strike aligned to live oracle grid");
   }
 
   if (missing.length > 0) {
