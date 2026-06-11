@@ -186,7 +186,7 @@ export async function fetchPredictManagerInventoryReadback(
       "Position quantities are parsed from u64 dynamic-field values.",
       "MarketKey dynamic-field names are decoded as oracle ID, expiry, strike, and UP/DOWN direction.",
       "Position status is reconstructed from decoded expiry, quantity, and current read time.",
-      "This readback is stronger than local execution history, but settlement-aware position reconstruction still needs deeper protocol parsing.",
+      "Full settlement accounting still requires PositionRedeemed event history plus oracle and vault settlement readback.",
     ],
   };
 }

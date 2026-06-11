@@ -1427,6 +1427,35 @@ This is not the same as full settlement accounting. Full settlement would also
 read or infer the final market result, whether the YES/NO side won, and how much
 value was claimed or remains claimable.
 
+### Full Settlement Accounting
+
+Chinese: 完整结算核算。
+
+`Full settlement accounting` means reconstructing the complete post-expiry
+state of a position:
+
+- final settlement price
+- winning side
+- claimable amount
+- claimed amount
+- unclaimed amount
+- redeemed transaction history
+
+PredictGuard does not implement full settlement accounting yet. The current MVP
+implements settlement-aware status classification and documents the remaining
+data requirements.
+
+### PositionRedeemed Event
+
+Chinese: PositionRedeemed 事件、仓位赎回事件。
+
+`PositionRedeemed` is emitted by DeepBook Predict when a position is redeemed.
+It contains quantity, payout, bid price, and whether the redemption happened
+against a settled oracle.
+
+PredictGuard needs this event history, plus oracle/vault settlement readback, to
+move from settlement-aware v1 to full settlement accounting.
+
 ### Active Position Quantity
 
 Chinese: 活跃仓位数量。

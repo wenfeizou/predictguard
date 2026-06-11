@@ -143,6 +143,7 @@ Read in this order:
 17. [Depth Roadmap](docs/17-depth-roadmap.md)
 18. [Judge Demo Script](docs/18-judge-demo-script.md)
 19. [Final Submission Checklist](docs/19-final-submission-checklist.md)
+20. [Settlement Reconstruction Feasibility](docs/20-settlement-reconstruction-feasibility.md)
 
 ## Current Official References
 

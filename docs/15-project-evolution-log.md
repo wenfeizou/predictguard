@@ -1495,6 +1495,54 @@ Next implementation step:
 
 - Run checks, commit, then evaluate full settlement reconstruction feasibility.
 
+### Round Y: Settlement Reconstruction Feasibility
+
+Status: completed.
+
+Goal:
+
+- Evaluate whether full settlement reconstruction should be implemented now or
+  documented as a deeper post-MVP path.
+
+Implementation outcome:
+
+- Reviewed official DeepBook Predict `predict-testnet-4-16` source:
+  - `PositionRedeemed` event exists.
+  - `redeem` and `redeem_permissionless` exist.
+  - `PositionRedeemed` includes payout, bid price, and `is_settled`.
+  - settled redemption requires settled oracle state and compacted vault state.
+  - `predict_manager::decrease_position` reduces quantity but does not remove
+    the `MarketKey` table entry, explaining zero-quantity entries.
+- Added `docs/20-settlement-reconstruction-feasibility.md`.
+- Added the settlement feasibility document to the README index.
+- Updated manager readback notes to state that full settlement accounting
+  requires redeemed-event history plus oracle/vault settlement readback.
+- Updated the concept glossary with:
+  - `Full Settlement Accounting`
+  - `PositionRedeemed Event`
+
+Product decision:
+
+- Do not implement full settlement accounting in the current MVP. Keep
+  settlement-aware v1 as the honest product behavior and document the deeper
+  implementation path.
+
+Current completion estimate:
+
+- About `95%`. The remaining gap to `100%` is final official contract
+  verification, manual final validation, screenshots/video, and submission
+  packaging.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Run checks, commit, then return to final validation/submission preparation.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
