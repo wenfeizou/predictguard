@@ -1326,6 +1326,31 @@ A `stress test` checks what happens in severe market moves, such as a fast BTC
 drop, liquidity shortage, high volatility, or stale quote. It helps explain
 whether a hedge still protects the user in tail scenarios.
 
+### Executed Stress Comparison
+
+Chinese: 执行后压力测试对比。
+
+`Executed stress comparison` compares three versions of scenario PnL:
+
+- unhedged PLP result
+- recommended hedge result
+- latest wallet-executed hedge result
+
+This matters because the recommended hedge may be larger than the actually
+minted testnet position. PredictGuard uses the latest executed quantity and cost
+to show how much protection was actually achieved across multiple scenarios.
+
+### Worst-Case Improvement
+
+Chinese: 最差情形改善值。
+
+`Worst-case improvement` compares the worst unhedged scenario PnL with the worst
+executed-hedge scenario PnL.
+
+If the value is positive, the executed hedge improved the simulated worst case.
+If it is small, the app is showing that the executed mint covered only part of
+the recommended protection.
+
 ### Tail Loss
 
 Chinese: 尾部亏损、极端情形下的大额亏损。

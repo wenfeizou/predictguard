@@ -1393,6 +1393,58 @@ Next implementation step:
 - Manual browser walkthrough or one targeted depth item such as scenario/stress
   improvement.
 
+### Round W: Executed Stress Comparison
+
+Status: completed.
+
+Goal:
+
+- Strengthen scenario and stress depth by showing how the latest wallet-executed
+  hedge changes outcomes across multiple scenarios.
+
+Implementation outcome:
+
+- Added `src/lib/risk/executedStress.ts`.
+- Converted the latest `PredictMintExecutionSummary` into a conservative
+  executed hedge model when side, strike, quantity, and cost are available.
+- Added an executed stress summary with:
+  - unhedged PnL
+  - recommended hedge PnL
+  - executed hedge PnL
+  - executed tail-loss reduction
+  - worst unhedged PnL
+  - worst executed PnL
+  - worst-case improvement
+- Added an `Executed stress comparison` table to the Scenario Simulator panel.
+- Added executed stress comparison to Markdown risk reports.
+- Updated the concept glossary with:
+  - `Executed Stress Comparison`
+  - `Worst-Case Improvement`
+
+Concept note:
+
+- This closes a visible depth gap: the product no longer only says "a hedge was
+  recommended and minted"; it shows how the actually executed position affects
+  several stress scenarios.
+- Because the executed testnet hedge can be smaller than the recommended
+  notional, this also makes partial coverage explicit.
+
+Current completion estimate:
+
+- About `93%`.
+
+Verification:
+
+- `bun run lint`
+- `bun run build`
+- `bun run typecheck`
+- Note: one parallel `typecheck` attempt raced with `next build` generated
+  `.next/types` output. A standalone rerun passed.
+
+Next implementation step:
+
+- Run checks, commit, then move to quote source labeling / freshness.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

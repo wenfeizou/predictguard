@@ -48,6 +48,10 @@ import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
 import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
 import { buildMarkdownReport } from "@/lib/report/markdown";
 import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
+import {
+  buildExecutedStressSummary,
+  type ExecutedStressSummary,
+} from "@/lib/risk/executedStress";
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
 
 const market = seedMarketState;
@@ -100,6 +104,16 @@ export default function Home() {
   const allResults = useMemo(
     () => runScenarioSet(market, scenarios, recommendation.recommendedHedge),
     [recommendation.recommendedHedge],
+  );
+  const executedStressSummary = useMemo(
+    () =>
+      buildExecutedStressSummary({
+        market,
+        scenarios,
+        recommendedHedge: recommendation.recommendedHedge,
+        execution: mintExecution,
+      }),
+    [recommendation.recommendedHedge, mintExecution],
   );
   const ptbInput = useMemo(
     () => ({
@@ -171,6 +185,7 @@ export default function Home() {
         executionRiskSummary,
         managerHistorySummary,
         managerInventoryReadback,
+        executedStressSummary,
       }),
     [
       metrics,
@@ -181,6 +196,7 @@ export default function Home() {
       executionRiskSummary,
       managerHistorySummary,
       managerInventoryReadback,
+      executedStressSummary,
     ],
   );
 
@@ -491,6 +507,7 @@ export default function Home() {
                 </BarChart>
               )}
             </ChartFrame>
+            <ExecutedStressPanel summary={executedStressSummary} />
           </Panel>
         </section>
 
@@ -779,6 +796,113 @@ function DemoFlowPanel({ steps }: { steps: DemoFlowStep[] }) {
         ))}
       </div>
     </Panel>
+  );
+}
+
+function ExecutedStressPanel({ summary }: { summary: ExecutedStressSummary }) {
+  const visibleComparisons = summary.comparisons.slice(0, 4);
+
+  return (
+    <div className="mt-6 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[#17211d]">
+            Executed stress comparison
+          </div>
+          <p className="mt-2 text-sm leading-6 text-[#52615a]">
+            Compares the recommended hedge with the latest wallet-executed
+            Predict position across multiple scenarios.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs text-[#52615a] sm:min-w-72">
+          <SummaryTile
+            label="Worst unhedged"
+            value={`${summary.worstUnhedgedPnl.toFixed(0)} dUSDC`}
+            danger
+          />
+          <SummaryTile
+            label="Worst executed"
+            value={
+              summary.worstExecutedPnl === undefined
+                ? "Pending"
+                : `${summary.worstExecutedPnl.toFixed(0)} dUSDC`
+            }
+            danger={(summary.worstExecutedPnl ?? 0) < 0}
+          />
+        </div>
+      </div>
+      {summary.executedHedge ? (
+        <div className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-3">
+          <ConfigRow
+            label="Executed hedge"
+            value={`${summary.executedHedge.side} ${summary.executedHedge.strike.toLocaleString("en-US")}`}
+          />
+          <ConfigRow
+            label="Executed quantity"
+            value={`${summary.executedHedge.notional.toLocaleString("en-US", {
+              maximumFractionDigits: 6,
+            })} dUSDC`}
+          />
+          <ConfigRow
+            label="Worst-case improvement"
+            value={
+              summary.executedWorstCaseImprovementDusdc === undefined
+                ? undefined
+                : `${summary.executedWorstCaseImprovementDusdc.toFixed(2)} dUSDC`
+            }
+          />
+        </div>
+      ) : (
+        <p className="mt-3 text-xs leading-5 text-[#52615a]">
+          Execute or load a wallet mint to compare actual hedge impact against
+          the recommendation.
+        </p>
+      )}
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[680px] border-collapse text-left text-xs">
+          <thead className="text-[#52615a]">
+            <tr className="border-b border-[#dce3dd]">
+              <th className="py-2 pr-3 font-semibold">Scenario</th>
+              <th className="py-2 pr-3 font-semibold">Spot</th>
+              <th className="py-2 pr-3 font-semibold">Unhedged</th>
+              <th className="py-2 pr-3 font-semibold">Recommended</th>
+              <th className="py-2 pr-3 font-semibold">Executed</th>
+              <th className="py-2 pr-3 font-semibold">Executed reduction</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleComparisons.map((comparison) => (
+              <tr key={comparison.scenarioId} className="border-b border-[#eef2ee]">
+                <td className="py-2 pr-3 font-semibold text-[#17211d]">
+                  {comparison.scenarioName}
+                </td>
+                <td className="py-2 pr-3 text-[#52615a]">
+                  {formatUsd(comparison.scenarioSpot)}
+                </td>
+                <td className="py-2 pr-3 text-[#c75c48]">
+                  {comparison.unhedgedPnl.toFixed(0)}
+                </td>
+                <td className="py-2 pr-3 text-[#52615a]">
+                  {comparison.recommendedHedgedPnl === undefined
+                    ? "N/A"
+                    : comparison.recommendedHedgedPnl.toFixed(0)}
+                </td>
+                <td className="py-2 pr-3 text-[#52615a]">
+                  {comparison.executedHedgedPnl === undefined
+                    ? "Pending"
+                    : comparison.executedHedgedPnl.toFixed(0)}
+                </td>
+                <td className="py-2 pr-3 text-[#1f8a70]">
+                  {comparison.executedTailLossReductionPct === undefined
+                    ? "Pending"
+                    : `${comparison.executedTailLossReductionPct.toFixed(1)}%`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 

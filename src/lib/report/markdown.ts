@@ -12,6 +12,7 @@ import type {
   PredictMintExecutionSummary,
 } from "@/lib/predict/execution";
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
+import type { ExecutedStressSummary } from "@/lib/risk/executedStress";
 
 export function buildMarkdownReport(input: {
   market: MarketState;
@@ -24,6 +25,7 @@ export function buildMarkdownReport(input: {
   executionRiskSummary?: ExecutionAdjustedRiskSummary;
   managerHistorySummary?: ManagerExecutionHistorySummary;
   managerInventoryReadback?: PredictManagerInventoryReadback;
+  executedStressSummary?: ExecutedStressSummary;
 }): string {
   const {
     market,
@@ -36,6 +38,7 @@ export function buildMarkdownReport(input: {
     executionRiskSummary,
     managerHistorySummary,
     managerInventoryReadback,
+    executedStressSummary,
   } = input;
 
   return [
@@ -93,6 +96,24 @@ export function buildMarkdownReport(input: {
       const scenario = scenarios.find((item) => item.id === result.scenarioId);
       return `| ${scenario?.name ?? result.scenarioId} | ${result.unhedgedPnl.toFixed(2)} | ${(result.hedgedPnl ?? result.unhedgedPnl).toFixed(2)} | ${(result.tailLossReductionPct ?? 0).toFixed(1)}% |`;
     }),
+    "",
+    "## Executed Stress Comparison",
+    "",
+    ...(executedStressSummary
+      ? [
+          `- Source: ${executedStressSummary.source}`,
+          `- Executed hedge: ${executedStressSummary.executedHedge ? `${executedStressSummary.executedHedge.side} ${executedStressSummary.executedHedge.strike.toLocaleString("en-US")} / ${formatDusdc(executedStressSummary.executedHedge.notional)}` : "N/A"}`,
+          `- Worst unhedged PnL: ${formatDusdc(executedStressSummary.worstUnhedgedPnl)}`,
+          `- Worst executed PnL: ${formatDusdc(executedStressSummary.worstExecutedPnl)}`,
+          `- Worst-case improvement: ${formatDusdc(executedStressSummary.executedWorstCaseImprovementDusdc)}`,
+          "",
+          "| Scenario | Unhedged | Recommended | Executed | Executed reduction |",
+          "| --- | ---: | ---: | ---: | ---: |",
+          ...executedStressSummary.comparisons.map((comparison) =>
+            `| ${comparison.scenarioName} | ${comparison.unhedgedPnl.toFixed(2)} | ${comparison.recommendedHedgedPnl?.toFixed(2) ?? "N/A"} | ${comparison.executedHedgedPnl?.toFixed(2) ?? "N/A"} | ${comparison.executedTailLossReductionPct?.toFixed(1) ?? "N/A"}% |`
+          ),
+        ]
+      : ["- Executed stress comparison not available."]),
     "",
     "## Hedge Recommendation",
     "",
