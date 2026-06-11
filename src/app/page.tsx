@@ -78,6 +78,15 @@ const WalletReadinessClient = dynamic(
   },
 );
 
+const workflowNavItems = [
+  { label: "Demo", href: "#workflow", sectionId: "workflow" },
+  { label: "Risk", href: "#overview", sectionId: "overview" },
+  { label: "Hedge", href: "#hedge", sectionId: "hedge" },
+  { label: "Execute", href: "#ptb", sectionId: "ptb" },
+  { label: "Readback", href: "#readback", sectionId: "readback" },
+  { label: "Report", href: "#report", sectionId: "report" },
+];
+
 export default function Home() {
   const [walletReadiness, setWalletReadiness] = useState<WalletReadinessInput>({
     connected: false,
@@ -91,6 +100,7 @@ export default function Home() {
     PredictMintExecutionSummary[]
   >([]);
   const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
+  const [activeSectionId, setActiveSectionId] = useState("workflow");
   const selectedScenario =
     scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
 
@@ -212,6 +222,40 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const sectionIds = workflowNavItems.map((item) => item.sectionId);
+
+    function updateActiveSection() {
+      const current = sectionIds
+        .map((sectionId) => {
+          const element = document.getElementById(sectionId);
+          if (!element) {
+            return undefined;
+          }
+
+          return {
+            sectionId,
+            top: Math.abs(element.getBoundingClientRect().top - 120),
+          };
+        })
+        .filter((item): item is { sectionId: string; top: number } => Boolean(item))
+        .sort((left, right) => left.top - right.top)[0];
+
+      if (current) {
+        setActiveSectionId(current.sectionId);
+      }
+    }
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     async function loadPredictStatus() {
@@ -299,28 +343,33 @@ export default function Home() {
               <MetricCard label="Risk score" value={`${metrics.riskScore}/100`} tone="risk" />
             </div>
           </header>
-          <nav className="flex gap-2 overflow-x-auto pb-1 text-sm font-medium">
-            {[
-              "Overview",
-              "Testnet",
-              "Exposure",
-              "Vol Surface",
-              "Simulator",
-              "Hedge",
-              "PTB",
-              "Report",
-            ].map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(" ", "-")}`}
-                className="whitespace-nowrap rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-[#52615a] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-              >
-                {item}
-              </a>
-            ))}
-          </nav>
         </div>
       </section>
+
+      <nav className="sticky top-0 z-30 border-b border-[#dce3dd] bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-5 py-3 text-sm font-semibold lg:px-8">
+          <div className="mr-2 hidden shrink-0 text-xs uppercase tracking-normal text-[#52615a] sm:block">
+            Workflow
+          </div>
+          {workflowNavItems.map((item) => {
+            const active = activeSectionId === item.sectionId;
+
+            return (
+              <a
+                key={item.sectionId}
+                href={item.href}
+                className={`whitespace-nowrap rounded-md border px-3 py-2 transition ${
+                  active
+                    ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
+                    : "border-[#dce3dd] bg-white text-[#52615a] hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })}
+        </div>
+      </nav>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
         <section id="overview" className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -558,10 +607,12 @@ export default function Home() {
               onExecution={handleExecution}
             />
             <ExecutionAdjustedRiskPanel summary={executionRiskSummary} />
-            <ManagerExecutionSummaryPanel
-              summary={managerHistorySummary}
-              inventory={managerInventoryReadback}
-            />
+            <div id="readback">
+              <ManagerExecutionSummaryPanel
+                summary={managerHistorySummary}
+                inventory={managerInventoryReadback}
+              />
+            </div>
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">

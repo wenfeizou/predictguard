@@ -1543,6 +1543,40 @@ Next implementation step:
 
 - Run checks, commit, then return to final validation/submission preparation.
 
+### Round Z: Sticky Workflow Navigation
+
+Status: completed.
+
+Goal:
+
+- Improve demo navigation without splitting the app into multiple pages.
+
+Implementation outcome:
+
+- Replaced the long hero navigation with a sticky compact workflow nav.
+- New workflow nav items:
+  - `Demo`
+  - `Risk`
+  - `Hedge`
+  - `Execute`
+  - `Readback`
+  - `Report`
+- Added scroll/resize tracking to highlight the currently nearest workflow
+  section.
+- Added a dedicated `readback` anchor around the manager/account summary.
+- Kept the app as one continuous workflow page for demo storytelling.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- User visual review of the sticky nav in browser, then final validation or
+  further small UI polish.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
