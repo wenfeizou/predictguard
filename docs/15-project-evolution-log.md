@@ -1013,6 +1013,37 @@ Next implementation step:
 - Continue with direct manager inventory readback after the glossary review is
   acceptable.
 
+### Round O: Browser Warning Review
+
+Status: completed.
+
+Problem:
+
+- Browser console showed Recharts warnings from `page.tsx`:
+  `The width(-1) and height(-1) of chart should be greater than 0`.
+- The warning came from `ResponsiveContainer` measuring before its parent chart
+  frame had a stable width/height.
+- Browser console also showed `Lit is in dev mode`, which comes from a
+  development dependency/wallet UI path and is not a PredictGuard layout or
+  transaction bug.
+
+Implementation outcome:
+
+- Updated `ChartFrame` with explicit `w-full`, `min-w-0`, fixed height, and
+  overflow containment.
+- Added `minWidth={0}` and `minHeight={288}` to both Recharts
+  `ResponsiveContainer` instances.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Browser-refresh and confirm the Recharts width/height warnings are gone.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

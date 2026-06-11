@@ -361,7 +361,7 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
               <IvHeatmap />
               <ChartFrame>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
                   <LineChart
                     data={market.markets.filter((item) => item.expiryId === "15m")}
                     margin={{ top: 12, right: 12, bottom: 8, left: 0 }}
@@ -427,7 +427,7 @@ export default function Home() {
               />
             </div>
             <ChartFrame className="mt-6">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
                 <BarChart
                   data={[
                     { name: "Unhedged", pnl: selectedResult.unhedgedPnl },
@@ -986,7 +986,11 @@ function ChartFrame({
     );
   }
 
-  return <div className={`h-72 min-h-72 min-w-0 ${className}`}>{children}</div>;
+  return (
+    <div className={`h-72 min-h-72 w-full min-w-0 overflow-hidden ${className}`}>
+      {children}
+    </div>
+  );
 }
 
 function MetricCard({
