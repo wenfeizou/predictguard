@@ -1309,6 +1309,53 @@ Next implementation step:
 
 - Verify build/UI, then create judge-facing README/pitch/demo script.
 
+### Round U: Judge-Facing README And Demo Script
+
+Status: completed.
+
+Goal:
+
+- Make the project understandable to judges without requiring them to read all
+  planning documents.
+
+Implementation outcome:
+
+- Added a `Judge Demo` section to `README.md`.
+- Added a short pitch, local demo path, and proof points to the README.
+- Added `docs/18-judge-demo-script.md` with:
+  - one-minute pitch
+  - step-by-step demo path
+  - points to emphasize
+  - verified chain evidence
+  - fallback demo path
+  - known limitations
+  - next depth targets
+- Added the new judge demo script to the README document index.
+
+Concept note:
+
+- This is not a feature-heavy round, but it materially improves submission
+  readiness. A project with real protocol work can still underperform if judges
+  cannot quickly understand the product loop and verified evidence.
+
+Current completion estimate:
+
+- About `90%` for the competition MVP / judge-demo target. This does not mean
+  production completeness; it means the current project has a coherent
+  risk-to-execution-to-readback flow, direct testnet evidence, and a judge-facing
+  story.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Final manual browser walkthrough and final submission assets: screenshots,
+  recorded demo, and any late official contract verification.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

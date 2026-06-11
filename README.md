@@ -85,6 +85,38 @@ The app also includes a non-blocking DeepBook Predict testnet adapter at `/api/p
 
 The PTB panel now uses a typed Sui `Transaction` builder preview in `src/lib/ptb/hedgeTransaction.ts`. It can show wallet readiness, the Predict mint target, live oracle candidate, missing wallet/manager/coin inputs, scaled strike, and an SDK transaction skeleton. Wallet state comes from `@mysten/dapp-kit-react` with gRPC clients. The preview is aligned with the `predict-testnet-4-16` flow: deposit dUSDC into `PredictManager`, construct `MarketKey`, then call `predict::mint<dUSDC>`. The wallet execution control stays blocked while inputs are missing and hands the `Transaction` instance to the connected wallet once readiness reaches `ready-to-sign`.
 
+## Judge Demo
+
+Short pitch:
+
+> PredictGuard is the risk and hedge workflow for DeepBook Predict PLPs. It
+> shows where PLP tail risk is concentrated, recommends a hedge, executes a
+> wallet-signed Predict mint on testnet, then reads the manager inventory back
+> from chain to verify active hedge coverage.
+
+Recommended local demo path:
+
+1. Open <http://localhost:3000>.
+2. Start at `Demo Flow` to show the product loop.
+3. Review PLP overview, exposure heatmap, and scenario simulator.
+4. Review the hedge recommendation and expected tail-loss reduction.
+5. Connect a Sui testnet wallet with dUSDC and an existing `PredictManager`.
+6. In `PTB`, check wallet readiness and sign the Predict mint if ready.
+7. Confirm the SuiVision digest, execution-adjusted risk, and manager readback.
+8. Export the Markdown risk report from `Report`.
+
+What the demo proves:
+
+- DeepBook Predict concepts are integrated directly: `PLP`, `dUSDC`,
+  `PredictManager`, `OracleSVI`, `MarketKey`, `PTB`, and Predict mint events.
+- The app does not only submit a transaction; it decodes manager position
+  inventory back into readable positions such as `YES 63,187`.
+- Position readback is status-aware: active, expired, zero quantity, or unknown.
+- The report connects risk diagnosis, hedge recommendation, wallet execution,
+  and manager readback evidence.
+
+See [Judge Demo Script](docs/18-judge-demo-script.md) for the full talk track.
+
 Project-specific agent rules live in `AGENTS.md`. Sui agent skills are vendored under `.agents/skills` with `skills-lock.json` for reproducible project-level context.
 
 ## Documents
@@ -109,6 +141,7 @@ Read in this order:
 15. [Project Evolution Log](docs/15-project-evolution-log.md)
 16. [Concept Glossary](docs/16-concept-glossary.md)
 17. [Depth Roadmap](docs/17-depth-roadmap.md)
+18. [Judge Demo Script](docs/18-judge-demo-script.md)
 
 ## Current Official References
 
