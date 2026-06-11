@@ -146,6 +146,7 @@ Read in this order:
 20. [Settlement Reconstruction Feasibility](docs/20-settlement-reconstruction-feasibility.md)
 21. [Concept Map CN/EN](docs/21-concept-map-cn-en.md)
 22. [Technical Deep Dive](docs/22-technical-deep-dive.md)
+23. [Lifecycle Extension Plan](docs/23-lifecycle-extension-plan.md)
 
 ## Current Official References
 

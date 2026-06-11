@@ -12,10 +12,11 @@ Chinese:
 
 ## One-Line Pitch
 
-PredictGuard is a DeepBook Predict risk management workflow for PLP providers,
-LPs, vault builders, and strategy developers. It identifies Predict exposure,
-recommends hedges, executes on-chain Predict positions, and shows whether risk
-improves after execution.
+PredictGuard is a DeepBook Predict position risk lifecycle manager for PLP
+providers, LPs, vault builders, and strategy developers. It identifies Predict
+exposure, recommends hedges, executes on-chain Predict positions, reads manager
+state back from chain, and tracks whether risk improves through execution and
+eventual settlement.
 
 ## Product Positioning
 
@@ -32,12 +33,14 @@ PredictGuard is:
 - a stress-test simulator
 - an AI hedge copilot
 - a wallet-signed Predict hedge execution workflow
+- a Predict position lifecycle tracker
 - a risk report exporter
 
 PredictGuard is not:
 
 - a casual prediction betting frontend
 - a full automated vault
+- a standalone all-market redeem keeper
 - a market-making bot
 - a claim that a strategy is profitable
 - a generic AI trading assistant
@@ -90,3 +93,5 @@ The demo must prove four things:
 3. **Risk is actionable:** AI recommends a hedge with cost and expected loss reduction.
 4. **Risk is executable:** the hedge becomes a wallet-signed Predict mint.
 5. **Risk is reviewable:** the app shows the resulting position and updated risk report.
+6. **Risk is trackable:** the app follows the position through manager readback,
+   expiry, settlement readiness, and redeem evidence where available.

@@ -192,17 +192,44 @@ Expected demo improvement:
 The final submission reads as a complete DeepBook Predict risk management
 workflow rather than a collection of technical pieces.
 
+## Depth Direction 7: Position Lifecycle And Redeem Evidence
+
+Status: planned.
+
+Why this matters:
+
+- PredictGuard currently proves mint, manager readback, and position status.
+- A complete risk workflow should eventually explain what happens after expiry:
+  whether a position is redeemable, redeemed, or still missing settlement
+  evidence.
+- This strengthens the project without changing its positioning, as long as
+  settlement/redeem is framed as hedge lifecycle tracking rather than a separate
+  keeper product.
+
+How to strengthen it:
+
+- Add a settlement readiness panel for decoded manager positions.
+- Parse `PositionRedeemed` events.
+- Add a guarded redeem PTB preview.
+- Enable wallet-signed redeem only when readiness is clear.
+- Add post-settlement realized result reporting.
+
+Expected demo improvement:
+
+The app can tell a fuller story: "We diagnosed risk, minted a hedge, confirmed
+the position, tracked its lifecycle, and recorded realized settlement evidence."
+
 ## Priority Recommendation
 
 Highest priority:
 
-1. Scenario and stress depth
-2. Quote source upgrade
-3. Final submission media
+1. Final submission media
+2. Position lifecycle and redeem evidence
+3. Scenario and stress depth
 
 Medium priority:
 
-4. Full settlement reconstruction
+4. Quote source upgrade
 5. Historical manager/indexer depth
 
 Optional if time allows:
@@ -220,6 +247,7 @@ PredictGuard should feel deep enough for competition when it can demonstrate:
 - executed-vs-recommended risk metrics: v1 completed
 - scenario comparison showing before/after impact: partially completed
 - a clear judge-facing story: v1 completed
+- position lifecycle / redeem evidence: planned
 
 At that point, the project does not need to be a large system. It needs to be a
 focused, credible, DeepBook Predict-native risk workflow.

@@ -1670,6 +1670,45 @@ Next implementation step:
 - Final validation: run checks, verify the app manually, capture screenshots,
   and prepare the 5-minute submission video.
 
+### Round AC: Lifecycle Extension Positioning And Plan
+
+Status: completed.
+
+Goal:
+
+- Decide whether adding settlement/redeem capability strengthens PredictGuard
+  or makes the product positioning unclear.
+
+Decision:
+
+- The extension fits PredictGuard if it is framed as position risk lifecycle
+  tracking, not as a standalone redeem keeper.
+- Updated positioning:
+  - `PredictGuard is the DeepBook Predict position risk lifecycle manager for
+    PLPs, LPs, vault builders, and strategy developers.`
+
+Implementation outcome:
+
+- Added `docs/23-lifecycle-extension-plan.md`.
+- Updated the README document index.
+- Updated `docs/01-product-brief.md` to include position lifecycle tracking.
+- Updated `docs/17-depth-roadmap.md` with position lifecycle and redeem
+  evidence as a planned depth direction.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `95%`.
+- Lifecycle extension target: about `35-40%`.
+- Commercial production target: about `25-35%`.
+
+Tomorrow's recommended development start:
+
+1. Add lifecycle readiness concepts to the glossary and concept map.
+2. Add read-only settlement readiness to manager/account readback.
+3. Add a `PositionRedeemed` parser with fixture or defensive parser support.
+4. Extend Markdown reports with lifecycle readiness and redeem evidence when
+   present.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
