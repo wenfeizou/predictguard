@@ -1079,6 +1079,67 @@ Next implementation step:
 
 - Browser-refresh and confirm hydration mismatch and Recharts warnings are gone.
 
+### Round Q: Direct Manager Inventory Readback V1
+
+Status: completed.
+
+Goal:
+
+- Reduce reliance on local browser execution history by reading the connected
+  `PredictManager` object directly from Sui testnet.
+
+Implementation outcome:
+
+- Added `src/lib/predict/managerReadback.ts`.
+- Extended `/api/predict/manager` so a found manager also returns
+  `inventoryReadback`.
+- Read the manager object through Sui gRPC.
+- Parsed manager object JSON for:
+  - manager object version
+  - object digest
+  - owner
+  - balance manager ID
+  - balances table ID
+  - positions table ID
+  - range positions table ID
+- Read Table dynamic fields for balances and positions.
+- Parsed direct dUSDC manager balance from the balances table.
+- Parsed u64 position quantities from the positions table.
+- Added direct on-chain manager readback to the UI manager/account panel.
+- Added direct manager readback evidence to the Markdown risk report.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+- Local API check for wallet
+  `0x5e2a28ff382ab6858588dba9d5ed8e21fc59908c295ced2124f87b1cdb4cefb6`
+  returned:
+  - manager:
+    `0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2`
+  - on-chain manager dUSDC balance: `8.102194 dUSDC`
+  - position entries: `2`
+  - total parsed position quantity: `10.31435 dUSDC`
+  - balance entries: `1`
+
+Concept note:
+
+- This is direct manager inventory readback v1. It proves the app can read
+  live manager object state and Table dynamic fields. It does not yet fully
+  decode each `MarketKey` into oracle, expiry, strike, and side, so
+  settlement-aware position reconstruction remains a follow-up.
+
+Current completion estimate:
+
+- About `76%`. This round closes a meaningful depth gap because the app now has
+  direct on-chain manager evidence in addition to transaction-event evidence.
+
+Next implementation step:
+
+- Decode `MarketKey` entries or add a judge-facing demo script/README section
+  that explains the full risk-to-execution-to-readback loop.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

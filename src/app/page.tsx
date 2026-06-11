@@ -41,6 +41,7 @@ import {
   storeMintExecution,
   type PredictMintExecutionSummary,
 } from "@/lib/predict/execution";
+import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
 import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
 import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
@@ -138,6 +139,7 @@ export default function Home() {
     () => buildManagerExecutionHistorySummary(mintExecutionHistory),
     [mintExecutionHistory],
   );
+  const managerInventoryReadback = walletReadiness.account?.managerInventory;
   const markdownReport = useMemo(
     () =>
       buildMarkdownReport({
@@ -150,6 +152,7 @@ export default function Home() {
         mintExecution,
         executionRiskSummary,
         managerHistorySummary,
+        managerInventoryReadback,
       }),
     [
       metrics,
@@ -159,6 +162,7 @@ export default function Home() {
       mintExecution,
       executionRiskSummary,
       managerHistorySummary,
+      managerInventoryReadback,
     ],
   );
 
@@ -513,7 +517,10 @@ export default function Home() {
               onExecution={handleExecution}
             />
             <ExecutionAdjustedRiskPanel summary={executionRiskSummary} />
-            <ManagerExecutionSummaryPanel summary={managerHistorySummary} />
+            <ManagerExecutionSummaryPanel
+              summary={managerHistorySummary}
+              inventory={managerInventoryReadback}
+            />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">
@@ -853,10 +860,12 @@ function ExecutionAdjustedRiskPanel({
 
 function ManagerExecutionSummaryPanel({
   summary,
+  inventory,
 }: {
   summary?: ManagerExecutionHistorySummary;
+  inventory?: PredictManagerInventoryReadback;
 }) {
-  if (!summary) {
+  if (!summary && !inventory) {
     return (
       <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
         <div className="text-sm font-semibold text-[#17211d]">
@@ -876,6 +885,54 @@ function ManagerExecutionSummaryPanel({
       <div className="text-sm font-semibold text-[#17211d]">
         Manager/account summary
       </div>
+      {inventory ? (
+        <>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <SummaryTile
+              label="On-chain dUSDC"
+              value={
+                inventory.directDusdcBalance === undefined
+                  ? "N/A"
+                  : `${inventory.directDusdcBalance.toLocaleString("en-US", {
+                      maximumFractionDigits: 6,
+                    })} dUSDC`
+              }
+            />
+            <SummaryTile
+              label="On-chain positions"
+              value={String(inventory.positionEntryCount ?? 0)}
+            />
+            <SummaryTile
+              label="Position quantity"
+              value={`${(inventory.directPositionQuantityDusdc ?? 0).toLocaleString("en-US", {
+                maximumFractionDigits: 6,
+              })} dUSDC`}
+            />
+            <SummaryTile
+              label="Balance entries"
+              value={String(inventory.balanceEntryCount ?? 0)}
+            />
+          </div>
+          <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+            <ConfigRow label="Object version" value={inventory.objectVersion} />
+            <ConfigRow label="Object digest" value={inventory.objectDigest} />
+            <ConfigRow label="Positions table" value={inventory.positionsTableId} />
+            <ConfigRow label="Balances table" value={inventory.balancesTableId} />
+            <div className="sm:col-span-2">
+              <ConfigRow label="Manager" value={inventory.managerObjectId} />
+            </div>
+          </dl>
+          <p className="mt-3 text-xs leading-5 text-[#52615a]">
+            Direct chain readback via Sui gRPC. MarketKey decoding and
+            settlement-aware position reconstruction remain follow-up tasks.
+          </p>
+        </>
+      ) : null}
+      {summary ? (
+        <>
+          <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#52615a]">
+            Local execution evidence
+          </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <SummaryTile
           label="Local executions"
@@ -913,9 +970,11 @@ function ManagerExecutionSummaryPanel({
         </div>
       </dl>
       <p className="mt-3 text-xs leading-5 text-[#52615a]">
-        This is a local event-history estimate. Direct manager inventory remains
-        a deeper protocol readback task.
+        Local event-history estimate retained for comparison with direct
+        manager object readback.
       </p>
+        </>
+      ) : null}
     </div>
   );
 }

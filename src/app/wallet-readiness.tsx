@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { predictTestnetConfig } from "@/lib/predict/config";
+import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import type { WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
 
 export function WalletReadinessClient({
@@ -71,6 +72,8 @@ export function WalletReadinessClient({
         managerFound: boolean;
         managerObjectId?: string;
         candidateCount?: number;
+        managerCreatedAtMs?: number;
+        inventoryReadback?: PredictManagerInventoryReadback | { error: string };
         error?: string;
       };
     },
@@ -88,6 +91,11 @@ export function WalletReadinessClient({
         dusdcBalanceMist: dusdcQuery.data?.totalBalanceMist,
         managerObjectId: managerQuery.data?.managerObjectId,
         managerFound: managerQuery.data?.managerFound,
+        managerInventory:
+          managerQuery.data?.inventoryReadback &&
+          !("error" in managerQuery.data.inventoryReadback)
+            ? managerQuery.data.inventoryReadback
+            : undefined,
       },
     });
   }, [account, dusdcQuery.data, managerQuery.data, network, onChange]);

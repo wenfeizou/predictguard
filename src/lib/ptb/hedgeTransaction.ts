@@ -1,6 +1,7 @@
 import { Transaction } from "@mysten/sui/transactions";
 
 import { predictTestnetConfig, type PredictTestnetConfig } from "@/lib/predict/config";
+import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import type { HedgeCandidate, Side } from "@/lib/types";
 
 const OBJECT_ID_PATTERN = /^0x[a-fA-F0-9]{64}$/;
@@ -40,6 +41,7 @@ export type PredictAccountReadinessInput = {
   dusdcBalanceMist?: string;
   managerObjectId?: string;
   managerFound?: boolean;
+  managerInventory?: PredictManagerInventoryReadback;
 };
 
 export type PtbReadinessStatus = "no-hedge" | "blocked" | "preview-ready" | "ready-to-sign";

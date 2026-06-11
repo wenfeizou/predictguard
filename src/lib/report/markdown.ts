@@ -11,6 +11,7 @@ import type {
   ManagerExecutionHistorySummary,
   PredictMintExecutionSummary,
 } from "@/lib/predict/execution";
+import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 
 export function buildMarkdownReport(input: {
   market: MarketState;
@@ -22,6 +23,7 @@ export function buildMarkdownReport(input: {
   mintExecution?: PredictMintExecutionSummary | null;
   executionRiskSummary?: ExecutionAdjustedRiskSummary;
   managerHistorySummary?: ManagerExecutionHistorySummary;
+  managerInventoryReadback?: PredictManagerInventoryReadback;
 }): string {
   const {
     market,
@@ -33,6 +35,7 @@ export function buildMarkdownReport(input: {
     mintExecution,
     executionRiskSummary,
     managerHistorySummary,
+    managerInventoryReadback,
   } = input;
 
   return [
@@ -122,6 +125,24 @@ export function buildMarkdownReport(input: {
     "",
     "## Manager / Account Summary",
     "",
+    ...(managerInventoryReadback
+      ? [
+          `- Direct manager readback source: ${managerInventoryReadback.source}`,
+          `- Manager object: ${managerInventoryReadback.managerObjectId}`,
+          `- Object version: ${managerInventoryReadback.objectVersion ?? "N/A"}`,
+          `- Object digest: ${managerInventoryReadback.objectDigest ?? "N/A"}`,
+          `- On-chain dUSDC balance: ${formatDusdc(managerInventoryReadback.directDusdcBalance)}`,
+          `- On-chain position entries: ${managerInventoryReadback.positionEntryCount ?? "N/A"}`,
+          `- On-chain position quantity: ${formatDusdc(managerInventoryReadback.directPositionQuantityDusdc)}`,
+          `- Balances table: ${managerInventoryReadback.balancesTableId ?? "N/A"}`,
+          `- Positions table: ${managerInventoryReadback.positionsTableId ?? "N/A"}`,
+          "- Note: direct readback currently parses manager object and Table entries; full MarketKey decoding remains pending.",
+          "",
+        ]
+      : [
+          "- Direct manager inventory readback not loaded.",
+          "",
+        ]),
     ...(managerHistorySummary
       ? [
           `- Manager: ${managerHistorySummary.managerId ?? "N/A"}`,

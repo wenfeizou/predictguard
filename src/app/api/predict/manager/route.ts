@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { predictTestnetConfig } from "@/lib/predict/config";
+import { fetchPredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 
 export const dynamic = "force-dynamic";
 
@@ -41,11 +42,18 @@ export async function GET(request: Request) {
       .filter((manager) => manager.owner.toLowerCase() === owner)
       .sort((a, b) => b.checkpoint_timestamp_ms - a.checkpoint_timestamp_ms);
     const latest = candidates[0];
+    const inventoryReadback = latest
+      ? await fetchPredictManagerInventoryReadback(latest.manager_id).catch((error) => ({
+          error: error instanceof Error ? error.message : "Unknown manager inventory readback error",
+        }))
+      : undefined;
 
     return NextResponse.json({
       managerFound: Boolean(latest),
       managerObjectId: latest?.manager_id,
       candidateCount: candidates.length,
+      managerCreatedAtMs: latest?.checkpoint_timestamp_ms,
+      inventoryReadback,
     });
   } catch (error) {
     return NextResponse.json({
