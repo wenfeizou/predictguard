@@ -939,6 +939,80 @@ Next implementation step:
 - Direct manager inventory readback or scenario/stress depth is the next best
   implementation target.
 
+### Round M: Execution Risk Concept Glossary Update
+
+Status: completed.
+
+Documentation outcome:
+
+- Updated `docs/16-concept-glossary.md` with Chinese explanations for the
+  newest execution-result concepts:
+  - `Execution-adjusted risk`
+  - `Coverage ratio`
+  - `Executed gap`
+  - `Budget usage`
+  - `Recommended notional`
+  - `Executed quantity`
+  - `Manager/account summary`
+  - `Local execution history`
+  - `Estimated manager remaining`
+  - `Direct manager inventory readback`
+
+Concept decision:
+
+- Keep English terms as stable anchors because code, protocol docs, and wallet
+  surfaces use English.
+- Explain each term in Chinese in the PredictGuard context so the user can map
+  page labels to product meaning.
+
+Next implementation step:
+
+- Proceed to direct manager inventory readback after confirming the glossary is
+  understandable.
+
+### Round N: Full Concept Coverage Audit
+
+Status: completed.
+
+Goal:
+
+- Re-audit concepts that have appeared across code, UI labels, reports,
+  planning docs, and previous conversations.
+- Ensure the glossary can be used as a Chinese-first learning map while keeping
+  English terms as stable anchors for code and protocol docs.
+
+Documentation outcome:
+
+- Expanded `docs/16-concept-glossary.md` from execution-result concepts into a
+  broader cross-reference covering:
+  - DeepBook Predict basics: `DeepBook Predict`, `Binary Market`, `YES / NO`,
+    `MarketKey`, `Oracle`, `Strike`, `Expiry`, `Ask Price`, `SVI`, volatility
+    surface.
+  - Wallet and PTB execution: `Wallet Connection`, `Wallet Signing`, `dApp Kit`,
+    `Transaction Instance`, `PTB Readiness`, `Sign PTB`, `Move Abort`,
+    `assert_mintable_ask`, `assert_live_oracle`.
+  - Risk and finance: `TVL`, `Utilization`, `PnL`, `Unhedged / Hedged PnL`,
+    `Payout Liability`, `Premium Collected`, `OTM`, `Tail-Loss Reduction`.
+  - Data and Sui state: `Indexer`, `Event Parsing`, `PositionMinted Event`,
+    `Balance Changes`, `Object Changes`, `Dynamic Fields`, `Shared Object`,
+    `Owned Object`, `Coin Object`, `Package ID`, `Object ID`, `LocalStorage`.
+  - Product architecture: `Data Adapter`, `Normalized Market State`,
+    `Risk Engine`, `Exposure Matrix`, `Scenario Simulator`,
+    `Hedge Optimizer`, `AI Hedge Copilot`.
+
+Concept decision:
+
+- Every glossary entry should have:
+  - an English heading
+  - a `Chinese:` line
+  - a PredictGuard-specific explanation
+- The glossary is now the primary place to study project concepts one by one.
+
+Next implementation step:
+
+- Continue with direct manager inventory readback after the glossary review is
+  acceptable.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

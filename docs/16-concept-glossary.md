@@ -10,6 +10,9 @@ planning, implementation, testing, or demo preparation.
   usually use English.
 - Add the Chinese explanation in the PredictGuard context, not only a dictionary
   translation.
+- Treat each entry as a Chinese-English cross reference: the heading is the
+  English anchor, the `Chinese:` line gives the Chinese name, and the body
+  explains how the term is used in PredictGuard.
 - When a concept changes after implementation, update the existing entry instead
   of creating a duplicate.
 
@@ -21,11 +24,53 @@ Chinese: 铸造、创建仓位。
 
 In PredictGuard, `mint` means creating a DeepBook Predict position on-chain. It
 does not mean issuing a new token for the project. For example, when the user
-buys an UP or DOWN prediction position for a BTC strike and expiry, the app
-calls `predict::mint`.
+buys a YES or NO prediction position for a BTC strike and expiry, the app calls
+`predict::mint`.
 
 Why it matters: a successful `mint` proves that the app can execute a real
 DeepBook Predict transaction, not only display a simulation.
+
+### DeepBook Predict
+
+Chinese: DeepBook Predict，DeepBook 的预测/二元仓位协议模块。
+
+`DeepBook Predict` is the Sui testnet protocol surface PredictGuard integrates
+with. In this project, it provides Predict managers, binary positions, oracles,
+pricing, vault context, and mint entrypoints.
+
+In Chinese, PredictGuard is not a generic prediction-market UI. It is a risk
+management workflow built around DeepBook Predict primitives.
+
+### Binary Market
+
+Chinese: 二元市场、二元结果市场。
+
+A `binary market` has two possible sides, usually represented as `YES` and
+`NO`. The position value depends on whether the market condition is true at
+expiry.
+
+Example:
+
+```text
+YES 62,151
+NO 62,151
+```
+
+In Chinese, this means the market is centered around a strike such as `62,151`,
+and the user chooses the side that matches the risk they want to hedge.
+
+### YES / NO
+
+Chinese: YES / NO 方向，是/否方向。
+
+`YES` and `NO` are the two sides of a binary Predict market.
+
+- `YES`: the condition is expected to be true at settlement.
+- `NO`: the condition is expected to be false at settlement.
+
+In PredictGuard, these are not only speculative directions. They are used as
+hedge instruments. For example, a PLP exposed to a specific tail event may buy
+the side that pays in that adverse scenario.
 
 ### Position
 
@@ -49,6 +94,24 @@ Predict trading.
 PredictGuard first checks whether the connected wallet already has a manager.
 If not, it can create one through `predict::create_manager`.
 
+### Account Readiness
+
+Chinese: 账户准备状态。
+
+`Account readiness` means whether the connected wallet has the objects and
+balances required before PredictGuard can build a transaction.
+
+Current checks include:
+
+- wallet connected
+- wallet on Sui testnet
+- enough dUSDC
+- available dUSDC coin object
+- existing `PredictManager`, or ability to create one
+
+In Chinese, this is the app's pre-flight checklist before allowing a real
+wallet-signed Predict mint.
+
 ### Readback
 
 Chinese: 读回、回读链上状态。
@@ -58,6 +121,17 @@ transaction to show updated state in the UI.
 
 Example: after mint succeeds, the app should read back the manager and position
 state instead of only showing a transaction digest.
+
+### Post-Mint Readback
+
+Chinese: mint 后读回、铸造后读取结果。
+
+`Post-mint readback` means waiting for the confirmed transaction and extracting
+what was actually minted: side, strike, expiry, quantity, cost, manager, oracle,
+and digest.
+
+This is stronger than "transaction submitted" because it tells the user what
+the chain accepted and recorded.
 
 ### Probe
 
@@ -114,6 +188,24 @@ Important limitation: v1 uses the most recent successful mint's ask price as a
 practical quote estimate. A later version should use a direct live quote or
 market pricing source when available.
 
+### Safety Buffer
+
+Chinese: 安全缓冲、预算缓冲。
+
+`Safety buffer` is the part of the selected budget that PredictGuard does not
+plan to spend when estimating quote-aware quantity.
+
+Example:
+
+```text
+max budget = 2 dUSDC
+safety buffer = 0.25 dUSDC
+available budget = 1.75 dUSDC
+```
+
+In Chinese, this leaves room for price movement between planning and wallet
+execution.
+
 ### Hedge
 
 Chinese: 对冲。
@@ -141,6 +233,20 @@ Current updated state: PredictGuard now has quote-aware sizing v1. If no quote
 is available, it falls back to probe mode. If a recent ask price is available,
 it estimates quantity from max budget and ask price.
 
+### Max Hedge Budget
+
+Chinese: 最大对冲预算。
+
+`Max hedge budget` is the user's selected spending cap for a hedge execution.
+It limits how much dUSDC PredictGuard should plan to use when building a mint.
+
+It is different from recommended notional:
+
+```text
+recommended notional = how much exposure to protect
+max hedge budget = how much the user is willing to spend
+```
+
 ### Deposit
 
 Chinese: 存入、充值到 PredictManager。
@@ -166,6 +272,17 @@ Chinese: 实际成交成本。
 `PositionMinted` event. It may differ slightly from `estimated cost` because the
 app estimates from the last known quote while the chain computes the current
 mint price at execution time.
+
+Example:
+
+```text
+quantity = 1 dUSDC
+ask price = 0.398901165
+actual cost = 0.398901 dUSDC
+```
+
+In Chinese, this means the user received `1 dUSDC` of Predict position exposure
+and actually paid about `0.398901 dUSDC` for that mint.
 
 ### Estimated Cost
 
@@ -199,6 +316,45 @@ Examples:
 
 Good error handling translates raw protocol errors into actions the user can
 take.
+
+### Move Abort
+
+Chinese: Move 合约中止、链上合约主动报错。
+
+`MoveAbort` means a Sui Move function rejected the transaction during execution.
+It is not a frontend exception; it is an on-chain contract check failing.
+
+Examples seen in PredictGuard:
+
+- `assert_mintable_ask`: the requested mint price or parameters are outside the
+  acceptable ask boundary.
+- `assert_live_oracle`: the oracle passed into the transaction is not accepted
+  as a live oracle by the contract.
+
+In Chinese, a Move abort usually means the transaction was constructed and sent
+to the wallet, but the protocol refused one of its assumptions.
+
+### assert_mintable_ask
+
+Chinese: 检查是否可按当前 ask 报价 mint。
+
+`assert_mintable_ask` is a DeepBook Predict contract check. If it aborts, the
+mint request does not match a currently acceptable ask price or market
+condition.
+
+PredictGuard mitigates this by moving from fixed probe assumptions toward
+quote-aware sizing.
+
+### assert_live_oracle
+
+Chinese: 检查 oracle 是否仍然是 live 状态。
+
+`assert_live_oracle` is a DeepBook Predict contract check that rejects a stale,
+expired, or otherwise non-live oracle.
+
+PredictGuard mitigates this by disabling status caching, refreshing Predict
+status before signing, and rebuilding the transaction with the latest eligible
+active oracle.
 
 ### User Explanation
 
@@ -242,6 +398,17 @@ SuiVision or returned by `signAndExecuteTransaction`.
 Digest alone is not enough; the app should also check whether the transaction
 status is `success`.
 
+### SuiVision
+
+Chinese: SuiVision 区块浏览器。
+
+`SuiVision` is a Sui block explorer. PredictGuard links to SuiVision so the
+user or judge can inspect the transaction digest, effects, events, and object
+changes independently from the app.
+
+In Chinese, it is the external proof link for "this actually happened on
+testnet."
+
 ### Demo
 
 Chinese: 演示流程。
@@ -281,12 +448,285 @@ Chinese: 执行。
 transaction. In this project, execution uses a Sui `Transaction` PTB passed to
 `dAppKit.signAndExecuteTransaction`.
 
+### Wallet Connection
+
+Chinese: 钱包连接。
+
+`Wallet connection` means the browser app asks a Sui wallet, such as Slush, for
+permission to see the user's account address and supported chains.
+
+Connection does not spend funds. It only lets the app read the selected wallet
+account and prepare wallet-gated actions.
+
+### Wallet Signing
+
+Chinese: 钱包签名。
+
+`Wallet signing` means the connected wallet asks the user to approve a
+transaction. In PredictGuard, the wallet receives a Sui `Transaction` instance
+and signs and executes it through dApp Kit.
+
+The app cannot hard-code a private key into browser wallet execution. The user
+must approve through the wallet UI.
+
+### dApp Kit
+
+Chinese: Mysten dApp Kit，Sui 前端钱包连接工具包。
+
+`dApp Kit` is the Mysten frontend library PredictGuard uses to connect wallets
+and submit transactions. In code, this appears as
+`@mysten/dapp-kit-react` and `signAndExecuteTransaction`.
+
+### Transaction Instance
+
+Chinese: Transaction 实例、Sui SDK 交易对象。
+
+A `Transaction instance` is the object built with the Sui TypeScript SDK before
+wallet signing. PredictGuard builds this object from manager, dUSDC, oracle,
+market key, quantity, and deposit inputs.
+
+The wallet signs the transaction instance. The app should not treat a text
+preview as enough for execution.
+
+### PTB Readiness
+
+Chinese: PTB 准备状态、交易块可执行状态。
+
+`PTB readiness` is PredictGuard's status for whether a transaction can be built
+and handed to the wallet.
+
+Current labels include:
+
+- `no-hedge`: no hedge recommendation exists.
+- `preview-ready`: the app can explain the transaction, but required execution
+  inputs are missing.
+- `ready-to-sign`: all required inputs are present, so `Sign PTB` can be
+  enabled.
+- `blocked`: the UI action is disabled because something required is missing.
+
+In Chinese, readiness is the bridge between "we have a plan" and "the wallet
+can safely sign."
+
+### Sign PTB
+
+Chinese: 签名 PTB、提交可编程交易块给钱包签名。
+
+`Sign PTB` is the UI action that passes the built Sui `Transaction` to the
+connected wallet. If the user approves, the wallet signs and executes it.
+
+This is the point where the demo moves from simulated recommendation to real
+testnet execution.
+
 ### Result Display
 
 Chinese: 结果展示。
 
 `Result display` means showing what happened after execution: success status,
 digest, minted position, cost, manager state, and updated risk report.
+
+### Execution-Adjusted Risk
+
+Chinese: 执行后修正风险、按实际执行结果调整后的风险。
+
+`Execution-adjusted risk` compares the original hedge recommendation with the
+actual on-chain result. It answers:
+
+- How much protection did PredictGuard recommend?
+- How much was actually minted on-chain?
+- How much risk is still uncovered?
+- How much did the executed hedge actually cost?
+- How much of the selected budget was used?
+
+Example:
+
+```text
+recommended notional = 100 dUSDC
+executed quantity = 1 dUSDC
+actual cost = 0.398901 dUSDC
+coverage ratio = 1.00%
+executed gap = 99 dUSDC
+```
+
+In Chinese, this means the app recommended protecting `100 dUSDC` of risk, but
+the current wallet-signed mint only covered `1 dUSDC`. The remaining uncovered
+gap is therefore `99 dUSDC`.
+
+This metric is important because it moves PredictGuard from "show a recommended
+trade" to "show what really happened after execution."
+
+### Coverage Ratio
+
+Chinese: 覆盖比例、风险覆盖率。
+
+`Coverage ratio` measures how much of the recommended hedge size was actually
+executed.
+
+```text
+coverage ratio = executed quantity / recommended notional
+```
+
+Example:
+
+```text
+executed quantity = 1 dUSDC
+recommended notional = 100 dUSDC
+coverage ratio = 1.00%
+```
+
+This does not mean the transaction failed. It means the user only executed a
+small part of the recommended protection, often because the current step is a
+probe, the budget is small, or the user intentionally capped the hedge size.
+
+### Executed Gap
+
+Chinese: 执行缺口、未覆盖缺口。
+
+`Executed gap` is the difference between recommended hedge size and actual
+executed quantity.
+
+```text
+executed gap = recommended notional - executed quantity
+```
+
+Example:
+
+```text
+recommended notional = 100 dUSDC
+executed quantity = 1 dUSDC
+executed gap = 99 dUSDC
+```
+
+In Chinese, this means the hedge is still short by `99 dUSDC` compared with the
+recommended protection size.
+
+### Budget Usage
+
+Chinese: 预算使用率。
+
+`Budget usage` compares actual hedge cost with the user's selected maximum
+budget.
+
+```text
+budget usage = actual cost / max hedge budget
+```
+
+Example:
+
+```text
+max hedge budget = 2 dUSDC
+actual cost = 0.398901 dUSDC
+budget usage = 19.95%
+```
+
+This tells the user whether the hedge used most of the allowed budget or only a
+small part of it.
+
+### Recommended Notional
+
+Chinese: 建议保护名义金额、建议对冲规模。
+
+`Recommended notional` is the amount of risk exposure that PredictGuard
+recommends protecting. It is not the same as the trading cost.
+
+Example:
+
+```text
+recommended notional = 100 dUSDC
+```
+
+In Chinese, this means the app thinks the user should protect `100 dUSDC` worth
+of exposure. The actual cost may be much lower because Predict positions are
+priced below or above `1 dUSDC` depending on probability, strike, expiry, and
+market state.
+
+### Executed Quantity
+
+Chinese: 实际执行数量、实际 mint 数量。
+
+`Executed quantity` is the Predict position quantity actually minted on-chain.
+
+Example:
+
+```text
+executed quantity = 1 dUSDC
+```
+
+This is the actual position size, not the amount paid. The amount paid is
+`actual cost`.
+
+### Manager / Account Summary
+
+Chinese: Manager / 账户摘要。
+
+`Manager/account summary` summarizes the user's local PredictGuard execution
+history for the connected PredictManager. It currently includes:
+
+- local execution count
+- total minted quantity
+- total deposited dUSDC
+- total actual cost
+- estimated manager remaining
+- latest transaction digest
+- manager object ID
+
+This helps the user understand what has happened after wallet execution.
+
+Important limitation: the current summary is still based on local execution
+history. It should later be upgraded to direct on-chain manager and position
+inventory readback.
+
+### Local Execution History
+
+Chinese: 本地执行历史。
+
+`Local execution history` is execution evidence saved by the browser after
+successful wallet-signed mints. It is useful for a fast MVP because it can show
+recent execution results immediately.
+
+However, it is not the chain's full source of truth. If the user changes
+browser, clears storage, or executes elsewhere, local history can be incomplete.
+
+### Estimated Manager Remaining
+
+Chinese: 估算的 manager 剩余金额。
+
+`Estimated manager remaining` estimates how much dUSDC remains on the manager
+side after deposits and mint costs.
+
+Current calculation:
+
+```text
+estimated manager remaining = total deposited - total actual cost
+```
+
+Example:
+
+```text
+deposited = 2 dUSDC
+actual cost = 0.398901 dUSDC
+estimated manager remaining = 1.601099 dUSDC
+```
+
+This is an estimate from local execution history. The deeper implementation
+target is direct manager inventory readback from on-chain state.
+
+### Direct Manager Inventory Readback
+
+Chinese: 直接读取 manager 链上库存。
+
+`Direct manager inventory readback` means querying the real on-chain
+PredictManager state to show:
+
+- remaining dUSDC balance
+- minted positions
+- position direction
+- strike
+- expiry
+- quantity
+- settlement status, when available
+
+This is stronger than local execution history because it uses chain state as
+the source of truth.
 
 ### README
 
@@ -351,6 +791,67 @@ strike grid, and settlement/reference price.
 PredictGuard uses the active oracle to choose an execution strike that fits the
 live market grid.
 
+### Live Oracle
+
+Chinese: live oracle，仍处于可用状态的预言机。
+
+A `live oracle` is an oracle object the Predict contract currently accepts for
+minting. It has not expired or settled, and the protocol considers it valid for
+new markets.
+
+PredictGuard must use a live oracle when building a mint PTB.
+
+### Stale Oracle
+
+Chinese: stale oracle，过期或陈旧的预言机。
+
+A `stale oracle` is an oracle reference that may have been valid earlier but is
+no longer safe to use. It can happen when the frontend caches status too long
+or the user waits on the page while the oracle approaches expiry.
+
+A stale oracle can trigger `assert_live_oracle`.
+
+### Fresh Oracle Guard
+
+Chinese: 新鲜 oracle 保护、签名前刷新预言机保护。
+
+`Fresh oracle guard` is PredictGuard's mitigation for stale oracle failures. It
+fetches the latest Predict status, selects an active oracle, and rebuilds the
+transaction immediately before wallet signing.
+
+In Chinese, it reduces the chance that a transaction is built from an expired
+oracle snapshot.
+
+### Oracle Grid
+
+Chinese: oracle 价格网格、预言机可用价格档位。
+
+`Oracle grid` means the valid strike range and step size defined by the oracle.
+PredictGuard uses it to align the execution strike.
+
+The page currently shows:
+
+```text
+Oracle grid = min strike / tick size
+```
+
+For example:
+
+```text
+50,000 / 1
+```
+
+This means valid strikes start from `50,000` and move in increments of `1`.
+
+### Reference Price
+
+Chinese: 参考价格。
+
+`Reference price` is the latest price context used by PredictGuard to choose or
+display an execution strike. It is not the same as final settlement price.
+
+In Chinese, it is the current pricing reference used before expiry.
+
 ### Strike
 
 Chinese: 行权价、判断价格。
@@ -381,6 +882,49 @@ succeeds, PredictGuard uses the new executed ask price to recalculate the next
 plan. That is why the "planned quantity" shown after a successful transaction
 can differ from the quantity that was just minted.
 
+### Ask Bounds
+
+Chinese: ask 报价边界、可 mint 买入价格边界。
+
+`Ask bounds` are protocol-side limits around what ask prices or mint conditions
+are acceptable. If a transaction falls outside these bounds, the contract can
+abort with `assert_mintable_ask`.
+
+In Chinese, this is one reason PredictGuard cannot rely only on stale or fixed
+price assumptions.
+
+### Implied Volatility
+
+Chinese: 隐含波动率。
+
+`Implied volatility` is the volatility level implied by option-like market
+prices. Predict markets use pricing inputs that can reflect volatility
+expectations.
+
+PredictGuard uses volatility concepts to explain why some strikes or expiries
+are more expensive or risky than others.
+
+### Volatility Surface
+
+Chinese: 波动率曲面。
+
+`Volatility surface` means the shape of implied volatility across strikes and
+expiries. It helps explain pricing, skew, and risk concentration.
+
+In a final demo, showing the surface can make PredictGuard look more like a
+risk tool and less like a simple execution frontend.
+
+### SVI
+
+Chinese: SVI 波动率参数模型。
+
+`SVI` stands for Stochastic Volatility Inspired. It is a common model family
+for representing implied volatility smiles or surfaces.
+
+In DeepBook Predict context, SVI-related data helps describe how market prices
+vary across strikes. PredictGuard should explain it as a pricing/risk surface
+input, not as a user-facing trading command.
+
 ### dUSDC
 
 Chinese: DeepBook Predict 测试网使用的 USDC 类测试资产。
@@ -397,6 +941,142 @@ Chinese: Passive Liquidity Provider，被动流动性提供者。
 `PLP` refers to liquidity providers exposed to market risk while earning fees or
 spreads. PredictGuard's product story focuses on helping PLPs understand and
 hedge tail risk.
+
+### LP
+
+Chinese: Liquidity Provider，流动性提供者。
+
+`LP` is a broader term for liquidity provider. A PLP is a specific passive LP
+role in the PredictGuard story.
+
+In Chinese, LPs provide liquidity and can earn fees, but they also carry market
+and payout risk.
+
+### Vault
+
+Chinese: 金库、策略金库。
+
+A `vault` is a pooled strategy or account structure that manages funds under a
+defined strategy. In PredictGuard, a vault builder may want to supply liquidity,
+measure PLP exposure, and hedge tail risk with Predict positions.
+
+### Vault Builder
+
+Chinese: 金库构建者、策略金库开发者。
+
+A `vault builder` is the developer or team designing a vault strategy.
+PredictGuard targets this user because they need risk reports, hedge logic, and
+execution evidence before deploying a strategy.
+
+### TVL
+
+Chinese: Total Value Locked，总锁仓价值。
+
+`TVL` measures the total value controlled by a protocol, vault, or liquidity
+pool. PredictGuard uses TVL to size risk and cap hedge cost.
+
+Example:
+
+```text
+max hedge cost = TVL * maxCostPctOfTvl
+```
+
+### Utilization
+
+Chinese: 资金利用率。
+
+`Utilization` measures how much available liquidity or vault capacity is being
+used by active risk or obligations.
+
+In PredictGuard, high utilization can mean less room to absorb adverse market
+moves or payout obligations.
+
+### Payout Liability
+
+Chinese: 赔付负债、潜在赔付责任。
+
+`Payout liability` is the amount the liquidity side may need to pay if
+positions settle against it.
+
+PredictGuard uses payout liability to identify where PLP or vault risk is
+concentrated.
+
+### Max Payout Liability
+
+Chinese: 最大赔付负债、最大潜在赔付责任。
+
+`Max payout liability` is the worst payout obligation under the modeled
+positions or scenarios.
+
+It is one of the core risk metrics because it shows how bad the obligation can
+be if the adverse side wins.
+
+### Premium Collected
+
+Chinese: 已收权利金、已收保费。
+
+`Premium collected` is the income received for taking the other side of market
+risk. PLPs may collect premium, but that income comes with payout liability.
+
+PredictGuard's hedge logic should compare premium income against tail-loss
+risk.
+
+### PnL
+
+Chinese: Profit and Loss，盈亏。
+
+`PnL` means profit and loss. PredictGuard uses PnL to compare unhedged and
+hedged outcomes under scenarios.
+
+Example:
+
+```text
+unhedged PnL = outcome without hedge
+hedged PnL = outcome after including hedge cost and payoff
+```
+
+### Unhedged / Hedged PnL
+
+Chinese: 未对冲盈亏 / 已对冲盈亏。
+
+`Unhedged PnL` is the result before applying the recommended hedge.
+`Hedged PnL` is the result after including hedge cost and potential hedge
+payoff.
+
+In Chinese, this comparison answers whether the hedge actually improves the
+risk profile.
+
+### OTM
+
+Chinese: Out Of The Money，价外。
+
+`OTM` means a strike is away from the current spot price and would only pay in a
+more extreme scenario.
+
+PredictGuard often discusses OTM binary hedges because they can be cheaper
+tail-risk protection.
+
+### Spot Price
+
+Chinese: 现货价格。
+
+`Spot price` is the current reference price of the underlying asset, such as
+BTC. PredictGuard compares strike prices to spot price when choosing hedge
+candidates.
+
+### Underlying Asset
+
+Chinese: 标的资产。
+
+`Underlying asset` is the asset the Predict market is based on. In the current
+demo, the underlying asset is BTC.
+
+### Quote Asset
+
+Chinese: 计价资产、报价资产。
+
+`Quote asset` is the asset used to price and pay for Predict positions. In the
+current testnet integration, the quote asset is dUSDC.
 
 ## Product Depth Concepts
 
@@ -444,6 +1124,91 @@ and expected risk reduction.
 
 Risk model depth is what turns PredictGuard from an execution demo into a risk
 management product.
+
+### Data Adapter
+
+Chinese: 数据适配器。
+
+`Data adapter` is the module that fetches and normalizes data from live Predict
+APIs, local seed data, or future indexers.
+
+In Chinese, it keeps the rest of the app from depending directly on raw API
+shapes.
+
+### Normalized Market State
+
+Chinese: 标准化市场状态。
+
+`Normalized market state` is the internal data format PredictGuard uses after
+adapting raw market data. It contains spot price, expiries, strikes, markets,
+exposures, and PLP/vault state in one consistent shape.
+
+### Risk Engine
+
+Chinese: 风险引擎。
+
+`Risk engine` is the logic that turns market state and scenarios into metrics
+such as worst PnL, max payout liability, risk score, and tail-loss reduction.
+
+### Exposure Matrix
+
+Chinese: 风险敞口矩阵。
+
+`Exposure matrix` groups exposure by expiry and strike. It helps the user see
+where YES/NO notional, premium, and payout liability are concentrated.
+
+### Scenario Simulator
+
+Chinese: 场景模拟器。
+
+`Scenario simulator` computes outcomes under predefined market moves, such as
+BTC falling, staying flat, or rising.
+
+In Chinese, it is how PredictGuard turns "what if BTC moves?" into concrete
+PnL and risk metrics.
+
+### Hedge Optimizer
+
+Chinese: 对冲优化器。
+
+`Hedge optimizer` ranks possible hedge candidates by cost, expected loss
+reduction, expiry, strike, side, and user constraints.
+
+The current version is deterministic and rule-based. A deeper version can use
+more realistic live quotes and historical/stress data.
+
+### AI Hedge Copilot
+
+Chinese: AI 对冲助手。
+
+`AI Hedge Copilot` is the explanation layer that translates risk metrics and
+hedge recommendations into user-facing language.
+
+In the current project, it is part of the product vision and report narrative;
+future implementation can make it more interactive.
+
+### Risk Score
+
+Chinese: 风险评分。
+
+`Risk score` compresses multiple risk signals into a simple number for quick
+scanning. It should not replace detailed metrics, but it helps the user compare
+states.
+
+### Tail-Loss Reduction
+
+Chinese: 尾部亏损降低幅度。
+
+`Tail-loss reduction` measures how much a hedge improves the worst simulated
+loss.
+
+Example:
+
+```text
+tail-loss reduction = (hedged max loss - unhedged max loss) / abs(unhedged max loss)
+```
+
+In Chinese, it tells whether the hedge meaningfully reduces extreme downside.
 
 ### Product Loop Depth
 
@@ -531,3 +1296,113 @@ Chinese: 结算。
 market after expiry. For a full product loop, PredictGuard should eventually
 explain whether a position won or lost after settlement and how that affected
 the user's risk report.
+
+### Indexer
+
+Chinese: 索引器。
+
+An `indexer` reads on-chain data and events into a query-friendly database or
+API. PredictGuard may need an indexer or official Predict server endpoint to
+reconstruct full position and manager history.
+
+### Event Parsing
+
+Chinese: 事件解析。
+
+`Event parsing` means reading emitted transaction events, such as
+`PositionMinted`, to understand what the contract did.
+
+PredictGuard currently uses event parsing for post-mint execution readback.
+
+### PositionMinted Event
+
+Chinese: PositionMinted 事件、仓位铸造事件。
+
+`PositionMinted` is the event emitted by DeepBook Predict when a mint creates a
+position. PredictGuard parses it to display side, strike, quantity, cost,
+manager, oracle, and expiry.
+
+### Balance Changes
+
+Chinese: 余额变化。
+
+`Balance changes` are the token balance deltas returned with a Sui transaction.
+PredictGuard uses them to show wallet-side dUSDC changes after execution.
+
+### Object Changes
+
+Chinese: 对象变化。
+
+`Object changes` describe which Sui objects were created, mutated, transferred,
+or deleted by a transaction.
+
+PredictGuard can use object changes later to improve manager and position
+readback.
+
+### Dynamic Fields
+
+Chinese: 动态字段。
+
+`Dynamic fields` are Sui object-attached storage entries. Protocols can use
+them to store collections or child state under an object.
+
+PredictGuard may need to inspect manager dynamic fields to reconstruct direct
+position inventory.
+
+### Shared Object
+
+Chinese: 共享对象。
+
+A `shared object` is a Sui object that multiple users or transactions can
+access through consensus. DeepBook Predict protocol objects are often shared
+because many users interact with the same market or protocol state.
+
+### Owned Object
+
+Chinese: 地址拥有对象。
+
+An `owned object` is controlled by a specific address. Wallet dUSDC coin
+objects are examples of owned objects before they are used in a transaction.
+
+### Coin Object
+
+Chinese: Coin 对象、代币对象。
+
+A `coin object` is the Sui object representing a token balance. PredictGuard
+needs a dUSDC coin object to split and deposit into PredictManager.
+
+### Testnet
+
+Chinese: 测试网。
+
+`Testnet` is a non-mainnet Sui network used for development and competition
+integration. The current DeepBook Predict integration uses testnet dUSDC and
+testnet package/object IDs.
+
+Testnet assets and object IDs can change. PredictGuard should verify official
+contract information late before final submission.
+
+### Package ID
+
+Chinese: 包 ID、Move 合约包地址。
+
+`Package ID` identifies a published Move package on Sui. PredictGuard uses the
+DeepBook Predict package ID to build calls such as `predict::mint`.
+
+### Object ID
+
+Chinese: 对象 ID。
+
+`Object ID` identifies a Sui object, such as a Predict object, oracle object,
+manager object, or coin object.
+
+Wrong object IDs can cause PTB readiness failures or Move aborts.
+
+### LocalStorage
+
+Chinese: 浏览器本地存储。
+
+`localStorage` is browser storage used by PredictGuard to persist recent
+execution evidence across refreshes.
+
+It is useful for demo continuity but is not a chain source of truth.
