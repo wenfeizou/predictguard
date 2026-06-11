@@ -33,6 +33,11 @@ import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
 import type { PredictLiveSnapshot } from "@/lib/predict/client";
 import {
+  buildExecutionAdjustedRiskSummary,
+  buildManagerExecutionHistorySummary,
+  type ExecutionAdjustedRiskSummary,
+  type ManagerExecutionHistorySummary,
+  loadStoredMintExecutionHistory,
   loadStoredMintExecution,
   storeMintExecution,
   type PredictMintExecutionSummary,
@@ -79,6 +84,9 @@ export default function Home() {
   const [mintExecution, setMintExecution] = useState<PredictMintExecutionSummary | null>(() =>
     loadStoredMintExecution(),
   );
+  const [mintExecutionHistory, setMintExecutionHistory] = useState<
+    PredictMintExecutionSummary[]
+  >(() => loadStoredMintExecutionHistory());
   const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
   const selectedScenario =
     scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
@@ -120,6 +128,19 @@ export default function Home() {
     ],
   );
   const ptbPlan = useMemo(() => buildPredictHedgePtbPlan(ptbInput), [ptbInput]);
+  const executionRiskSummary = useMemo(
+    () =>
+      buildExecutionAdjustedRiskSummary({
+        execution: mintExecution,
+        recommendedNotionalDusdc: recommendation.recommendedHedge?.notional,
+        maxBudgetDusdc: maxHedgeBudgetDusdc,
+      }),
+    [mintExecution, recommendation.recommendedHedge?.notional, maxHedgeBudgetDusdc],
+  );
+  const managerHistorySummary = useMemo(
+    () => buildManagerExecutionHistorySummary(mintExecutionHistory),
+    [mintExecutionHistory],
+  );
   const markdownReport = useMemo(
     () =>
       buildMarkdownReport({
@@ -130,21 +151,33 @@ export default function Home() {
         recommendation,
         liveContext: liveSnapshot?.liveContext,
         mintExecution,
+        executionRiskSummary,
+        managerHistorySummary,
       }),
-    [metrics, allResults, recommendation, liveSnapshot?.liveContext, mintExecution],
+    [
+      metrics,
+      allResults,
+      recommendation,
+      liveSnapshot?.liveContext,
+      mintExecution,
+      executionRiskSummary,
+      managerHistorySummary,
+    ],
   );
 
   useEffect(() => {
     let active = true;
 
-    fetch("/api/predict/status")
-      .then(async (response) => {
+    async function loadPredictStatus() {
+      try {
+        const response = await fetch("/api/predict/status", {
+          cache: "no-store",
+        });
         const snapshot = (await response.json()) as PredictLiveSnapshot;
         if (active) {
           setLiveSnapshot(snapshot);
         }
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         if (active) {
           setLiveSnapshot({
             reachable: false,
@@ -160,21 +193,26 @@ export default function Home() {
             error: error instanceof Error ? error.message : "Failed to load testnet status",
           });
         }
-      })
-      .finally(() => {
+      } finally {
         if (active) {
           setLiveLoading(false);
         }
-      });
+      }
+    }
+
+    void loadPredictStatus();
+    const refreshTimer = window.setInterval(loadPredictStatus, 60_000);
 
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
     };
   }, []);
 
   function handleExecution(execution: PredictMintExecutionSummary) {
     setMintExecution(execution);
     storeMintExecution(execution);
+    setMintExecutionHistory(loadStoredMintExecutionHistory());
   }
 
   function exportReport() {
@@ -464,6 +502,8 @@ export default function Home() {
               onBudgetChange={setMaxHedgeBudgetDusdc}
               onExecution={handleExecution}
             />
+            <ExecutionAdjustedRiskPanel summary={executionRiskSummary} />
+            <ManagerExecutionSummaryPanel summary={managerHistorySummary} />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">
@@ -711,6 +751,161 @@ function PtbReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function ExecutionAdjustedRiskPanel({
+  summary,
+}: {
+  summary?: ExecutionAdjustedRiskSummary;
+}) {
+  if (!summary) {
+    return (
+      <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+        <div className="text-sm font-semibold text-[#17211d]">
+          Execution-adjusted risk
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[#52615a]">
+          Execute a Predict mint to compare actual hedge quantity, cost, and
+          coverage against the recommendation.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="text-sm font-semibold text-[#17211d]">
+        Execution-adjusted risk
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <SummaryTile
+          label="Coverage ratio"
+          value={`${summary.coverageRatioPct.toFixed(2)}%`}
+        />
+        <SummaryTile
+          label="Executed gap"
+          value={`${summary.executedGapDusdc.toFixed(2)} dUSDC`}
+        />
+        <SummaryTile
+          label="Actual cost ratio"
+          value={
+            summary.actualCostRatioPct === undefined
+              ? "N/A"
+              : `${summary.actualCostRatioPct.toFixed(2)}%`
+          }
+        />
+        <SummaryTile
+          label="Budget usage"
+          value={
+            summary.budgetUsagePct === undefined
+              ? "N/A"
+              : `${summary.budgetUsagePct.toFixed(2)}%`
+          }
+        />
+      </div>
+      <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+        <ConfigRow
+          label="Recommended notional"
+          value={`${summary.recommendedNotionalDusdc.toLocaleString("en-US")} dUSDC`}
+        />
+        <ConfigRow
+          label="Executed quantity"
+          value={`${summary.executedQuantityDusdc.toLocaleString("en-US", {
+            maximumFractionDigits: 6,
+          })} dUSDC`}
+        />
+        <ConfigRow
+          label="Deposited"
+          value={
+            summary.depositedDusdc === undefined
+              ? undefined
+              : `${summary.depositedDusdc.toLocaleString("en-US", {
+                  maximumFractionDigits: 6,
+                })} dUSDC`
+          }
+        />
+        <ConfigRow
+          label="Estimated manager remaining"
+          value={
+            summary.estimatedManagerRemainingDusdc === undefined
+              ? undefined
+              : `${summary.estimatedManagerRemainingDusdc.toLocaleString("en-US", {
+                  maximumFractionDigits: 6,
+                })} dUSDC`
+          }
+        />
+      </dl>
+    </div>
+  );
+}
+
+function ManagerExecutionSummaryPanel({
+  summary,
+}: {
+  summary?: ManagerExecutionHistorySummary;
+}) {
+  if (!summary) {
+    return (
+      <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+        <div className="text-sm font-semibold text-[#17211d]">
+          Manager/account summary
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[#52615a]">
+          No local execution history yet. After minting, PredictGuard will
+          estimate manager-side remaining dUSDC from deposited amount and actual
+          mint cost.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="text-sm font-semibold text-[#17211d]">
+        Manager/account summary
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <SummaryTile
+          label="Local executions"
+          value={String(summary.executionCount)}
+        />
+        <SummaryTile
+          label="Total minted"
+          value={`${summary.totalQuantityDusdc.toLocaleString("en-US", {
+            maximumFractionDigits: 6,
+          })} dUSDC`}
+        />
+        <SummaryTile
+          label="Total actual cost"
+          value={`${summary.totalActualCostDusdc.toLocaleString("en-US", {
+            maximumFractionDigits: 6,
+          })} dUSDC`}
+        />
+        <SummaryTile
+          label="Est. manager remaining"
+          value={`${summary.estimatedManagerRemainingDusdc.toLocaleString("en-US", {
+            maximumFractionDigits: 6,
+          })} dUSDC`}
+        />
+      </div>
+      <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+        <ConfigRow
+          label="Total deposited"
+          value={`${summary.totalDepositedDusdc.toLocaleString("en-US", {
+            maximumFractionDigits: 6,
+          })} dUSDC`}
+        />
+        <ConfigRow label="Latest digest" value={summary.latestDigest} />
+        <div className="sm:col-span-2">
+          <ConfigRow label="Manager" value={summary.managerId} />
+        </div>
+      </dl>
+      <p className="mt-3 text-xs leading-5 text-[#52615a]">
+        This is a local event-history estimate. Direct manager inventory remains
+        a deeper protocol readback task.
+      </p>
     </div>
   );
 }

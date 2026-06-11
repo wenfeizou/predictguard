@@ -9,6 +9,7 @@ import {
   summarizePredictMintExecution,
   type PredictMintExecutionSummary,
 } from "@/lib/predict/execution";
+import type { PredictLiveSnapshot } from "@/lib/predict/client";
 import {
   buildPredictHedgeTransactionPreview,
   type PredictHedgeMintInput,
@@ -48,7 +49,8 @@ export function PtbExecuteClient({
     setError(null);
 
     try {
-      const preview = buildPredictHedgeTransactionPreview(input);
+      const freshInput = await refreshPtbInputWithLiveOracle(input);
+      const preview = buildPredictHedgeTransactionPreview(freshInput);
       if (!preview.transaction) {
         throw new Error("Transaction is not ready. Check missing PTB inputs.");
       }
@@ -264,6 +266,32 @@ export function PtbExecuteClient({
       ) : null}
     </div>
   );
+}
+
+async function refreshPtbInputWithLiveOracle(input: PredictHedgeMintInput) {
+  const response = await fetch("/api/predict/status", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return input;
+  }
+
+  const snapshot = (await response.json()) as PredictLiveSnapshot;
+  const oracle = snapshot.liveContext?.latestActiveOracle;
+
+  if (!oracle) {
+    return input;
+  }
+
+  return {
+    ...input,
+    oracleObjectId: oracle.oracleId,
+    oracleExpiryMs: oracle.expiry,
+    oracleMinStrike: oracle.minStrike,
+    oracleTickSize: oracle.tickSize,
+    oracleReferencePrice: oracle.referencePrice,
+  };
 }
 
 function formatDusdcBaseUnits(value?: string) {

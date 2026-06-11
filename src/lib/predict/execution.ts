@@ -5,6 +5,8 @@ import { predictTestnetConfig } from "@/lib/predict/config";
 const DUSDC_DECIMALS = 1_000_000;
 const ORACLE_PRICE_DECIMALS = 1_000_000_000;
 const EXECUTION_STORAGE_KEY = "predictguard.latestMintExecution";
+const EXECUTION_HISTORY_STORAGE_KEY = "predictguard.mintExecutionHistory";
+const MAX_STORED_EXECUTIONS = 20;
 
 type TransactionWithExecutionData = SuiClientTypes.Transaction<{
   events: true;
@@ -31,6 +33,68 @@ export type PredictMintExecutionSummary = {
   gasMist?: string;
 };
 
+export type ExecutionAdjustedRiskSummary = {
+  recommendedNotionalDusdc: number;
+  executedQuantityDusdc: number;
+  executedGapDusdc: number;
+  coverageRatioPct: number;
+  actualCostDusdc?: number;
+  actualCostRatioPct?: number;
+  maxBudgetDusdc: number;
+  budgetUsagePct?: number;
+  depositedDusdc?: number;
+  estimatedManagerRemainingDusdc?: number;
+};
+
+export type ManagerExecutionHistorySummary = {
+  managerId?: string;
+  executionCount: number;
+  totalQuantityDusdc: number;
+  totalActualCostDusdc: number;
+  totalDepositedDusdc: number;
+  estimatedManagerRemainingDusdc: number;
+  latestDigest?: string;
+};
+
+export function buildExecutionAdjustedRiskSummary(input: {
+  execution?: PredictMintExecutionSummary | null;
+  recommendedNotionalDusdc?: number;
+  maxBudgetDusdc: number;
+}): ExecutionAdjustedRiskSummary | undefined {
+  const executedQuantityDusdc = input.execution?.quantityDusdc;
+  const recommendedNotionalDusdc = input.recommendedNotionalDusdc;
+
+  if (!input.execution || !executedQuantityDusdc || !recommendedNotionalDusdc) {
+    return undefined;
+  }
+
+  const actualCostDusdc = input.execution.costDusdc;
+  const depositedDusdc = input.execution.dusdcBalanceChange === undefined
+    ? undefined
+    : Math.abs(Math.min(input.execution.dusdcBalanceChange, 0));
+  const estimatedManagerRemainingDusdc =
+    depositedDusdc === undefined || actualCostDusdc === undefined
+      ? undefined
+      : Math.max(0, depositedDusdc - actualCostDusdc);
+
+  return {
+    recommendedNotionalDusdc,
+    executedQuantityDusdc,
+    executedGapDusdc: Math.max(0, recommendedNotionalDusdc - executedQuantityDusdc),
+    coverageRatioPct: (executedQuantityDusdc / recommendedNotionalDusdc) * 100,
+    actualCostDusdc,
+    actualCostRatioPct: actualCostDusdc === undefined
+      ? undefined
+      : (actualCostDusdc / recommendedNotionalDusdc) * 100,
+    maxBudgetDusdc: input.maxBudgetDusdc,
+    budgetUsagePct: actualCostDusdc === undefined
+      ? undefined
+      : (actualCostDusdc / input.maxBudgetDusdc) * 100,
+    depositedDusdc,
+    estimatedManagerRemainingDusdc,
+  };
+}
+
 export function loadStoredMintExecution(): PredictMintExecutionSummary | null {
   if (typeof window === "undefined") {
     return null;
@@ -49,12 +113,40 @@ export function loadStoredMintExecution(): PredictMintExecutionSummary | null {
   }
 }
 
+export function loadStoredMintExecutionHistory(): PredictMintExecutionSummary[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(EXECUTION_HISTORY_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw) as PredictMintExecutionSummary[];
+    return Array.isArray(parsed)
+      ? parsed.filter((execution) => Boolean(execution.digest))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export function storeMintExecution(execution: PredictMintExecutionSummary) {
   if (typeof window === "undefined") {
     return;
   }
 
   window.localStorage.setItem(EXECUTION_STORAGE_KEY, JSON.stringify(execution));
+  const nextHistory = [
+    execution,
+    ...loadStoredMintExecutionHistory().filter((item) => item.digest !== execution.digest),
+  ].slice(0, MAX_STORED_EXECUTIONS);
+  window.localStorage.setItem(
+    EXECUTION_HISTORY_STORAGE_KEY,
+    JSON.stringify(nextHistory),
+  );
 }
 
 export function clearStoredMintExecution() {
@@ -63,6 +155,41 @@ export function clearStoredMintExecution() {
   }
 
   window.localStorage.removeItem(EXECUTION_STORAGE_KEY);
+  window.localStorage.removeItem(EXECUTION_HISTORY_STORAGE_KEY);
+}
+
+export function buildManagerExecutionHistorySummary(
+  history: PredictMintExecutionSummary[],
+): ManagerExecutionHistorySummary | undefined {
+  if (history.length === 0) {
+    return undefined;
+  }
+
+  const latest = history[0];
+  const totals = history.reduce(
+    (sum, execution) => {
+      const depositedDusdc = execution.dusdcBalanceChange === undefined
+        ? 0
+        : Math.abs(Math.min(execution.dusdcBalanceChange, 0));
+
+      return {
+        quantity: sum.quantity + (execution.quantityDusdc ?? 0),
+        cost: sum.cost + (execution.costDusdc ?? 0),
+        deposited: sum.deposited + depositedDusdc,
+      };
+    },
+    { quantity: 0, cost: 0, deposited: 0 },
+  );
+
+  return {
+    managerId: latest.managerId,
+    executionCount: history.length,
+    totalQuantityDusdc: totals.quantity,
+    totalActualCostDusdc: totals.cost,
+    totalDepositedDusdc: totals.deposited,
+    estimatedManagerRemainingDusdc: Math.max(0, totals.deposited - totals.cost),
+    latestDigest: latest.digest,
+  };
 }
 
 export function summarizePredictMintExecution(

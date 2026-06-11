@@ -6,7 +6,11 @@ import type {
   ScenarioResult,
 } from "@/lib/types";
 import type { NormalizedPredictLiveContext } from "@/lib/predict/normalize";
-import type { PredictMintExecutionSummary } from "@/lib/predict/execution";
+import type {
+  ExecutionAdjustedRiskSummary,
+  ManagerExecutionHistorySummary,
+  PredictMintExecutionSummary,
+} from "@/lib/predict/execution";
 
 export function buildMarkdownReport(input: {
   market: MarketState;
@@ -16,6 +20,8 @@ export function buildMarkdownReport(input: {
   recommendation: HedgeRecommendation;
   liveContext?: NormalizedPredictLiveContext;
   mintExecution?: PredictMintExecutionSummary | null;
+  executionRiskSummary?: ExecutionAdjustedRiskSummary;
+  managerHistorySummary?: ManagerExecutionHistorySummary;
 }): string {
   const {
     market,
@@ -25,6 +31,8 @@ export function buildMarkdownReport(input: {
     recommendation,
     liveContext,
     mintExecution,
+    executionRiskSummary,
+    managerHistorySummary,
   } = input;
 
   return [
@@ -94,12 +102,38 @@ export function buildMarkdownReport(input: {
           `- Ask price: ${mintExecution.askPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 }) ?? "N/A"}`,
           `- Manager: ${mintExecution.managerId ?? "N/A"}`,
           `- Oracle: ${mintExecution.oracleId ?? "N/A"}`,
-          "- Note: current execution is a small live mint probe; full hedge sizing remains pending quote-aware sizing.",
+          ...(executionRiskSummary
+            ? [
+                `- Recommended notional: ${formatDusdc(executionRiskSummary.recommendedNotionalDusdc)}`,
+                `- Coverage ratio: ${executionRiskSummary.coverageRatioPct.toFixed(2)}%`,
+                `- Executed gap: ${formatDusdc(executionRiskSummary.executedGapDusdc)}`,
+                `- Actual cost ratio: ${executionRiskSummary.actualCostRatioPct?.toFixed(2) ?? "N/A"}%`,
+                `- Budget usage: ${executionRiskSummary.budgetUsagePct?.toFixed(2) ?? "N/A"}%`,
+                `- Deposited: ${formatDusdc(executionRiskSummary.depositedDusdc)}`,
+                `- Estimated manager remaining: ${formatDusdc(executionRiskSummary.estimatedManagerRemainingDusdc)}`,
+              ]
+            : []),
+          "- Note: current execution uses latest available sizing evidence; full manager inventory remains pending.",
         ]
       : [
           "- No wallet-signed Predict mint has been executed in this browser session.",
           "- Latest verified testnet evidence is tracked in the project evolution log.",
         ]),
+    "",
+    "## Manager / Account Summary",
+    "",
+    ...(managerHistorySummary
+      ? [
+          `- Manager: ${managerHistorySummary.managerId ?? "N/A"}`,
+          `- Local execution count: ${managerHistorySummary.executionCount}`,
+          `- Total minted quantity: ${formatDusdc(managerHistorySummary.totalQuantityDusdc)}`,
+          `- Total deposited: ${formatDusdc(managerHistorySummary.totalDepositedDusdc)}`,
+          `- Total actual cost: ${formatDusdc(managerHistorySummary.totalActualCostDusdc)}`,
+          `- Estimated manager remaining: ${formatDusdc(managerHistorySummary.estimatedManagerRemainingDusdc)}`,
+          `- Latest digest: ${managerHistorySummary.latestDigest ?? "N/A"}`,
+          "- Note: this is a local event-history estimate until direct manager inventory readback is implemented.",
+        ]
+      : ["- No local manager execution history available."]),
     "",
     "## Assumptions",
     "",

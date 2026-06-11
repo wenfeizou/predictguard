@@ -786,6 +786,159 @@ Next implementation step:
 - Add a small UI action to clear stored execution evidence, then improve manager
   balance/readback so leftover deposited dUSDC is visible.
 
+### Round J: Execution-Adjusted Risk Metrics
+
+Status: completed.
+
+Goal:
+
+- Convert the latest on-chain mint evidence into risk-management metrics instead
+  of only showing digest and position details.
+
+Implementation outcome:
+
+- Added `ExecutionAdjustedRiskSummary` derived from latest mint execution,
+  recommendation notional, and selected max hedge budget.
+- Added metrics:
+  - coverage ratio
+  - executed quantity
+  - executed gap
+  - actual cost ratio
+  - budget usage
+  - deposited dUSDC
+  - estimated manager-side remaining dUSDC
+- Added an `Execution-adjusted risk` panel under PTB execution.
+- Extended Markdown risk report with the same execution-adjusted metrics.
+
+Concept explanation:
+
+This round answers: "The app recommended a hedge, but how much did the actual
+on-chain mint cover?" It turns execution evidence into a partial-risk-management
+view. The manager remaining value is currently estimated from local event data:
+
+```text
+estimated manager remaining = deposited dUSDC - actual mint cost
+```
+
+This is useful for demo explanation, but full manager inventory still requires
+direct manager/dynamic-field or indexer readback.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+
+Next implementation step:
+
+- Implement a first manager/account summary: either direct manager balance
+  readback if available, or a local execution-history summary if direct readback
+  remains blocked.
+
+### Round K: Manager Account Summary V1
+
+Status: completed.
+
+Goal:
+
+- Give users a first explanation of where deposited-but-not-spent dUSDC is
+  accounted for after one or more mint executions.
+
+Implementation outcome:
+
+- Extended local execution persistence from latest execution only to a recent
+  execution history.
+- Added `ManagerExecutionHistorySummary`.
+- Added manager/account summary metrics:
+  - local execution count
+  - total minted quantity
+  - total deposited dUSDC
+  - total actual cost
+  - estimated manager-side remaining dUSDC
+  - latest digest
+  - manager object ID
+- Added a `Manager/account summary` panel below PTB execution.
+- Added a `Manager / Account Summary` section to Markdown reports.
+
+Concept explanation:
+
+This is not direct manager dynamic-field inventory yet. It is a local
+event-history estimate from confirmed wallet-signed mints:
+
+```text
+estimated manager remaining = sum(deposited dUSDC) - sum(actual mint costs)
+```
+
+This gives the demo a practical answer to "deposit is 2 dUSDC, actual cost is
+lower, where is the rest?" while keeping direct protocol inventory as a deeper
+follow-up.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Add demo script v1 and submission story, then decide whether direct manager
+  inventory or scenario/stress depth is the next best use of time.
+
+### Round L: Fresh Oracle Guard For PTB Signing
+
+Status: completed.
+
+Problem:
+
+- A new wallet signing attempt failed with Move abort code `3` in
+  `oracle_config::assert_live_oracle`.
+- This means the PTB reached `predict::mint`, but the oracle object used by the
+  transaction was no longer accepted as live by the on-chain contract.
+
+Implementation outcome:
+
+- Disabled caching for Predict status fetches so `/api/predict/status` returns
+  fresh oracle context.
+- Marked the status route as dynamic and returned `cache-control: no-store`.
+- Prioritized active oracle candidates with at least 5 minutes of remaining
+  lifetime, with a fallback to the nearest still-unexpired active oracle.
+- On `Sign PTB`, the execution component now fetches fresh Predict status and
+  rebuilds the transaction with the latest eligible live oracle immediately
+  before handing it to the wallet.
+- The page now refreshes Predict testnet status every 60 seconds so a stale or
+  expiring oracle can recover without a manual page reload.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+- Local `/api/predict/status` currently selects a live BTC oracle with about 16
+  minutes to expiry.
+- Browser wallet verification succeeded after the fix:
+  - digest:
+    `B8SyuLtURpM6xYysApq3rKB1UEcrADFNHRMe7NeYQnZR`
+  - position: `YES 62,151`
+  - quantity: `1 dUSDC`
+  - actual cost: `0.398901 dUSDC`
+  - oracle:
+    `0x7681a180a95fd9957cf581941a08f9e4a4b6a182c1f5d1f05e9333ed47023c43`
+  - manager:
+    `0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2`
+
+Execution-adjusted risk result:
+
+- Recommended notional: `100 dUSDC`
+- Executed quantity: `1 dUSDC`
+- Coverage ratio: `1.00%`
+- Executed gap: `99 dUSDC`
+- Budget usage: `19.95%`
+- Estimated manager remaining: `1.601099 dUSDC`
+
+Next implementation step:
+
+- Direct manager inventory readback or scenario/stress depth is the next best
+  implementation target.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

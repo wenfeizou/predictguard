@@ -106,7 +106,7 @@ export async function fetchPredictLiveSnapshot(): Promise<PredictLiveSnapshot> {
       oracles: oracles
         .filter((oracle) => oracle.underlying_asset === "BTC")
         .sort((a, b) => b.expiry - a.expiry)
-        .slice(0, 32),
+        .slice(0, 128),
       protocolState,
     };
   } catch (error) {
@@ -124,9 +124,7 @@ async function fetchJson<T>(url: string, schema: z.ZodType<T>): Promise<T> {
     headers: {
       accept: "application/json",
     },
-    next: {
-      revalidate: 30,
-    },
+    cache: "no-store",
   });
 
   if (!response.ok) {

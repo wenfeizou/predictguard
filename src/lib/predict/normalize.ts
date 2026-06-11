@@ -6,6 +6,8 @@ import type {
 } from "@/lib/predict/client";
 import type { DataSourceMode } from "@/lib/types";
 
+const MIN_EXECUTION_ORACLE_LIFETIME_MS = 5 * 60 * 1000;
+
 export type NormalizedPredictLiveContext = {
   dataSource: DataSourceMode;
   reachable: boolean;
@@ -48,9 +50,12 @@ export function normalizePredictLiveContext(input: {
 }): NormalizedPredictLiveContext {
   const now = Date.now();
   const activeOracles = (input.oracles ?? [])
-    .filter((oracle) => oracle.status === "active")
+    .filter((oracle) => oracle.status === "active" && oracle.expiry > now)
     .sort((a, b) => a.expiry - b.expiry);
-  const latestActiveOracle = activeOracles[0];
+  const executableActiveOracles = activeOracles.filter(
+    (oracle) => oracle.expiry - now > MIN_EXECUTION_ORACLE_LIFETIME_MS,
+  );
+  const latestActiveOracle = executableActiveOracles[0] ?? activeOracles[0];
   const latestReferencePrice = (input.oracles ?? [])
     .filter((oracle) => oracle.settlement_price)
     .sort((a, b) => (b.settled_at ?? 0) - (a.settled_at ?? 0))[0]?.settlement_price;
