@@ -1264,6 +1264,51 @@ Next implementation step:
 
 - Move to demo-flow polish.
 
+### Round T: Risk-To-Execution-To-Readback Demo Flow
+
+Status: completed.
+
+Goal:
+
+- Make the product loop visible as a single judge-facing workflow instead of
+  scattered panels.
+
+Implementation outcome:
+
+- Added a `Demo Flow` panel near the top of the page.
+- The flow tracks five steps:
+  - risk identification
+  - hedge recommendation
+  - wallet/PTB readiness
+  - wallet execution
+  - manager readback
+- Each step shows a compact status: `complete`, `ready`, or `blocked`.
+- The readback step shows active position quantity when manager inventory is
+  loaded.
+- Added workflow status to the exported Markdown risk report.
+
+Concept note:
+
+- This turns PredictGuard from a collection of panels into a repeatable demo:
+  `risk -> hedge -> wallet execution -> execution-adjusted risk -> manager
+  readback`.
+
+Current completion estimate:
+
+- About `85%`. The chain integration depth is mostly present; this round
+  improves judge-facing clarity and makes the core product loop easier to
+  demonstrate.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Verify build/UI, then create judge-facing README/pitch/demo script.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

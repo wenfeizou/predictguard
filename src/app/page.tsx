@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Bot,
   ClipboardList,
+  CheckCircle2,
   Download,
   FileText,
   Layers,
@@ -140,6 +141,23 @@ export default function Home() {
     [mintExecutionHistory],
   );
   const managerInventoryReadback = walletReadiness.account?.managerInventory;
+  const demoFlowSteps = useMemo(
+    () => buildDemoFlowSteps({
+      riskScore: metrics.riskScore,
+      hasRecommendation: Boolean(recommendation.recommendedHedge),
+      readinessStatus: ptbPlan.readiness.status,
+      hasExecution: Boolean(mintExecution),
+      hasManagerReadback: Boolean(managerInventoryReadback),
+      activeQuantityDusdc: managerInventoryReadback?.directActivePositionQuantityDusdc,
+    }),
+    [
+      metrics.riskScore,
+      recommendation.recommendedHedge,
+      ptbPlan.readiness.status,
+      mintExecution,
+      managerInventoryReadback,
+    ],
+  );
   const markdownReport = useMemo(
     () =>
       buildMarkdownReport({
@@ -331,6 +349,10 @@ export default function Home() {
               </div>
             ) : null}
           </Panel>
+        </section>
+
+        <section id="workflow">
+          <DemoFlowPanel steps={demoFlowSteps} />
         </section>
 
         <section id="testnet">
@@ -720,6 +742,107 @@ function TestnetStatusPanel({
       </div>
     </Panel>
   );
+}
+
+type DemoFlowStep = {
+  label: string;
+  status: "complete" | "ready" | "blocked";
+  value: string;
+  detail: string;
+};
+
+function DemoFlowPanel({ steps }: { steps: DemoFlowStep[] }) {
+  return (
+    <Panel title="Demo Flow" icon={<CheckCircle2 className="h-5 w-5" />}>
+      <div className="grid gap-3 md:grid-cols-5">
+        {steps.map((step, index) => (
+          <a
+            key={step.label}
+            href={getDemoFlowHref(index)}
+            className="rounded-md border border-[#dce3dd] bg-white p-3 transition hover:border-[#1f8a70]"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-xs font-semibold uppercase tracking-normal text-[#52615a]">
+                {step.label}
+              </div>
+              <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${getDemoFlowStatusClass(step.status)}`}>
+                {step.status}
+              </span>
+            </div>
+            <div className="mt-3 text-lg font-semibold text-[#17211d]">
+              {step.value}
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[#52615a]">
+              {step.detail}
+            </p>
+          </a>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function buildDemoFlowSteps(input: {
+  riskScore: number;
+  hasRecommendation: boolean;
+  readinessStatus: string;
+  hasExecution: boolean;
+  hasManagerReadback: boolean;
+  activeQuantityDusdc?: number;
+}): DemoFlowStep[] {
+  return [
+    {
+      label: "Risk",
+      status: input.riskScore > 0 ? "complete" : "blocked",
+      value: `${input.riskScore}/100`,
+      detail: "PLP exposure and tail-loss risk are scored before recommending a hedge.",
+    },
+    {
+      label: "Hedge",
+      status: input.hasRecommendation ? "complete" : "blocked",
+      value: input.hasRecommendation ? "Ready" : "None",
+      detail: "PredictGuard selects a side, strike, expiry, and notional for protection.",
+    },
+    {
+      label: "Wallet",
+      status: input.readinessStatus === "ready-to-sign" ? "complete" : "ready",
+      value: input.readinessStatus,
+      detail: "PTB signing is gated by wallet, manager, coin, oracle, and package inputs.",
+    },
+    {
+      label: "Execute",
+      status: input.hasExecution ? "complete" : "ready",
+      value: input.hasExecution ? "Minted" : "Pending",
+      detail: "A wallet-approved Predict mint turns the recommendation into an on-chain position.",
+    },
+    {
+      label: "Readback",
+      status: input.hasManagerReadback ? "complete" : "ready",
+      value:
+        input.activeQuantityDusdc === undefined
+          ? "Pending"
+          : `${input.activeQuantityDusdc.toLocaleString("en-US", {
+              maximumFractionDigits: 6,
+            })} dUSDC`,
+      detail: "Manager inventory is decoded into active, expired, zero, or unknown positions.",
+    },
+  ];
+}
+
+function getDemoFlowHref(index: number) {
+  return ["#overview", "#hedge", "#ptb", "#ptb", "#ptb"][index] ?? "#overview";
+}
+
+function getDemoFlowStatusClass(status: DemoFlowStep["status"]) {
+  if (status === "complete") {
+    return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+  }
+
+  if (status === "ready") {
+    return "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]";
+  }
+
+  return "border-[#c94f4f] bg-[#fff1ed] text-[#c75c48]";
 }
 
 function PtbReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {
