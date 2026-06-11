@@ -909,11 +909,15 @@ function ManagerExecutionSummaryPanel({
               })} dUSDC`}
             />
             <SummaryTile
-              label="Balance entries"
-              value={String(inventory.balanceEntryCount ?? 0)}
+              label="Active quantity"
+              value={`${(inventory.directActivePositionQuantityDusdc ?? 0).toLocaleString("en-US", {
+                maximumFractionDigits: 6,
+              })} dUSDC`}
             />
           </div>
           <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+            <ConfigRow label="Reconstructed at" value={formatIsoDateTime(inventory.reconstructedAtIso)} />
+            <ConfigRow label="Balance entries" value={String(inventory.balanceEntryCount ?? 0)} />
             <ConfigRow label="Object version" value={inventory.objectVersion} />
             <ConfigRow label="Object digest" value={inventory.objectDigest} />
             <ConfigRow label="Positions table" value={inventory.positionsTableId} />
@@ -934,12 +938,17 @@ function ManagerExecutionSummaryPanel({
                     className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-xs text-[#52615a]"
                   >
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="font-semibold text-[#17211d]">
-                        {entry.marketKey
-                          ? `${entry.marketKey.side} ${entry.marketKey.strike.toLocaleString("en-US", {
-                              maximumFractionDigits: 6,
-                            })}`
-                          : "Undecoded MarketKey"}
+                      <div>
+                        <div className="font-semibold text-[#17211d]">
+                          {entry.marketKey
+                            ? `${entry.marketKey.side} ${entry.marketKey.strike.toLocaleString("en-US", {
+                                maximumFractionDigits: 6,
+                              })}`
+                            : "Undecoded MarketKey"}
+                        </div>
+                        <div className={`mt-1 w-fit rounded-full border px-2 py-0.5 font-semibold ${getPositionStatusClass(entry.status.code)}`}>
+                          {entry.status.label}
+                        </div>
                       </div>
                       <div>
                         {(entry.quantityDusdc ?? 0).toLocaleString("en-US", {
@@ -969,6 +978,9 @@ function ManagerExecutionSummaryPanel({
                         <ConfigRow label="Oracle" value={entry.marketKey?.oracleId} />
                       </div>
                     </dl>
+                    <p className="mt-2 leading-5">
+                      {entry.status.explanation}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1324,4 +1336,20 @@ function formatPct(value: number) {
 
 function formatIsoDateTime(value: string) {
   return value.replace("T", " ").replace(".000Z", " UTC");
+}
+
+function getPositionStatusClass(status: string) {
+  if (status === "active") {
+    return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+  }
+
+  if (status === "expired") {
+    return "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]";
+  }
+
+  if (status === "zero") {
+    return "border-[#dce3dd] bg-white text-[#52615a]";
+  }
+
+  return "border-[#c94f4f] bg-[#fff1f1] text-[#9a2f2f]";
 }

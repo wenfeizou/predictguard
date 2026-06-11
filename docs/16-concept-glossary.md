@@ -1350,6 +1350,57 @@ market after expiry. For a full product loop, PredictGuard should eventually
 explain whether a position won or lost after settlement and how that affected
 the user's risk report.
 
+### Settlement-Aware Position Reconstruction
+
+Chinese: 考虑结算状态的仓位重建。
+
+`Settlement-aware position reconstruction` means PredictGuard does not stop at
+"there is a position entry". It tries to classify whether that position is still
+active, already expired, zero quantity, or unknown.
+
+Current v1 status labels:
+
+- `Active`: quantity is greater than zero and expiry is still in the future.
+- `Expired`: quantity is greater than zero but expiry is in the past.
+- `Zero quantity`: the manager table still has this market key, but quantity is
+  zero.
+- `Unknown`: PredictGuard cannot decode enough fields to classify it safely.
+
+This is not the same as full settlement accounting. Full settlement would also
+read or infer the final market result, whether the YES/NO side won, and how much
+value was claimed or remains claimable.
+
+### Active Position Quantity
+
+Chinese: 活跃仓位数量。
+
+`Active position quantity` is the sum of manager position quantities that are
+still non-zero and not expired at read time.
+
+PredictGuard uses it as a conservative view of current hedge coverage. Zero or
+expired positions are shown for transparency, but they are not counted as active
+risk protection.
+
+### Zero Quantity Position
+
+Chinese: 零数量仓位。
+
+A `zero quantity position` is a position table entry whose `MarketKey` still
+exists, but whose stored quantity is `0`.
+
+This can happen when the protocol keeps the table key even after quantity was
+cleared or consumed. PredictGuard displays it but does not count it as active
+hedge coverage.
+
+### Expired Position
+
+Chinese: 已到期仓位。
+
+An `expired position` has a non-zero quantity but an expiry timestamp in the
+past. It may still be useful for audit or settlement review, but PredictGuard
+does not treat it as current active protection until deeper settlement
+reconstruction is implemented.
+
 ### Indexer
 
 Chinese: 索引器。

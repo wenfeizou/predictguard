@@ -134,6 +134,8 @@ export function buildMarkdownReport(input: {
           `- On-chain dUSDC balance: ${formatDusdc(managerInventoryReadback.directDusdcBalance)}`,
           `- On-chain position entries: ${managerInventoryReadback.positionEntryCount ?? "N/A"}`,
           `- On-chain position quantity: ${formatDusdc(managerInventoryReadback.directPositionQuantityDusdc)}`,
+          `- Active position quantity: ${formatDusdc(managerInventoryReadback.directActivePositionQuantityDusdc)}`,
+          `- Reconstructed at: ${managerInventoryReadback.reconstructedAtIso}`,
           `- Balances table: ${managerInventoryReadback.balancesTableId ?? "N/A"}`,
           `- Positions table: ${managerInventoryReadback.positionsTableId ?? "N/A"}`,
           "- Decoded positions:",
@@ -186,6 +188,7 @@ function formatDecodedPositions(readback: PredictManagerInventoryReadback) {
         maximumFractionDigits: 6,
       })}`,
       `quantity ${formatDusdc(entry.quantityDusdc)}`,
+      `status ${entry.status.label}`,
       `expiry ${entry.marketKey.expiryIso}`,
       `oracle ${entry.marketKey.oracleId}`,
     ].join("; ");

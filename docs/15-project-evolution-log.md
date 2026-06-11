@@ -1205,6 +1205,65 @@ Next implementation step:
 
 - Continue toward settlement-aware reconstruction or judge-facing demo polish.
 
+### Round S: Settlement-Aware Position Status V1
+
+Status: completed.
+
+Goal:
+
+- Move manager readback from raw decoded positions to status-aware position
+  reconstruction.
+
+Implementation outcome:
+
+- Added a read timestamp to direct manager inventory reconstruction.
+- Added status reconstruction for each decoded position:
+  - `active`: quantity is greater than zero and expiry is still in the future
+  - `expired`: quantity is greater than zero but expiry is in the past
+  - `zero`: quantity is zero
+  - `unknown`: missing or undecodable fields
+- Added `directActivePositionQuantityDusdc` to distinguish all stored position
+  quantity from active risk-protection quantity.
+- Updated the manager/account summary UI to show:
+  - reconstructed timestamp
+  - active quantity
+  - per-position status label
+  - per-position status explanation
+- Updated Markdown risk reports with active quantity and per-position status.
+- Updated the concept glossary with:
+  - `Settlement-Aware Position Reconstruction`
+  - `Active Position Quantity`
+  - `Zero Quantity Position`
+  - `Expired Position`
+
+Concept note:
+
+- This is settlement-aware v1, not full settlement accounting. It classifies
+  whether positions are active, expired, zero, or unknown based on decoded
+  `MarketKey`, quantity, and read time.
+- Full settlement would additionally determine final market outcome, winning
+  side, claimable amount, and claimed amount.
+
+Current completion estimate:
+
+- About `82%`. This closes the first task in today's path toward `90%` by
+  making chain readback more explainable and less likely to overstate current
+  hedge coverage.
+
+Verification:
+
+- Local manager API returned:
+  - `YES 62,151`, quantity `0 dUSDC`, status `Zero quantity`
+  - `YES 63,187`, quantity `10.31435 dUSDC`, status `Active`
+  - active position quantity `10.31435 dUSDC`
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Move to demo-flow polish.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
