@@ -1044,6 +1044,41 @@ Next implementation step:
 
 - Browser-refresh and confirm the Recharts width/height warnings are gone.
 
+### Round P: Hydration And Chart Measurement Fix
+
+Status: completed.
+
+Problem:
+
+- Browser console showed a React hydration mismatch in
+  `ExecutionAdjustedRiskPanel`.
+- Root cause: server-rendered HTML had no local execution evidence, while the
+  client initial render read `localStorage` before hydration and rendered the
+  execution-adjusted metric grid.
+- Recharts width/height warnings persisted because `ResponsiveContainer` could
+  still measure the chart container before a valid width was available.
+
+Implementation outcome:
+
+- Initialized execution evidence state to empty values for both server and
+  client first render.
+- Deferred `localStorage` execution-history read until after hydration using
+  `requestAnimationFrame`.
+- Replaced Recharts `ResponsiveContainer` usage with `ChartFrame` width
+  measurement through `ResizeObserver`.
+- Chart components now render only after the measured width is greater than
+  zero.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Browser-refresh and confirm hydration mismatch and Recharts warnings are gone.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

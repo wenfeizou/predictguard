@@ -21,13 +21,12 @@ import {
   Cell,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
@@ -81,12 +80,10 @@ export default function Home() {
   const [selectedScenarioId, setSelectedScenarioId] = useState("btc-up-5");
   const [liveSnapshot, setLiveSnapshot] = useState<PredictLiveSnapshot | null>(null);
   const [liveLoading, setLiveLoading] = useState(true);
-  const [mintExecution, setMintExecution] = useState<PredictMintExecutionSummary | null>(() =>
-    loadStoredMintExecution(),
-  );
+  const [mintExecution, setMintExecution] = useState<PredictMintExecutionSummary | null>(null);
   const [mintExecutionHistory, setMintExecutionHistory] = useState<
     PredictMintExecutionSummary[]
-  >(() => loadStoredMintExecutionHistory());
+  >([]);
   const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
   const selectedScenario =
     scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
@@ -164,6 +161,15 @@ export default function Home() {
       managerHistorySummary,
     ],
   );
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setMintExecution(loadStoredMintExecution());
+      setMintExecutionHistory(loadStoredMintExecutionHistory());
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -361,8 +367,10 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
               <IvHeatmap />
               <ChartFrame>
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
+                {(chartWidth) => (
                   <LineChart
+                    width={chartWidth}
+                    height={288}
                     data={market.markets.filter((item) => item.expiryId === "15m")}
                     margin={{ top: 12, right: 12, bottom: 8, left: 0 }}
                   >
@@ -382,7 +390,7 @@ export default function Home() {
                       dot={{ r: 3 }}
                     />
                   </LineChart>
-                </ResponsiveContainer>
+                )}
               </ChartFrame>
             </div>
           </Panel>
@@ -427,8 +435,10 @@ export default function Home() {
               />
             </div>
             <ChartFrame className="mt-6">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
+              {(chartWidth) => (
                 <BarChart
+                  width={chartWidth}
+                  height={288}
                   data={[
                     { name: "Unhedged", pnl: selectedResult.unhedgedPnl },
                     {
@@ -453,7 +463,7 @@ export default function Home() {
                     />
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
+              )}
             </ChartFrame>
           </Panel>
         </section>
@@ -963,10 +973,12 @@ function ChartFrame({
   children,
   className = "",
 }: {
-  children: React.ReactNode;
+  children: (width: number) => React.ReactNode;
   className?: string;
 }) {
   const [mounted, setMounted] = useState(false);
+  const [width, setWidth] = useState(0);
+  const frameRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -975,6 +987,23 @@ function ChartFrame({
 
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !frameRef.current) {
+      return;
+    }
+
+    const target = frameRef.current;
+    const updateWidth = () => {
+      setWidth(Math.max(0, Math.floor(target.getBoundingClientRect().width)));
+    };
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [mounted]);
 
   if (!mounted) {
     return (
@@ -987,8 +1016,17 @@ function ChartFrame({
   }
 
   return (
-    <div className={`h-72 min-h-72 w-full min-w-0 overflow-hidden ${className}`}>
-      {children}
+    <div
+      ref={frameRef}
+      className={`h-72 min-h-72 w-full min-w-0 overflow-hidden ${className}`}
+    >
+      {width > 0 ? (
+        children(width)
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-[#52615a]">
+          Loading chart
+        </div>
+      )}
     </div>
   );
 }
