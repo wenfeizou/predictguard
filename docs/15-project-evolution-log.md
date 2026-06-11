@@ -1356,6 +1356,43 @@ Next implementation step:
 - Final manual browser walkthrough and final submission assets: screenshots,
   recorded demo, and any late official contract verification.
 
+### Round V: Final Submission Readiness Documents
+
+Status: completed.
+
+Goal:
+
+- Make the remaining `90% -> final submission` work explicit and avoid
+  confusing completed depth work with pending media/submission tasks.
+
+Implementation outcome:
+
+- Updated `docs/17-depth-roadmap.md` to reflect current completed work:
+  - manager and position inventory v1 completed
+  - execution-adjusted risk metrics v1 completed
+  - demo and judge-facing story v1 completed
+- Added `docs/19-final-submission-checklist.md`.
+- Added final submission checklist to the README document index.
+- The checklist covers:
+  - final engineering checks
+  - official contract information verification
+  - manual browser walkthrough
+  - screenshot list
+  - 5-7 minute video outline
+  - demo risk controls
+  - remaining product depth
+
+Current completion estimate:
+
+- Still about `90%` for competition MVP / judge-demo readiness. This round does
+  not add core product features; it clarifies the last-mile work before final
+  submission.
+
+Next implementation step:
+
+- Manual browser walkthrough or one targeted depth item such as scenario/stress
+  improvement.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

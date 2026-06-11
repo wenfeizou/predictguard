@@ -27,7 +27,7 @@ turning the project into a large unfocused system.
 
 ## Depth Direction 1: Manager And Position Inventory
 
-Status: not started.
+Status: v1 completed.
 
 Why this matters:
 
@@ -37,12 +37,15 @@ Why this matters:
 
 How to strengthen it:
 
-- Read manager state after execution.
-- Show remaining manager-side dUSDC balance.
-- Show open positions or a best-effort position inventory.
-- Distinguish latest transaction evidence from total current exposure.
-- If direct inventory is hard, document the protocol/indexing limitation and
-  show the latest known on-chain event history as a fallback.
+- Completed:
+  - read manager state through Sui gRPC
+  - show remaining manager-side dUSDC balance
+  - decode `MarketKey` table entries into oracle, expiry, strike, and direction
+  - classify positions as active, expired, zero quantity, or unknown
+  - distinguish local transaction evidence from direct manager object readback
+- Remaining:
+  - reconstruct final settlement outcome and claimable/claimed amounts
+  - improve historical position lifecycle across old transactions or indexer data
 
 Expected demo improvement:
 
@@ -51,7 +54,7 @@ current Predict account state after execution."
 
 ## Depth Direction 2: Execution-Adjusted Risk Metrics
 
-Status: not started.
+Status: v1 completed.
 
 Why this matters:
 
@@ -62,13 +65,17 @@ Why this matters:
 
 How to strengthen it:
 
-- Compare recommended hedge notional with actual minted quantity.
-- Add `coverage ratio`.
-- Add `executed vs recommended gap`.
-- Add `actual hedge cost`.
-- Add `cost-to-protection ratio` using executed cost, not only estimated cost.
-- Update before/after scenario results using actual minted quantity where
-  possible.
+- Completed:
+  - compare recommended hedge notional with executed quantity
+  - show `coverage ratio`
+  - show `executed gap`
+  - show `actual cost ratio`
+  - show `budget usage`
+  - estimate manager-side remaining dUSDC from local execution evidence
+- Remaining:
+  - update multi-scenario before/after charts with the actual executed position
+  - reconcile local execution history with direct manager readback after every
+    wallet action
 
 Candidate metrics:
 
@@ -160,7 +167,7 @@ dashboard.
 
 ## Depth Direction 6: Demo And Judge-Facing Story
 
-Status: pending final submission work.
+Status: v1 completed; final media pending.
 
 Why this matters:
 
@@ -170,17 +177,15 @@ Why this matters:
 
 How to strengthen it:
 
-- Prepare a 5-7 minute script:
-  1. PLP risk problem
-  2. exposure and stress loss
-  3. hedge recommendation
-  4. quote-aware sizing
-  5. wallet execution
-  6. position confirmation
-  7. risk report evidence
-- Add screenshots for each step.
-- Add one concise pitch paragraph.
-- Make simulated vs live testnet labels impossible to miss.
+- Completed:
+  - added a `Demo Flow` panel in the UI
+  - added a README judge demo section
+  - added `docs/18-judge-demo-script.md`
+  - added workflow status to exported Markdown reports
+- Remaining:
+  - add screenshots for each step
+  - record the 5-7 minute final demo video
+  - verify official contract information shortly before submission
 
 Expected demo improvement:
 
@@ -191,14 +196,14 @@ workflow rather than a collection of technical pieces.
 
 Highest priority:
 
-1. Manager and position inventory
-2. Execution-adjusted risk metrics
-3. Demo and judge-facing story
+1. Scenario and stress depth
+2. Quote source upgrade
+3. Final submission media
 
 Medium priority:
 
-4. Quote source upgrade
-5. Scenario and stress depth
+4. Full settlement reconstruction
+5. Historical manager/indexer depth
 
 Optional if time allows:
 
@@ -208,12 +213,13 @@ Optional if time allows:
 
 PredictGuard should feel deep enough for competition when it can demonstrate:
 
-- a real wallet-signed Predict mint
-- readable manager/position evidence
-- quote-aware sizing with explicit quote source
-- executed-vs-recommended risk metrics
-- scenario comparison showing before/after impact
-- a clear judge-facing story
+- a real wallet-signed Predict mint: completed
+- readable manager/position evidence: v1 completed
+- quote-aware sizing with explicit quote source: v1 completed with last
+  executed ask price; live quote source pending
+- executed-vs-recommended risk metrics: v1 completed
+- scenario comparison showing before/after impact: partially completed
+- a clear judge-facing story: v1 completed
 
 At that point, the project does not need to be a large system. It needs to be a
 focused, credible, DeepBook Predict-native risk workflow.
