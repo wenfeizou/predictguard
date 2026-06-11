@@ -145,6 +145,7 @@ Read in this order:
 19. [Final Submission Checklist](docs/19-final-submission-checklist.md)
 20. [Settlement Reconstruction Feasibility](docs/20-settlement-reconstruction-feasibility.md)
 21. [Concept Map CN/EN](docs/21-concept-map-cn-en.md)
+22. [Technical Deep Dive](docs/22-technical-deep-dive.md)
 
 ## Current Official References
 

@@ -7,10 +7,11 @@ understandable without rereading the chat.
 
 ## Current Status Snapshot
 
-As of the latest implementation round, PredictGuard is roughly 60-63% complete
-against the final hackathon target. The main technical risk dropped after a
-successful wallet-signed DeepBook Predict testnet mint probe, but product depth
-still needs position readback, quote-aware sizing, and demo/report polish.
+As of the latest implementation round, PredictGuard is roughly 95% complete
+against the competition MVP / judge-demo target. The main technical risk has
+dropped after successful wallet-signed DeepBook Predict testnet mints, direct
+manager inventory readback, `MarketKey` decoding, settlement-aware position
+status, executed stress comparison, and judge-facing report support.
 
 Completed:
 
@@ -31,22 +32,33 @@ Completed:
   `ready-to-sign`
 - Connected-account `PredictManager` creation
 - Wallet-signed DeepBook Predict mint probe
+- Quote-aware sizing v1
+- Persistent execution evidence
+- Execution-adjusted risk metrics
+- Direct manager inventory readback through Sui gRPC
+- `MarketKey` BCS decoding for position entries
+- Settlement-aware position status v1
+- Executed stress comparison
+- Sticky workflow navigation
+- Judge-facing README, demo script, and final submission checklist
 - Verified successful transaction digest:
   `2N7TpuBGod9sebHQBpQT5YtSKujWZqFLpf9HcR5hLGag`
 - Project concept glossary
 
-Still missing before the 70% milestone:
+Still missing before final competition submission:
 
-- dUSDC faucet/acquisition guidance when the user has no coin object
-- post-mint position and manager readback
-- transaction evidence linked into the risk report
+- late official contract/object verification
+- final manual browser walkthrough
+- screenshots and 5-minute video
+- final submission packaging
 
-Still missing before the 75%+ competitive target:
+Still missing for a commercial product:
 
-- quote-aware hedge sizing instead of fixed probe sizing
-- richer PLP/LP risk metrics
-- lightweight scenario comparison, backtest, or stress-test depth
-- Final UI polish, video, and submission package
+- production backend and database
+- indexer-backed historical lifecycle
+- direct live quote source
+- full settlement accounting
+- team accounts, saved reports, alerts, and monitoring
 
 ## Development Rounds Completed
 
@@ -1615,6 +1627,48 @@ Next implementation step:
 
 - User visual review on an actual browser/device, then final submission
   preparation or further small UI polish.
+
+### Round AB: Technical Deep Dive Documentation
+
+Status: completed.
+
+Goal:
+
+- Make PredictGuard's technical depth explicit so the project is not judged only
+  by the apparent simplicity of the UI.
+
+Implementation outcome:
+
+- Added `docs/22-technical-deep-dive.md`.
+- Added the technical deep dive document to the README document index.
+- Updated this current status snapshot from the older `60-63%` state to the
+  current `95%` competition MVP / judge-demo estimate.
+- Documented the main implemented depth layers:
+  - protocol-native PTB construction
+  - wallet-signed on-chain execution
+  - `PositionMinted` event parsing
+  - quote-aware sizing v1
+  - direct manager inventory readback
+  - `MarketKey` BCS decoding
+  - settlement-aware position reconstruction v1
+  - executed stress comparison
+  - Markdown report evidence
+
+Concept note:
+
+- The page is intentionally simple because it is a workflow. The depth is in
+  protocol alignment, chain reads, dynamic-field decoding, execution evidence,
+  and risk reconciliation.
+
+Current completion estimate:
+
+- About `95%` for the competition MVP / judge-demo target.
+- About `25-35%` for a commercial production product.
+
+Next implementation step:
+
+- Final validation: run checks, verify the app manually, capture screenshots,
+  and prepare the 5-minute submission video.
 
 ## Documentation Maintenance Rule
 
