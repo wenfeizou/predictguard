@@ -10,6 +10,10 @@ const PROBE_QUANTITY_DUSDC = 1;
 const DEFAULT_MAX_HEDGE_BUDGET_DUSDC = 2;
 const DEPOSIT_BUFFER_DUSDC = 0.25;
 
+export type QuoteSource = "last-executed-ask" | "none";
+
+export type QuoteFreshness = "available" | "unavailable";
+
 export type PredictHedgeMintInput = {
   hedge?: HedgeCandidate;
   wallet?: WalletReadinessInput;
@@ -76,6 +80,9 @@ export type PredictHedgePtbPlan = {
     oracleTickSize?: number;
     oracleReferencePrice?: number;
     quoteAskPrice?: number;
+    quoteSource?: QuoteSource;
+    quoteFreshness?: QuoteFreshness;
+    quoteExplanation?: string;
     maxHedgeBudgetDusdc?: number;
     dusdcCoinObjectId?: string;
     recipientAddress?: string;
@@ -185,6 +192,7 @@ export function buildPredictHedgePtbPlan(
   const executionStrike = getExecutionStrike(input);
   const strikeScaled = executionStrike ? priceToOracleScale(executionStrike) : undefined;
   const sizing = getExecutionSizing(input);
+  const quoteEvidence = getQuoteEvidence(input);
   const quantityMist = hedge ? (input.quantityMist ?? dusdcToMist(sizing.quantityDusdc)) : undefined;
   const depositAmountMist = hedge
     ? (input.depositAmountMist ?? dusdcToMist(sizing.depositDusdc))
@@ -212,6 +220,9 @@ export function buildPredictHedgePtbPlan(
       oracleTickSize: input.oracleTickSize,
       oracleReferencePrice: input.oracleReferencePrice,
       quoteAskPrice: input.quoteAskPrice,
+      quoteSource: quoteEvidence.source,
+      quoteFreshness: quoteEvidence.freshness,
+      quoteExplanation: quoteEvidence.explanation,
       maxHedgeBudgetDusdc: input.maxHedgeBudgetDusdc ?? DEFAULT_MAX_HEDGE_BUDGET_DUSDC,
       dusdcCoinObjectId,
       recipientAddress: input.recipientAddress,
@@ -243,6 +254,7 @@ export function buildPredictHedgeSdkSkeleton(input: PredictHedgeMintInput): stri
   const executionStrike = getExecutionStrike(input) ?? hedge.strike;
   const strikeScaled = priceToOracleScale(executionStrike);
   const isUp = hedge.side === "YES";
+  const quoteEvidence = getQuoteEvidence(input);
 
   return `import { Transaction } from "@mysten/sui/transactions";
 
@@ -287,6 +299,8 @@ tx.moveCall({
 });
 
 // Sizing mode: ${sizing.mode}.
+// Quote source: ${quoteEvidence.source}.
+// Quote note: ${quoteEvidence.explanation}
 // Estimated execution cost: ${sizing.estimatedCostDusdc.toLocaleString("en-US")} dUSDC.
 // Split selected dUSDC coin by ${depositAmountMist} base units before deposit.
 // Execution strike: ${executionStrike.toLocaleString("en-US")}.
@@ -343,6 +357,26 @@ function getExecutionSizing(input: PredictHedgeMintInput) {
     costToProtectionRatio: input.hedge
       ? estimatedCostDusdc / input.hedge.notional
       : undefined,
+  };
+}
+
+function getQuoteEvidence(input: PredictHedgeMintInput): {
+  source: QuoteSource;
+  freshness: QuoteFreshness;
+  explanation: string;
+} {
+  if (input.quoteAskPrice !== undefined && input.quoteAskPrice > 0) {
+    return {
+      source: "last-executed-ask",
+      freshness: "available",
+      explanation: "Sizing uses the ask price observed in the latest successful wallet mint. This is execution evidence, not a guaranteed live quote.",
+    };
+  }
+
+  return {
+    source: "none",
+    freshness: "unavailable",
+    explanation: "No usable ask price is available, so PredictGuard falls back to a fixed small probe quantity.",
   };
 }
 

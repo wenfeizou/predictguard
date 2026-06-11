@@ -162,6 +162,18 @@ export function PtbExecuteClient({
           <dd>{formatSizingMode(plan.inputs.sizingMode)}</dd>
         </div>
         <div>
+          <dt className="font-semibold text-[#17211d]">Quote source</dt>
+          <dd>{formatQuoteSource(plan.inputs.quoteSource)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Quote freshness</dt>
+          <dd>{formatQuoteFreshness(plan.inputs.quoteFreshness)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#17211d]">Ask price input</dt>
+          <dd>{formatOptionalNumber(plan.inputs.quoteAskPrice, 9)}</dd>
+        </div>
+        <div>
           <dt className="font-semibold text-[#17211d]">Max budget</dt>
           <dd>{formatOptionalDusdc(plan.inputs.maxHedgeBudgetDusdc)}</dd>
         </div>
@@ -210,6 +222,9 @@ export function PtbExecuteClient({
           </dd>
         </div>
       </dl>
+      <p className="mt-3 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-xs leading-5 text-[#52615a]">
+        {plan.inputs.quoteExplanation ?? "Quote evidence is unavailable."}
+      </p>
 
       {error ? (
         <div className="mt-3 rounded-md border border-[#c75c48] bg-[#fff1ed] p-3 text-sm leading-6 text-[#8f3325]">
@@ -336,6 +351,30 @@ function formatOptionalPct(value?: number, valueIsRatio = false) {
 
 function formatSizingMode(value?: "probe" | "quote-aware") {
   return value === "quote-aware" ? "Quote-aware" : "Probe";
+}
+
+function formatQuoteSource(value?: string) {
+  if (value === "last-executed-ask") {
+    return "Last executed ask";
+  }
+
+  if (value === "none") {
+    return "No quote";
+  }
+
+  return "Unavailable";
+}
+
+function formatQuoteFreshness(value?: string) {
+  if (value === "available") {
+    return "Available";
+  }
+
+  if (value === "unavailable") {
+    return "Unavailable";
+  }
+
+  return "Unknown";
 }
 
 function formatExpiry(value?: string) {

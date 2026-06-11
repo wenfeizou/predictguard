@@ -186,6 +186,7 @@ export default function Home() {
         managerHistorySummary,
         managerInventoryReadback,
         executedStressSummary,
+        ptbPlan,
       }),
     [
       metrics,
@@ -197,6 +198,7 @@ export default function Home() {
       managerHistorySummary,
       managerInventoryReadback,
       executedStressSummary,
+      ptbPlan,
     ],
   );
 
@@ -595,6 +597,8 @@ export default function Home() {
               />
               <ConfigRow label="Strike scaled" value={ptbPlan.inputs.strikeScaled} />
               <ConfigRow label="Sizing mode" value={ptbPlan.inputs.sizingMode} />
+              <ConfigRow label="Quote source" value={ptbPlan.inputs.quoteSource} />
+              <ConfigRow label="Quote freshness" value={ptbPlan.inputs.quoteFreshness} />
               <ConfigRow
                 label="Estimated cost"
                 value={

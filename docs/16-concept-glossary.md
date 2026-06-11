@@ -188,6 +188,38 @@ Important limitation: v1 uses the most recent successful mint's ask price as a
 practical quote estimate. A later version should use a direct live quote or
 market pricing source when available.
 
+### Quote Source
+
+Chinese: 报价来源。
+
+`Quote source` explains where the ask price used for sizing comes from.
+
+Current labels:
+
+- `Last executed ask`: the ask price observed in the latest successful wallet
+  mint.
+- `No quote`: no usable ask price is available, so PredictGuard uses probe mode.
+
+Important: `Last executed ask` is real execution evidence, but it is not the
+same as a guaranteed live quote.
+
+### Quote Freshness
+
+Chinese: 报价新鲜度。
+
+`Quote freshness` indicates whether PredictGuard has usable quote evidence for
+sizing.
+
+Current labels:
+
+- `Available`: a previous ask price is available and can drive quote-aware
+  sizing.
+- `Unavailable`: no ask price is available, so sizing falls back to a fixed
+  probe.
+
+Future versions should distinguish live quote, stale quote, and simulated quote
+more precisely.
+
 ### Safety Buffer
 
 Chinese: 安全缓冲、预算缓冲。

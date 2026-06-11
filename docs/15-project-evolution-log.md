@@ -1445,6 +1445,56 @@ Next implementation step:
 
 - Run checks, commit, then move to quote source labeling / freshness.
 
+### Round X: Quote Source Labeling And Freshness
+
+Status: completed.
+
+Goal:
+
+- Make quote-aware sizing easier to defend by showing where the quote evidence
+  comes from and whether it is available.
+
+Implementation outcome:
+
+- Added quote evidence fields to the PTB plan:
+  - quote source
+  - quote freshness
+  - quote explanation
+- Current source labels:
+  - `last-executed-ask`
+  - `none`
+- Current freshness labels:
+  - `available`
+  - `unavailable`
+- Added quote source/freshness/ask price input to the wallet execution panel.
+- Added quote evidence to the Sui SDK transaction skeleton comments.
+- Added quote source/freshness to the PTB config area.
+- Added sizing evidence to the Markdown risk report.
+- Updated the concept glossary with:
+  - `Quote Source`
+  - `Quote Freshness`
+
+Concept note:
+
+- `Last executed ask` is real execution evidence from the latest successful
+  wallet mint. It is not a guaranteed live quote. The UI now says this
+  explicitly, which reduces the chance that judges misread v1 sizing as a full
+  live quote engine.
+
+Current completion estimate:
+
+- About `94%`.
+
+Verification:
+
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Run checks, commit, then evaluate full settlement reconstruction feasibility.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

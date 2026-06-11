@@ -26,6 +26,15 @@ export function buildMarkdownReport(input: {
   managerHistorySummary?: ManagerExecutionHistorySummary;
   managerInventoryReadback?: PredictManagerInventoryReadback;
   executedStressSummary?: ExecutedStressSummary;
+  ptbPlan?: {
+    inputs: {
+      sizingMode?: string;
+      quoteSource?: string;
+      quoteFreshness?: string;
+      quoteAskPrice?: number;
+      quoteExplanation?: string;
+    };
+  };
 }): string {
   const {
     market,
@@ -39,6 +48,7 @@ export function buildMarkdownReport(input: {
     managerHistorySummary,
     managerInventoryReadback,
     executedStressSummary,
+    ptbPlan,
   } = input;
 
   return [
@@ -122,6 +132,14 @@ export function buildMarkdownReport(input: {
       : "No hedge recommended.",
     "",
     "## On-Chain Execution",
+    "",
+    "### Sizing Evidence",
+    "",
+    `- Sizing mode: ${ptbPlan?.inputs.sizingMode ?? "N/A"}`,
+    `- Quote source: ${ptbPlan?.inputs.quoteSource ?? "N/A"}`,
+    `- Quote freshness: ${ptbPlan?.inputs.quoteFreshness ?? "N/A"}`,
+    `- Ask price input: ${ptbPlan?.inputs.quoteAskPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 }) ?? "N/A"}`,
+    `- Quote note: ${ptbPlan?.inputs.quoteExplanation ?? "N/A"}`,
     "",
     ...(mintExecution
       ? [
