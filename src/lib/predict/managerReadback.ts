@@ -3,6 +3,10 @@ import { SuiGrpcClient } from "@mysten/sui/grpc";
 import { predictTestnetConfig } from "@/lib/predict/config";
 
 const DUSDC_DECIMALS = 1_000_000;
+const ORACLE_PRICE_DECIMALS = 1_000_000_000;
+const MARKET_KEY_BCS_LENGTH = 49;
+const MARKET_KEY_DIRECTION_UP = 0;
+const MARKET_KEY_DIRECTION_DOWN = 1;
 
 export type PredictManagerInventoryReadback = {
   source: "sui-grpc";
@@ -30,6 +34,19 @@ export type PredictManagerPositionEntry = {
   marketKeyType?: string;
   valueType?: string;
   quantityDusdc?: number;
+  marketKey?: PredictMarketKeyReadback;
+};
+
+export type PredictMarketKeyReadback = {
+  oracleId: string;
+  expiryMs: string;
+  expiryIso: string;
+  rawStrike: string;
+  strike: number;
+  directionCode: number;
+  direction: "UP" | "DOWN" | "UNKNOWN";
+  side: "YES" | "NO" | "UNKNOWN";
+  rawBytesHex: string;
 };
 
 type ManagerJson = {
@@ -108,6 +125,7 @@ export async function fetchPredictManagerInventoryReadback(
     quantityDusdc: field.valueType === "u64"
       ? readDynamicFieldU64(field) / DUSDC_DECIMALS
       : undefined,
+    marketKey: decodeMarketKey(field),
   }));
   const directPositionQuantityDusdc = positionEntries.reduce(
     (sum, entry) => sum + (entry.quantityDusdc ?? 0),
@@ -134,7 +152,8 @@ export async function fetchPredictManagerInventoryReadback(
     positionEntries,
     notes: [
       "Read directly from the live Sui manager object and its Table dynamic fields.",
-      "Position quantities are parsed from u64 dynamic-field values; MarketKey decoding remains a follow-up task.",
+      "Position quantities are parsed from u64 dynamic-field values.",
+      "MarketKey dynamic-field names are decoded as oracle ID, expiry, strike, and UP/DOWN direction.",
       "This readback is stronger than local execution history, but settlement-aware position reconstruction still needs deeper protocol parsing.",
     ],
   };
@@ -145,18 +164,78 @@ function readDynamicFieldU64(field: {
     bcs?: unknown;
   };
 }) {
-  const bytes = Object.entries((field.value?.bcs ?? {}) as Record<string, number>)
-    .sort(([left], [right]) => Number(left) - Number(right))
-    .map(([, byte]) => byte);
+  const bytes = readBcsRecordBytes(field.value?.bcs);
 
   if (bytes.length < 8) {
     return 0;
   }
 
-  return Number(
-    bytes.slice(0, 8).reduce(
-      (sum, byte, index) => sum + (BigInt(byte) << BigInt(index * 8)),
-      BigInt(0),
-    ),
+  return Number(readU64Le(bytes.slice(0, 8)));
+}
+
+function decodeMarketKey(field: {
+  name?: {
+    bcs?: unknown;
+  };
+}): PredictMarketKeyReadback | undefined {
+  const bytes = readBcsRecordBytes(field.name?.bcs);
+
+  if (bytes.length !== MARKET_KEY_BCS_LENGTH) {
+    return undefined;
+  }
+
+  const oracleId = `0x${bytes
+    .slice(0, 32)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")}`;
+  const expiryMs = readU64Le(bytes.slice(32, 40));
+  const rawStrike = readU64Le(bytes.slice(40, 48));
+  const directionCode = bytes[48];
+  const direction =
+    directionCode === MARKET_KEY_DIRECTION_UP
+      ? "UP"
+      : directionCode === MARKET_KEY_DIRECTION_DOWN
+        ? "DOWN"
+        : "UNKNOWN";
+  const side =
+    direction === "UP"
+      ? "YES"
+      : direction === "DOWN"
+        ? "NO"
+        : "UNKNOWN";
+
+  return {
+    oracleId,
+    expiryMs: expiryMs.toString(),
+    expiryIso: new Date(Number(expiryMs)).toISOString(),
+    rawStrike: rawStrike.toString(),
+    strike: Number(rawStrike) / ORACLE_PRICE_DECIMALS,
+    directionCode,
+    direction,
+    side,
+    rawBytesHex: bytes.map((byte) => byte.toString(16).padStart(2, "0")).join(""),
+  };
+}
+
+function readBcsRecordBytes(bcs?: unknown): number[] {
+  if (!bcs || typeof bcs !== "object") {
+    return [];
+  }
+
+  return Object.entries(bcs as Record<string, unknown>)
+    .sort(([left], [right]) => Number(left) - Number(right))
+    .map(([, byte]) => byte)
+    .filter((byte): byte is number => (
+      typeof byte === "number"
+      && Number.isInteger(byte)
+      && byte >= 0
+      && byte <= 255
+    ));
+}
+
+function readU64Le(bytes: number[]) {
+  return bytes.reduce(
+    (sum, byte, index) => sum + (BigInt(byte) << BigInt(index * 8)),
+    BigInt(0),
   );
 }

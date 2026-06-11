@@ -781,6 +781,59 @@ expiry, strike, and direction.
 If any part is wrong, the mint may target the wrong market or fail protocol
 checks.
 
+In the current DeepBook Predict testnet source, `MarketKey` is stored as:
+
+- `oracle_id`: oracle object ID
+- `expiry`: expiry timestamp in milliseconds
+- `strike`: strike price scaled by `1_000_000_000`
+- `direction`: `UP = 0`, `DOWN = 1`
+
+PredictGuard decodes manager position table keys from this structure, then
+shows them as readable entries such as `YES 63,187`, expiry time, oracle ID, and
+quantity.
+
+### Position Entry
+
+Chinese: 仓位条目。
+
+A `position entry` is one row inside the `PredictManager.positions` table. It is
+stored as:
+
+`MarketKey -> quantity`
+
+This means the table key says "which market this position belongs to", and the
+value says "how much quantity the manager holds for that market".
+
+### Dynamic Field Name BCS
+
+Chinese: 动态字段名称的 BCS 编码。
+
+Sui `Table` entries are implemented through dynamic fields. For the positions
+table, the dynamic field name is the BCS-encoded `MarketKey`.
+
+PredictGuard reads these bytes and decodes them into:
+
+- oracle ID
+- expiry
+- strike
+- UP/DOWN direction
+
+This turns low-level chain storage into a human-readable manager inventory.
+
+### UP / DOWN Direction
+
+Chinese: UP / DOWN 方向。
+
+DeepBook Predict's `MarketKey` stores direction as protocol values:
+
+- `UP = 0`: price settles above the strike
+- `DOWN = 1`: price settles at or below the strike
+
+PredictGuard maps these into product language:
+
+- `UP` is shown as `YES`
+- `DOWN` is shown as `NO`
+
 ### Oracle
 
 Chinese: 预言机。

@@ -1140,6 +1140,71 @@ Next implementation step:
 - Decode `MarketKey` entries or add a judge-facing demo script/README section
   that explains the full risk-to-execution-to-readback loop.
 
+### Round R: MarketKey Position Decoding
+
+Status: completed.
+
+Goal:
+
+- Turn manager position table entries from low-level dynamic-field rows into
+  readable Predict positions.
+
+Implementation outcome:
+
+- Confirmed the official DeepBook Predict `MarketKey` source layout from
+  `predict-testnet-4-16`:
+  - `oracle_id: ID`
+  - `expiry: u64`
+  - `strike: u64`
+  - `direction: u8`
+- Confirmed protocol direction values:
+  - `UP = 0`
+  - `DOWN = 1`
+- Added `MarketKey` BCS decoding to direct manager readback.
+- Decoded each position entry into:
+  - oracle ID
+  - expiry timestamp and ISO time
+  - raw scaled strike
+  - readable strike
+  - UP/DOWN direction
+  - YES/NO product side
+- Added decoded positions to the manager/account summary panel.
+- Added decoded positions to exported Markdown risk reports.
+- Updated the concept glossary with:
+  - `MarketKey`
+  - `Position Entry`
+  - `Dynamic Field Name BCS`
+  - `UP / DOWN Direction`
+
+Concept note:
+
+- A `position entry` is `MarketKey -> quantity`. The key identifies which
+  Predict market the manager holds, and the value stores the quantity.
+- A `MarketKey` is the canonical protocol identity for a Predict binary market.
+  It combines oracle, expiry, strike, and direction.
+- This closes a major readability gap: the app can now show positions such as
+  `YES 63,187` directly from on-chain manager storage.
+
+Current completion estimate:
+
+- About `78%`. This improves product depth because manager readback is no
+  longer just a count and total quantity; it now reconstructs real market
+  identity from chain storage.
+
+Verification:
+
+- Local manager API returned decoded positions for wallet
+  `0x5e2a28ff382ab6858588dba9d5ed8e21fc59908c295ced2124f87b1cdb4cefb6`:
+  - `YES 62,151`, quantity `0 dUSDC`
+  - `YES 63,187`, quantity `10.31435 dUSDC`
+- `bun run typecheck`
+- `bun run lint`
+- `bun run build`
+
+Next implementation step:
+
+- Continue toward settlement-aware reconstruction or judge-facing demo polish.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

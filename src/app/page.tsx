@@ -922,9 +922,62 @@ function ManagerExecutionSummaryPanel({
               <ConfigRow label="Manager" value={inventory.managerObjectId} />
             </div>
           </dl>
+          {inventory.positionEntries.length > 0 ? (
+            <div className="mt-4">
+              <div className="text-xs font-semibold uppercase tracking-wide text-[#52615a]">
+                Decoded positions
+              </div>
+              <div className="mt-2 space-y-2">
+                {inventory.positionEntries.slice(0, 4).map((entry) => (
+                  <div
+                    key={entry.fieldId}
+                    className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-xs text-[#52615a]"
+                  >
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="font-semibold text-[#17211d]">
+                        {entry.marketKey
+                          ? `${entry.marketKey.side} ${entry.marketKey.strike.toLocaleString("en-US", {
+                              maximumFractionDigits: 6,
+                            })}`
+                          : "Undecoded MarketKey"}
+                      </div>
+                      <div>
+                        {(entry.quantityDusdc ?? 0).toLocaleString("en-US", {
+                          maximumFractionDigits: 6,
+                        })}{" "}
+                        dUSDC
+                      </div>
+                    </div>
+                    <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <ConfigRow
+                        label="Expiry"
+                        value={
+                          entry.marketKey
+                            ? formatIsoDateTime(entry.marketKey.expiryIso)
+                            : undefined
+                        }
+                      />
+                      <ConfigRow
+                        label="Direction"
+                        value={
+                          entry.marketKey
+                            ? `${entry.marketKey.direction} (${entry.marketKey.directionCode})`
+                            : undefined
+                        }
+                      />
+                      <div className="sm:col-span-2">
+                        <ConfigRow label="Oracle" value={entry.marketKey?.oracleId} />
+                      </div>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <p className="mt-3 text-xs leading-5 text-[#52615a]">
-            Direct chain readback via Sui gRPC. MarketKey decoding and
-            settlement-aware position reconstruction remain follow-up tasks.
+            Direct chain readback via Sui gRPC. MarketKey is decoded from Table
+            dynamic-field names; settlement-aware position reconstruction
+            remains a follow-up task.
           </p>
         </>
       ) : null}
@@ -1267,4 +1320,8 @@ function formatNumber(value: number) {
 
 function formatPct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatIsoDateTime(value: string) {
+  return value.replace("T", " ").replace(".000Z", " UTC");
 }

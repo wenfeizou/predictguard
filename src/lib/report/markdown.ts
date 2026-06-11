@@ -136,7 +136,9 @@ export function buildMarkdownReport(input: {
           `- On-chain position quantity: ${formatDusdc(managerInventoryReadback.directPositionQuantityDusdc)}`,
           `- Balances table: ${managerInventoryReadback.balancesTableId ?? "N/A"}`,
           `- Positions table: ${managerInventoryReadback.positionsTableId ?? "N/A"}`,
-          "- Note: direct readback currently parses manager object and Table entries; full MarketKey decoding remains pending.",
+          "- Decoded positions:",
+          ...formatDecodedPositions(managerInventoryReadback),
+          "- Note: direct readback decodes MarketKey from Table dynamic-field names; settlement-aware reconstruction remains pending.",
           "",
         ]
       : [
@@ -167,4 +169,25 @@ function formatDusdc(value?: number) {
   return value === undefined
     ? "N/A"
     : `${value.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC`;
+}
+
+function formatDecodedPositions(readback: PredictManagerInventoryReadback) {
+  if (readback.positionEntries.length === 0) {
+    return ["  - None"];
+  }
+
+  return readback.positionEntries.slice(0, 6).map((entry) => {
+    if (!entry.marketKey) {
+      return `  - Undecoded MarketKey: ${formatDusdc(entry.quantityDusdc)}`;
+    }
+
+    return [
+      `  - ${entry.marketKey.side} ${entry.marketKey.strike.toLocaleString("en-US", {
+        maximumFractionDigits: 6,
+      })}`,
+      `quantity ${formatDusdc(entry.quantityDusdc)}`,
+      `expiry ${entry.marketKey.expiryIso}`,
+      `oracle ${entry.marketKey.oracleId}`,
+    ].join("; ");
+  });
 }
