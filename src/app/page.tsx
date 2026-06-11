@@ -371,8 +371,8 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
-        <section id="overview" className="scroll-mt-24 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="mx-auto grid max-w-7xl min-w-0 gap-6 px-5 py-6 lg:px-8">
+        <section id="overview" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Panel title="PLP Overview" icon={<Activity className="h-5 w-5" />}>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <SummaryTile
@@ -418,15 +418,15 @@ export default function Home() {
           </Panel>
         </section>
 
-        <section id="workflow" className="scroll-mt-24">
+        <section id="workflow" className="scroll-mt-24 min-w-0">
           <DemoFlowPanel steps={demoFlowSteps} />
         </section>
 
-        <section id="testnet" className="scroll-mt-24">
+        <section id="testnet" className="scroll-mt-24 min-w-0">
           <TestnetStatusPanel snapshot={liveSnapshot} loading={liveLoading} />
         </section>
 
-        <section id="exposure" className="scroll-mt-24 grid gap-6 lg:grid-cols-[1fr_360px]">
+        <section id="exposure" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[1fr_360px]">
           <Panel title="Exposure Heatmap" icon={<Layers className="h-5 w-5" />}>
             <Heatmap cells={exposureMatrix} />
           </Panel>
@@ -455,7 +455,7 @@ export default function Home() {
           </Panel>
         </section>
 
-        <section id="vol-surface" className="scroll-mt-24">
+        <section id="vol-surface" className="scroll-mt-24 min-w-0">
           <Panel title="Volatility Surface" icon={<ArrowUpRight className="h-5 w-5" />}>
             <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
               <IvHeatmap />
@@ -489,7 +489,7 @@ export default function Home() {
           </Panel>
         </section>
 
-        <section id="simulator" className="scroll-mt-24 grid gap-6 lg:grid-cols-[360px_1fr]">
+        <section id="simulator" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[360px_1fr]">
           <Panel title="Scenario Simulator" icon={<Activity className="h-5 w-5" />}>
             <div className="space-y-2">
               {scenarios.map((scenario) => (
@@ -562,7 +562,7 @@ export default function Home() {
           </Panel>
         </section>
 
-        <section id="hedge" className="scroll-mt-24 grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+        <section id="hedge" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[1fr_0.8fr]">
           <Panel title="Hedge Recommendation" icon={<Bot className="h-5 w-5" />}>
             <p className="text-sm leading-6 text-[#52615a]">
               {recommendation.plainEnglishExplanation}
@@ -595,7 +595,7 @@ export default function Home() {
           </Panel>
         </section>
 
-        <section id="ptb" className="scroll-mt-24 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+        <section id="ptb" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <Panel title="PTB Preview" icon={<WalletCards className="h-5 w-5" />}>
             <WalletReadinessPanel plan={ptbPlan} onChange={setWalletReadiness} />
             <PtbReadinessPanel plan={ptbPlan} />
@@ -607,7 +607,7 @@ export default function Home() {
               onExecution={handleExecution}
             />
             <ExecutionAdjustedRiskPanel summary={executionRiskSummary} />
-            <div id="readback" className="scroll-mt-24">
+            <div id="readback" className="scroll-mt-24 min-w-0">
               <ManagerExecutionSummaryPanel
                 summary={managerHistorySummary}
                 inventory={managerInventoryReadback}
@@ -675,7 +675,7 @@ export default function Home() {
           </Panel>
         </section>
 
-        <section id="report" className="scroll-mt-24">
+        <section id="report" className="scroll-mt-24 min-w-0">
           <Panel
             title="Risk Report"
             icon={<FileText className="h-5 w-5" />}
@@ -1488,9 +1488,9 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-[#dce3dd] bg-[#ffffff] p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-lg font-semibold text-[#17211d]">
+    <section className="min-w-0 rounded-md border border-[#dce3dd] bg-[#ffffff] p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">
+      <div className="mb-5 flex min-w-0 items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-2 text-lg font-semibold text-[#17211d]">
           <span className="text-[#1f8a70]">{icon}</span>
           {title}
         </div>
@@ -1513,12 +1513,12 @@ function SummaryTile({
   danger?: boolean;
 }) {
   return (
-    <div className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase text-[#52615a]">
+    <div className="min-w-0 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4">
+      <div className="flex min-w-0 items-center gap-2 text-xs font-medium uppercase text-[#52615a]">
         {icon ? <span className="text-[#1f8a70]">{icon}</span> : null}
         {label}
       </div>
-      <div className={`mt-3 text-lg font-semibold ${danger ? "text-[#c75c48]" : "text-[#17211d]"}`}>
+      <div className={`mt-3 break-words text-lg font-semibold ${danger ? "text-[#c75c48]" : "text-[#17211d]"}`}>
         {value}
       </div>
     </div>

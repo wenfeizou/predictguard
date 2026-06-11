@@ -1577,6 +1577,45 @@ Next implementation step:
 - User visual review of the sticky nav in browser, then final validation or
   further small UI polish.
 
+### Round AA: Responsive Layout Audit
+
+Status: completed.
+
+Goal:
+
+- Evaluate mobile, tablet, desktop, and recording-size responsiveness after the
+  sticky workflow navigation change.
+
+Implementation outcome:
+
+- Captured headless Chrome screenshots at:
+  - `390 x 844`
+  - `768 x 1024`
+  - `1440 x 900`
+  - `1920 x 1080`
+- Found a real mobile layout issue: the page had global horizontal overflow
+  because some grid/flex children were allowed to keep their default
+  `min-width: auto`.
+- Added `min-w-0` to key page grids, sections, panels, and panel headers.
+- Added `break-words` to summary values.
+- Preserved intentional local horizontal scrolling for dense heatmaps and
+  tables.
+- Rechecked mobile DOM dimensions through Chrome DevTools protocol:
+  - viewport width and document scroll width now match
+  - remaining wide elements are inside intentional scroll containers
+
+Responsive assessment:
+
+- Desktop and 1080p recording layouts are strong.
+- Tablet layout is strong after the fix.
+- Mobile layout is usable after the fix, with expected horizontal scroll only
+  for dense data tables/heatmaps and the compact workflow nav.
+
+Next implementation step:
+
+- User visual review on an actual browser/device, then final submission
+  preparation or further small UI polish.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
