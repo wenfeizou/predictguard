@@ -1926,6 +1926,52 @@ Next implementation step:
 - Wait for or create a non-zero, expired, safely redeemable position, then test
   guarded wallet-signed redeem end to end.
 
+### Round AI: Guarded Redeem Readiness V1
+
+Status: completed.
+
+Goal:
+
+- Add a structured pre-signing checklist that explains why a redeem action is
+  safe, blocked, or still waiting.
+
+Implementation outcome:
+
+- Added `PredictRedeemGuard` and `PredictRedeemGuardStatus`.
+- Added guard checks for:
+  - wallet owner matches manager owner
+  - decoded redeem candidate
+  - non-zero quantity
+  - expiry reached
+  - oracle quoteable
+  - vault settled evidence
+  - wallet signing validation
+- Added redeem readiness states:
+  - `blocked`
+  - `waiting`
+  - `preview-ready`
+  - `guarded-ready`
+- Rendered `Guarded redeem readiness` in the Redeem PTB preview panel.
+- Added guard checklist entries to the Markdown report.
+- Kept wallet-signed redeem disabled.
+- Updated glossary and concept map.
+
+Concept note:
+
+- `Guarded Redeem Readiness` / 受保护的赎回准备状态 is a pre-signing safety
+  checklist. It is stricter than a PTB preview because it explains whether a
+  future wallet action is actually safe to expose.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `80%`.
+
+Next implementation step:
+
+- After a non-zero position expires and oracle/vault evidence is present,
+  implement the wallet-signed redeem execution path behind the guard checklist.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

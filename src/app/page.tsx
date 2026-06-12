@@ -198,8 +198,15 @@ export default function Home() {
         vaultSettlement: redeemOracleIds.length > 0
           ? vaultSettlementReadback ?? undefined
           : undefined,
+        walletAddress: walletReadiness.address,
       }),
-    [managerInventoryReadback, liveSnapshot?.oracles, redeemOracleIds.length, vaultSettlementReadback],
+    [
+      managerInventoryReadback,
+      liveSnapshot?.oracles,
+      redeemOracleIds.length,
+      vaultSettlementReadback,
+      walletReadiness.address,
+    ],
   );
   const demoFlowSteps = useMemo(
     () => buildDemoFlowSteps({
@@ -1595,12 +1602,12 @@ function RedeemPreviewPanel({ plan }: { plan: PredictRedeemPreviewPlan }) {
           </p>
         </div>
         <div className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
-          plan.readiness.status === "preview-ready"
-            ? "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]"
-            : "border-[#c94f4f] bg-[#fff1ed] text-[#c75c48]"
+          plan.readiness.status === "blocked"
+            ? "border-[#c94f4f] bg-[#fff1ed] text-[#c75c48]"
+            : "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]"
         }`}
         >
-          {plan.readiness.status === "preview-ready" ? "Preview only" : "Blocked"}
+          {plan.readiness.status === "blocked" ? "Blocked" : "Waiting"}
         </div>
       </div>
 
@@ -1642,6 +1649,30 @@ function RedeemPreviewPanel({ plan }: { plan: PredictRedeemPreviewPlan }) {
         />
         <ConfigRow label="Lifecycle" value={plan.inputs.lifecycle} />
       </dl>
+
+      <div className="mt-4">
+        <div className="text-xs font-semibold uppercase tracking-normal text-[#17211d]">
+          Guarded redeem readiness
+        </div>
+        <div className="mt-2 grid gap-2">
+          {plan.readiness.guards.map((guard) => (
+            <div
+              key={guard.id}
+              className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-xs"
+            >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="font-semibold text-[#17211d]">{guard.label}</div>
+                  <p className="mt-1 leading-5 text-[#52615a]">{guard.detail}</p>
+                </div>
+                <span className={`w-fit rounded-full border px-2 py-0.5 font-semibold ${getGuardStatusClass(guard.status)}`}>
+                  {guard.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {plan.readiness.missing.length > 0 ? (
         <div className="mt-4">
@@ -2003,4 +2034,16 @@ function getLifecycleStatusClass(status: string) {
   }
 
   return "border-[#dce3dd] bg-white text-[#52615a]";
+}
+
+function getGuardStatusClass(status: string) {
+  if (status === "pass") {
+    return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+  }
+
+  if (status === "fail") {
+    return "border-[#c94f4f] bg-[#fff1ed] text-[#c75c48]";
+  }
+
+  return "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]";
 }

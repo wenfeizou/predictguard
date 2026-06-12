@@ -44,6 +44,12 @@ export function buildMarkdownReport(input: {
       status: string;
       canSign: boolean;
       missing: string[];
+      guards?: {
+        id: string;
+        label: string;
+        status: string;
+        detail: string;
+      }[];
       warnings: string[];
     };
     inputs: {
@@ -285,6 +291,9 @@ export function buildMarkdownReport(input: {
           `- Redeemability: ${redeemPreviewPlan.evidence.redeemability}`,
           `- Manager: ${redeemPreviewPlan.inputs.managerObjectId ?? "N/A"}`,
           `- Oracle: ${redeemPreviewPlan.inputs.oracleObjectId ?? "N/A"}`,
+          ...(redeemPreviewPlan.readiness.guards ?? []).map((guard) =>
+            `- Guard ${guard.label}: ${guard.status} - ${guard.detail}`
+          ),
           ...redeemPreviewPlan.evidence.notes.map((note) => `- Evidence note: ${note}`),
           ...(redeemPreviewPlan.readiness.missing.length > 0
             ? [`- Missing: ${redeemPreviewPlan.readiness.missing.join(", ")}`]

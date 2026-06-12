@@ -1544,6 +1544,36 @@ Current evidence status:
   redeemable test path, final guarded PTB checks, and `PositionRedeemed`
   validation.
 
+### Guarded Redeem Readiness
+
+Chinese: 受保护的赎回准备状态、赎回安全门槛清单。
+
+`Guarded redeem readiness` is PredictGuard's checklist before any future
+wallet-signed redeem action can be enabled.
+
+It is stricter than `Redeem PTB preview`. A preview can show the call shape, but
+guarded readiness asks whether signing would be safe.
+
+Current guard checks:
+
+- wallet owns the `PredictManager`
+- decoded redeem candidate exists
+- quantity is greater than zero
+- expiry has been reached
+- oracle is quoteable or settled
+- vault settled evidence is present when needed
+- wallet signing is still disabled until live validation
+
+UI statuses:
+
+- `pass`: this guard is satisfied.
+- `fail`: this guard is known to be false and should block redeem.
+- `pending`: more time, readback, or live validation is needed.
+
+Important limitation: `Guarded redeem readiness` is still read-only. It explains
+why a redeem action is or is not safe, but it does not submit a redeem
+transaction yet.
+
 ### Vault Settled Evidence
 
 Chinese: 金库结算证据。

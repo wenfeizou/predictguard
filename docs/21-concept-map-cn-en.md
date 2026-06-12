@@ -131,6 +131,7 @@ Chinese-English map. Use it before reading the full glossary in
 | Redeemability | 可赎回性 | Lifecycle roadmap | Stronger future claim that a position can safely be redeemed now. |
 | Oracle Evidence | 预言机证据 | Redeem PTB preview | Current API evidence for oracle status and settlement price. |
 | Vault Settled Evidence | 金库结算证据 | Redeem PTB preview | Direct Sui gRPC proof from `vault.settled_oracles` for the candidate oracle. |
+| Guarded Redeem Readiness | 受保护的赎回准备状态 | Redeem PTB preview, report | Checklist explaining whether a future redeem action is safe to sign. |
 
 ## Page Sections
 

@@ -8,10 +8,20 @@ import type { PredictVaultSettlementReadback } from "@/lib/predict/vaultSettleme
 
 export type PredictRedeemPreviewMode = "owner-redeem" | "permissionless-redeem";
 
+export type PredictRedeemGuardStatus = "pass" | "fail" | "pending";
+
+export type PredictRedeemGuard = {
+  id: string;
+  label: string;
+  status: PredictRedeemGuardStatus;
+  detail: string;
+};
+
 export type PredictRedeemPreviewInput = {
   inventory?: PredictManagerInventoryReadback;
   oracles?: PredictOracleSummary[];
   vaultSettlement?: PredictVaultSettlementReadback;
+  walletAddress?: string;
   mode?: PredictRedeemPreviewMode;
   config?: PredictTestnetConfig;
 };
@@ -45,10 +55,11 @@ export type PredictRedeemPreviewPlan = {
     notes: string[];
   };
   readiness: {
-    status: "blocked" | "preview-ready";
+    status: "blocked" | "waiting" | "preview-ready" | "guarded-ready";
     canPreview: boolean;
     canSign: false;
     missing: string[];
+    guards: PredictRedeemGuard[];
     warnings: string[];
   };
   steps: string[];
@@ -68,6 +79,15 @@ export function buildPredictRedeemPreviewPlan(
   const missing = getMissingInputs(input.inventory, candidate);
   const canPreview = missing.length === 0;
   const redeemability = getRedeemability({ oracleEvidence, vaultEvidence });
+  const guards = buildRedeemGuards({
+    inventory: input.inventory,
+    candidate,
+    oracleEvidence,
+    vaultEvidence,
+    walletAddress: input.walletAddress,
+    mode,
+  });
+  const readinessStatus = getReadinessStatus({ canPreview, guards });
 
   return {
     target,
@@ -104,15 +124,15 @@ export function buildPredictRedeemPreviewPlan(
       notes: buildEvidenceNotes({ mode, oracleEvidence, vaultEvidence }),
     },
     readiness: {
-      status: canPreview ? "preview-ready" : "blocked",
+      status: readinessStatus,
       canPreview,
       canSign: false,
       missing,
+      guards,
       warnings: [
-        "Redeem preview is read-only. Wallet-signed redeem stays disabled until oracle/vault settlement checks are implemented.",
-        "Owner redeem can work for quoteable or settled oracles, but PredictGuard has not yet built the final guarded transaction path.",
-        "Permissionless redeem requires the oracle to be settled; use it only after settled-state verification.",
-        "The preview now reads vault.settled_oracles evidence, but it still needs a live redeem test before enabling wallet signing.",
+        "Redeem readiness is still read-only. Wallet-signed redeem remains disabled until a live redeemable test path is verified.",
+        "The guard checklist is intentionally stricter than the preview skeleton: it requires wallet ownership, non-zero quantity, expiry, oracle quoteability, and settled-vault evidence when relevant.",
+        "Permissionless redeem uses settled-oracle evidence; owner redeem still needs final guarded transaction validation before signing can be enabled.",
       ],
     },
     steps: buildRedeemSteps(mode, canPreview),
@@ -213,9 +233,10 @@ function buildRedeemSteps(mode: PredictRedeemPreviewMode, canPreview: boolean) {
   return [
     "Select a decoded manager position from direct Sui gRPC readback.",
     "Recreate the MarketKey from oracle ID, expiry, scaled strike, and direction.",
+    "Run guarded readiness checks for wallet owner, quantity, expiry, oracle state, and vault settlement evidence.",
     `Preview predict::${mode === "permissionless-redeem" ? "redeem_permissionless" : "redeem"} with the current manager, oracle, quantity, and Clock.`,
     canPreview
-      ? "Keep signing disabled until redeemability checks are implemented."
+      ? "Keep signing disabled until live wallet-signed redeem is validated."
       : "Show missing readback inputs before constructing a redeem preview.",
     "After future execution, parse PositionRedeemed and refresh manager inventory.",
   ];
@@ -296,6 +317,121 @@ function getRedeemability(input: {
   }
 
   return "preview-live-oracle";
+}
+
+function buildRedeemGuards(input: {
+  inventory?: PredictManagerInventoryReadback;
+  candidate?: PredictManagerPositionEntry;
+  oracleEvidence: ReturnType<typeof getOracleEvidence>;
+  vaultEvidence: ReturnType<typeof getVaultSettlementEvidence>;
+  walletAddress?: string;
+  mode: PredictRedeemPreviewMode;
+}): PredictRedeemGuard[] {
+  const quantityDusdc = input.candidate?.quantityDusdc;
+  const expiryMs = Number(input.candidate?.marketKey?.expiryMs);
+  const nowMs = Date.now();
+  const owner = normalizeObjectId(input.inventory?.owner);
+  const walletAddress = normalizeObjectId(input.walletAddress);
+  const walletOwnerMatches =
+    Boolean(owner && walletAddress && owner === walletAddress);
+  const expired = Number.isFinite(expiryMs) && expiryMs <= nowMs;
+  const active = Number.isFinite(expiryMs) && expiryMs > nowMs;
+  const needsVaultEvidence =
+    input.mode === "permissionless-redeem" || input.oracleEvidence.settled || expired;
+
+  return [
+    {
+      id: "wallet-owner",
+      label: "Wallet owns manager",
+      status: walletOwnerMatches ? "pass" : owner && walletAddress ? "fail" : "pending",
+      detail: walletOwnerMatches
+        ? "Connected wallet matches the manager owner."
+        : owner && walletAddress
+          ? "Connected wallet does not match the manager owner."
+          : "Connect the manager owner wallet to prove owner redeem authority.",
+    },
+    {
+      id: "manager-position",
+      label: "Redeem candidate",
+      status: input.candidate?.marketKey ? "pass" : "pending",
+      detail: input.candidate?.marketKey
+        ? "Decoded MarketKey and position entry are available."
+        : "No decoded non-zero position candidate is available.",
+    },
+    {
+      id: "quantity",
+      label: "Non-zero quantity",
+      status: quantityDusdc === undefined ? "pending" : quantityDusdc > 0 ? "pass" : "fail",
+      detail: quantityDusdc === undefined
+        ? "Position quantity is not available."
+        : quantityDusdc > 0
+          ? `${quantityDusdc.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC is available for the preview candidate.`
+          : "Position quantity is zero, so it cannot be redeemed again.",
+    },
+    {
+      id: "expiry",
+      label: "Expiry reached",
+      status: expired ? "pass" : active ? "pending" : "pending",
+      detail: expired
+        ? "The candidate position has reached expiry."
+        : active
+          ? `Waiting until ${new Date(expiryMs).toLocaleString("en-US", { timeZone: "Asia/Shanghai" })} Asia/Shanghai.`
+          : "Expiry is not available from the decoded MarketKey.",
+    },
+    {
+      id: "oracle",
+      label: "Oracle quoteable",
+      status: input.oracleEvidence.quoteable ? "pass" : input.oracleEvidence.oracle ? "fail" : "pending",
+      detail: input.oracleEvidence.quoteable
+        ? `Oracle status is ${input.oracleEvidence.oracle?.status ?? "available"}.`
+        : input.oracleEvidence.oracle
+          ? `Oracle status is ${input.oracleEvidence.oracle.status}; redeem should stay blocked.`
+          : "No matching oracle summary is loaded for this candidate.",
+    },
+    {
+      id: "vault",
+      label: "Vault settled evidence",
+      status: !needsVaultEvidence
+        ? "pending"
+        : input.vaultEvidence.status === "present"
+          ? "pass"
+          : input.vaultEvidence.status === "absent"
+            ? "fail"
+            : "pending",
+      detail: !needsVaultEvidence
+        ? "Vault settled evidence is not required until the candidate is expired or settled."
+        : input.vaultEvidence.status === "present"
+          ? "vault.settled_oracles contains the candidate oracle ID."
+          : input.vaultEvidence.status === "absent"
+            ? "vault.settled_oracles was scanned and did not contain the candidate oracle ID."
+            : "Waiting for vault settled-oracle evidence.",
+    },
+    {
+      id: "signing",
+      label: "Wallet signing",
+      status: "pending",
+      detail: "Signing is intentionally disabled until a live redeemable test path is validated.",
+    },
+  ];
+}
+
+function getReadinessStatus(input: {
+  canPreview: boolean;
+  guards: PredictRedeemGuard[];
+}): PredictRedeemPreviewPlan["readiness"]["status"] {
+  if (!input.canPreview) {
+    return "blocked";
+  }
+
+  if (input.guards.some((guard) => guard.status === "fail")) {
+    return "blocked";
+  }
+
+  if (input.guards.some((guard) => guard.status === "pending")) {
+    return "waiting";
+  }
+
+  return "guarded-ready";
 }
 
 function buildEvidenceNotes(input: {
