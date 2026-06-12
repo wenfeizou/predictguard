@@ -158,6 +158,7 @@ Read these first:
 - [Judge Demo Script](docs/18-judge-demo-script.md)
 - [Technical Deep Dive](docs/22-technical-deep-dive.md)
 - [Redeem Strategy Tradeoff](docs/25-redeem-strategy-tradeoff.md)
+- [Code Review Handoff](docs/26-code-review-handoff.md)
 - [Project Evolution Log](docs/15-project-evolution-log.md)
 - [Final Submission Checklist](docs/19-final-submission-checklist.md)
 
@@ -331,6 +332,7 @@ bun run build
 - [Judge Demo Script](docs/18-judge-demo-script.md)
 - [Technical Deep Dive](docs/22-technical-deep-dive.md)
 - [Redeem Strategy Tradeoff](docs/25-redeem-strategy-tradeoff.md)
+- [Code Review Handoff](docs/26-code-review-handoff.md)
 - [Project Evolution Log](docs/15-project-evolution-log.md)
 - [Final Submission Checklist](docs/19-final-submission-checklist.md)
 

@@ -2328,6 +2328,40 @@ Next implementation step:
 - Human review should start with README, concept map, and the redeem/history
   accounting code paths.
 
+### Round AQ: Code Review Handoff Document
+
+Status: completed.
+
+Goal:
+
+- Add a single review-oriented handoff document for the next manual code review
+  phase.
+
+Implementation outcome:
+
+- Added `docs/26-code-review-handoff.md`.
+- The document records:
+  - current completion assessment
+  - completed feature inventory
+  - key implementation files by feature area
+  - known boundaries
+  - suggested code review order
+  - review questions
+  - validation commands
+- Added the new handoff document to README key documents in both English and
+  Chinese sections.
+
+Concept note:
+
+- This document is intentionally different from the evolution log: it is a
+  review index, not a chronological diary.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `98%`.
+- Code-review readiness: high.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
