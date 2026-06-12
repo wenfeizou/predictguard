@@ -16,6 +16,104 @@ planning, implementation, testing, or demo preparation.
 - When a concept changes after implementation, update the existing entry instead
   of creating a duplicate.
 
+## Abbreviations / 缩写速查
+
+### PLP
+
+Chinese: Predict Liquidity Provider，Predict 流动性提供者。
+
+`PLP` is the capital provider role in DeepBook Predict. A PLP earns premium or
+liquidity returns, but takes payout risk when market outcomes move against the
+vault.
+
+In PredictGuard, PLP is the primary user persona.
+
+### LP
+
+Chinese: Liquidity Provider，流动性提供者。
+
+`LP` is the broader DeFi term for someone who provides liquidity. PLP is the
+DeepBook Predict-specific version of this idea.
+
+### TVL
+
+Chinese: Total Value Locked，总锁仓价值。
+
+`TVL` is the amount of capital locked in a protocol, vault, or strategy. In
+PredictGuard it is used to interpret utilization, loss size, and hedge cost.
+
+### PnL
+
+Chinese: Profit and Loss，盈亏。
+
+`PnL` measures profit or loss. PredictGuard uses it in scenario results,
+unhedged/hedged comparisons, and realized hedge accounting.
+
+### IV
+
+Chinese: Implied Volatility，隐含波动率。
+
+`IV` is volatility implied by market prices. PredictGuard visualizes IV as a
+heatmap and selected expiry curve.
+
+### SVI
+
+Chinese: Stochastic Volatility Inspired，随机波动率启发模型。
+
+`SVI` is a volatility surface model family. In DeepBook Predict, `OracleSVI`
+provides oracle and pricing context used by Predict markets.
+
+### PTB
+
+Chinese: Programmable Transaction Block，可编程交易块。
+
+`PTB` is Sui's programmable transaction format. PredictGuard builds PTBs for
+DeepBook Predict mint and redeem preview flows.
+
+### SDK
+
+Chinese: Software Development Kit，软件开发工具包。
+
+`SDK` means a developer library. PredictGuard uses the Sui TypeScript SDK,
+especially `@mysten/sui`, to construct transactions and read chain state.
+
+### API
+
+Chinese: Application Programming Interface，应用程序接口。
+
+`API` means a programmatic data or action interface. PredictGuard uses the
+Predict server API, Sui GraphQL, and Sui gRPC.
+
+### RPC / gRPC / GraphQL
+
+Chinese: RPC 是远程过程调用；gRPC 是一种高性能 RPC；GraphQL 是图查询语言。
+
+PredictGuard uses Sui gRPC for direct chain reads and transaction readback, and
+Sui GraphQL for event history discovery. New code avoids JSON-RPC because it is
+deprecated in the current Sui SDK direction.
+
+### dUSDC
+
+Chinese: DeepBook testnet USDC，测试网 USDC。
+
+`dUSDC` is the quote asset used by DeepBook Predict testnet. PredictGuard uses
+it for wallet readiness, deposit, mint cost, payout, and accounting.
+
+### MVP
+
+Chinese: Minimum Viable Product，最小可行产品。
+
+`MVP` means the smallest complete product loop that proves the idea. For this
+competition, PredictGuard's MVP includes risk diagnosis, hedge recommendation,
+wallet execution, readback, redeem evidence, and report export.
+
+### UX
+
+Chinese: User Experience，用户体验。
+
+`UX` means the user's interaction experience. PredictGuard UX includes wallet
+readiness, transaction feedback, navigation, and explainable settlement status.
+
 ## Current Development Concepts
 
 ### Mint

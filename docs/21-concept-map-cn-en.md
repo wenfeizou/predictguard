@@ -11,6 +11,26 @@ Chinese-English map. Use it before reading the full glossary in
 - `Where`: where the concept appears in the product.
 - `Why it matters`: why the user or judge should care.
 
+## Abbreviations / 缩写速查
+
+| Abbreviation | Full English | Chinese | PredictGuard Meaning |
+| --- | --- | --- | --- |
+| PLP | Predict Liquidity Provider | Predict 流动性提供者 | DeepBook Predict 的资金提供者，赚取 premium，同时承担尾部赔付风险。 |
+| LP | Liquidity Provider | 流动性提供者 | 更泛化的 DeFi 资金提供者概念。 |
+| TVL | Total Value Locked | 总锁仓价值 | 当前用于风险和资金规模判断的总资本。 |
+| PnL | Profit and Loss | 盈亏 | 风险场景、hedge 效果和 realized hedge result 的收益/亏损。 |
+| IV | Implied Volatility | 隐含波动率 | 从市场价格隐含出的波动率，用于 volatility surface / heatmap。 |
+| SVI | Stochastic Volatility Inspired | 随机波动率启发模型 | DeepBook Predict oracle/pricing context 使用的波动率曲面相关模型名。 |
+| PTB | Programmable Transaction Block | 可编程交易块 | Sui 的交易构造方式，可把多个命令组合成一个原子交易。 |
+| SDK | Software Development Kit | 软件开发工具包 | `@mysten/sui` 等开发库。 |
+| API | Application Programming Interface | 应用程序接口 | Predict server、Sui GraphQL、Sui gRPC 等数据接口。 |
+| RPC | Remote Procedure Call | 远程过程调用 | 区块链节点调用接口类型；本项目避免新增 JSON-RPC。 |
+| gRPC | Google Remote Procedure Call | gRPC 接口 | Sui 推荐的高性能读取/交易接口之一。 |
+| GraphQL | Graph Query Language | GraphQL 查询语言 | 用于灵活查询 Sui indexed event history。 |
+| dUSDC | DeepBook testnet USDC | 测试网 USDC | DeepBook Predict 当前 testnet quote asset。 |
+| UX | User Experience | 用户体验 | 钱包连接、交易反馈、demo flow 等用户操作体验。 |
+| MVP | Minimum Viable Product | 最小可行产品 | 比赛可演示的核心产品闭环，不等于生产级完整产品。 |
+
 ## Product Positioning
 
 | English | Chinese | Where | Why it matters |
@@ -197,6 +217,7 @@ Chinese-English map. Use it before reading the full glossary in
 
 | English | Chinese | Meaning |
 | --- | --- | --- |
-| 95% MVP/Judge Demo Complete | MVP/评审演示约 95% 完成 | Core product loop is implemented and explainable. |
-| Not Production Complete | 不是生产级 100% | Still lacks final settlement accounting, full live exposure reconstruction, and final submission assets. |
-| Remaining 5% | 剩余 5% | Official contract re-check, final validation, screenshots, video, submission text. |
+| 99% MVP/Judge Demo Complete | MVP/评审演示约 99% 完成 | Core product loop, live mint, readback, redeem evidence, and report are implemented and explainable. |
+| 98% Lifecycle Extension Complete | 生命周期扩展约 98% 完成 | Includes bounded redeem history discovery and settlement accounting, but not a production indexer. |
+| Not Production Complete | 不是生产级 100% | Still lacks full historical indexer, persistence, institutional risk engine, and multi-account production workflows. |
+| Remaining Competition Work | 剩余比赛工作 | Official contract re-check, final validation, screenshots, video, README/pitch polish, and human code review. |

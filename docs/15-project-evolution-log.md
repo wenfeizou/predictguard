@@ -2278,6 +2278,56 @@ Next implementation step:
   - realized PnL assumptions from local mint history
   - whether a custom indexer is necessary for final submission
 
+### Round AP: Bilingual README And Concept Index Polish
+
+Status: completed.
+
+Goal:
+
+- Turn `README.md` into a judge-facing bilingual entry document.
+- Synchronize concept index and glossary with clear Chinese-English
+  explanations, especially abbreviations.
+
+Implementation outcome:
+
+- Rewrote `README.md` with English and Chinese sections.
+- README now covers:
+  - product positioning
+  - completed capabilities
+  - live testnet evidence
+  - technical depth
+  - current boundaries
+  - commercial product roadmap
+  - local development
+  - judge demo path
+  - key documents
+  - official references
+- Added `Abbreviations / 缩写速查` to `docs/21-concept-map-cn-en.md`.
+- Updated completion meaning in the concept map:
+  - judge-demo MVP about `99%`
+  - lifecycle extension about `98%`
+  - production product still incomplete
+- Added `Abbreviations / 缩写速查` to `docs/16-concept-glossary.md` with
+  Chinese-English explanations for PLP, LP, TVL, PnL, IV, SVI, PTB, SDK, API,
+  RPC/gRPC/GraphQL, dUSDC, MVP, and UX.
+
+Concept note:
+
+- The README is now the first document for judges.
+- The concept map is the short bilingual learning index.
+- The glossary remains the deeper explanation document.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `98%`.
+- Documentation readiness for human review: high.
+
+Next implementation step:
+
+- Human review should start with README, concept map, and the redeem/history
+  accounting code paths.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
