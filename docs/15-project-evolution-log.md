@@ -1886,6 +1886,46 @@ Next implementation step:
 - Find or create a safe live redeemable testnet path, then validate
   wallet-signed redeem and `PositionRedeemed` parsing end to end.
 
+### Round AH: Historical Redeem Evidence Readback V1
+
+Status: completed.
+
+Goal:
+
+- Preserve the first redeem investigation result and connect a real historical
+  `PositionRedeemed` transaction to the UI/report as lifecycle evidence.
+
+Implementation outcome:
+
+- Added `docs/24-redeem-investigation-log.md`.
+- Recorded manager, positions, digest, SuiVision link, event fields, parser
+  result, and next actions.
+- Added `src/lib/predict/redeemReadback.ts`.
+- Added `/api/predict/redeem-evidence`.
+- Added a default historical redeem digest:
+  `57uSyj5qZNpeQwNWrjzuFh7Dwhc7u3atfmi1bjSfata5`.
+- Reused `summarizePredictRedeemExecution()` to parse the official
+  `predict::PositionRedeemed` event.
+- Added `Redeem evidence readback` UI under manager/account readback.
+- Wired the parsed redeem summary into the Markdown report's
+  `Lifecycle / Redeem Evidence` section.
+
+Concept note:
+
+- `Historical Redeem Evidence` / 历史赎回证据 is not a new wallet action. It
+  is a confirmed prior transaction proving that the parser and lifecycle report
+  can consume real DeepBook Predict redeem events.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `75-80%`.
+
+Next implementation step:
+
+- Wait for or create a non-zero, expired, safely redeemable position, then test
+  guarded wallet-signed redeem end to end.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

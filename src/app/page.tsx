@@ -41,8 +41,10 @@ import {
   loadStoredMintExecution,
   storeMintExecution,
   type PredictMintExecutionSummary,
+  type PredictRedeemExecutionSummary,
 } from "@/lib/predict/execution";
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
+import type { PredictRedeemEvidenceReadback } from "@/lib/predict/redeemReadback";
 import type { PredictVaultSettlementReadback } from "@/lib/predict/vaultSettlementReadback";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
 import {
@@ -105,6 +107,8 @@ export default function Home() {
   const [mintExecutionHistory, setMintExecutionHistory] = useState<
     PredictMintExecutionSummary[]
   >([]);
+  const [redeemEvidenceReadback, setRedeemEvidenceReadback] =
+    useState<PredictRedeemEvidenceReadback | null>(null);
   const [vaultSettlementReadback, setVaultSettlementReadback] =
     useState<PredictVaultSettlementReadback | null>(null);
   const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
@@ -173,6 +177,7 @@ export default function Home() {
     [mintExecutionHistory],
   );
   const managerInventoryReadback = walletReadiness.account?.managerInventory;
+  const redeemExecution = redeemEvidenceReadback?.summary ?? null;
   const redeemOracleIds = useMemo(
     () =>
       Array.from(
@@ -223,7 +228,7 @@ export default function Home() {
         recommendation,
         liveContext: liveSnapshot?.liveContext,
         mintExecution,
-        redeemExecution: null,
+        redeemExecution,
         executionRiskSummary,
         managerHistorySummary,
         managerInventoryReadback,
@@ -237,6 +242,7 @@ export default function Home() {
       recommendation,
       liveSnapshot?.liveContext,
       mintExecution,
+      redeemExecution,
       executionRiskSummary,
       managerHistorySummary,
       managerInventoryReadback,
@@ -330,6 +336,38 @@ export default function Home() {
     return () => {
       active = false;
       window.clearInterval(refreshTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRedeemEvidence() {
+      try {
+        const response = await fetch("/api/predict/redeem-evidence", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Redeem evidence readback returned ${response.status}`);
+        }
+
+        const readback = (await response.json()) as PredictRedeemEvidenceReadback;
+
+        if (active) {
+          setRedeemEvidenceReadback(readback);
+        }
+      } catch {
+        if (active) {
+          setRedeemEvidenceReadback(null);
+        }
+      }
+    }
+
+    void loadRedeemEvidence();
+
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -688,6 +726,7 @@ export default function Home() {
                 summary={managerHistorySummary}
                 inventory={managerInventoryReadback}
               />
+              <RedeemEvidencePanel evidence={redeemExecution} />
               <RedeemPreviewPanel plan={redeemPreviewPlan} />
             </div>
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
@@ -1437,6 +1476,108 @@ function ManagerExecutionSummaryPanel({
       </p>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function RedeemEvidencePanel({ evidence }: { evidence?: PredictRedeemExecutionSummary | null }) {
+  if (!evidence) {
+    return (
+      <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+        <div className="text-sm font-semibold text-[#17211d]">
+          Redeem evidence readback
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[#52615a]">
+          No historical PositionRedeemed evidence has been loaded yet. The
+          current active position still needs expiry and settlement checks before
+          live redeem execution.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[#17211d]">
+            Redeem evidence readback
+          </div>
+          <p className="mt-2 text-sm leading-6 text-[#52615a]">
+            Historical DeepBook Predict redeem transaction parsed from the
+            official PositionRedeemed event.
+          </p>
+        </div>
+        <div className="w-fit rounded-full border border-[#1f8a70] bg-[#e8f4ef] px-3 py-1 text-xs font-semibold text-[#1f8a70]">
+          {evidence.status}
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <SummaryTile
+          label="Redeemed position"
+          value={`${evidence.side ?? "N/A"} ${evidence.strike?.toLocaleString("en-US") ?? "N/A"}`}
+        />
+        <SummaryTile
+          label="Payout"
+          value={
+            evidence.payoutDusdc === undefined
+              ? "N/A"
+              : `${evidence.payoutDusdc.toLocaleString("en-US", {
+                  maximumFractionDigits: 6,
+                })} dUSDC`
+          }
+        />
+        <SummaryTile
+          label="Quantity"
+          value={
+            evidence.quantityDusdc === undefined
+              ? "N/A"
+              : `${evidence.quantityDusdc.toLocaleString("en-US", {
+                  maximumFractionDigits: 6,
+                })} dUSDC`
+          }
+        />
+        <SummaryTile
+          label="Settled redeem"
+          value={evidence.isSettled === undefined ? "N/A" : evidence.isSettled ? "Yes" : "No"}
+        />
+      </div>
+
+      <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+        <ConfigRow label="Bid price" value={evidence.bidPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 })} />
+        <ConfigRow
+          label="Expiry"
+          value={
+            evidence.expiryMs
+              ? formatIsoDateTime(new Date(Number(evidence.expiryMs)).toISOString())
+              : undefined
+          }
+        />
+        <ConfigRow label="Digest" value={evidence.digest} />
+        <ConfigRow label="Gas" value={evidence.gasMist ? `${evidence.gasMist} MIST` : undefined} />
+        <div className="sm:col-span-2">
+          <ConfigRow label="Manager" value={evidence.managerId} />
+        </div>
+        <div className="sm:col-span-2">
+          <ConfigRow label="Oracle" value={evidence.oracleId} />
+        </div>
+        <div className="sm:col-span-2">
+          <ConfigRow label="Owner" value={evidence.owner} />
+        </div>
+        <div className="sm:col-span-2">
+          <ConfigRow label="Executor" value={evidence.executor} />
+        </div>
+      </dl>
+
+      <a
+        href={`https://testnet.suivision.xyz/txblock/${evidence.digest}`}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 inline-flex w-fit rounded-md border border-[#1f8a70] px-3 py-2 text-xs font-semibold text-[#1f8a70] hover:bg-[#e8f4ef]"
+      >
+        View redeem digest
+      </a>
     </div>
   );
 }
