@@ -13,6 +13,7 @@ import type {
   PredictRedeemExecutionSummary,
 } from "@/lib/predict/execution";
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
+import type { PredictRedeemHistoryReadback } from "@/lib/predict/redeemHistoryReadback";
 import type { ExecutedStressSummary } from "@/lib/risk/executedStress";
 
 export function buildMarkdownReport(input: {
@@ -24,6 +25,7 @@ export function buildMarkdownReport(input: {
   liveContext?: NormalizedPredictLiveContext;
   mintExecution?: PredictMintExecutionSummary | null;
   redeemExecution?: PredictRedeemExecutionSummary | null;
+  redeemHistoryReadback?: PredictRedeemHistoryReadback | null;
   executionRiskSummary?: ExecutionAdjustedRiskSummary;
   managerHistorySummary?: ManagerExecutionHistorySummary;
   managerInventoryReadback?: PredictManagerInventoryReadback;
@@ -44,6 +46,12 @@ export function buildMarkdownReport(input: {
     totalPayoutDusdc: number;
     totalUnresolvedQuantityDusdc: number;
     externalExecutorRedeems: number;
+    totalMintedQuantityDusdc: number;
+    totalMintCostDusdc: number;
+    realizedHedgePnlDusdc?: number;
+    claimedPayoutDusdc: number;
+    unclaimedPayoutDusdc?: number;
+    accountingScope: string;
     status: string;
     explanation: string;
   };
@@ -106,6 +114,7 @@ export function buildMarkdownReport(input: {
     liveContext,
     mintExecution,
     redeemExecution,
+    redeemHistoryReadback,
     executionRiskSummary,
     managerHistorySummary,
     managerInventoryReadback,
@@ -142,6 +151,7 @@ export function buildMarkdownReport(input: {
     `- Manager readback: ${managerInventoryReadback ? "complete" : "pending"}`,
     `- Lifecycle readiness: ${managerInventoryReadback ? "read-only" : "pending"}`,
     `- Redeem evidence: ${redeemExecution ? "available" : "not captured"}`,
+    `- Redeem history discovery: ${redeemHistoryReadback ? "bounded scan complete" : "single evidence fallback"}`,
     `- Active position quantity: ${formatDusdc(managerInventoryReadback?.directActivePositionQuantityDusdc)}`,
     "",
     "## Metrics",
@@ -292,14 +302,36 @@ export function buildMarkdownReport(input: {
           `- Zero-quantity positions: ${settlementAccounting.zeroQuantityPositions}`,
           `- Redeemed positions with linked evidence: ${settlementAccounting.redeemedPositions}`,
           `- Positions missing evidence: ${settlementAccounting.evidenceMissingPositions}`,
+          `- Minted quantity: ${formatDusdc(settlementAccounting.totalMintedQuantityDusdc)}`,
+          `- Mint cost: ${formatDusdc(settlementAccounting.totalMintCostDusdc)}`,
           `- Current quantity: ${formatDusdc(settlementAccounting.totalCurrentQuantityDusdc)}`,
           `- Redeemed quantity: ${formatDusdc(settlementAccounting.totalRedeemedQuantityDusdc)}`,
           `- Redeemed payout: ${formatDusdc(settlementAccounting.totalPayoutDusdc)}`,
+          `- Claimed payout: ${formatDusdc(settlementAccounting.claimedPayoutDusdc)}`,
+          `- Unclaimed payout: ${settlementAccounting.unclaimedPayoutDusdc === undefined ? "Unknown" : formatDusdc(settlementAccounting.unclaimedPayoutDusdc)}`,
+          `- Realized hedge PnL: ${formatDusdc(settlementAccounting.realizedHedgePnlDusdc)}`,
           `- Unresolved quantity: ${formatDusdc(settlementAccounting.totalUnresolvedQuantityDusdc)}`,
           `- External executor redeems: ${settlementAccounting.externalExecutorRedeems}`,
-          "- Note: settlement accounting v1 only links currently loaded redeem evidence; it is not a full historical indexer.",
+          `- Accounting scope: ${settlementAccounting.accountingScope}`,
+          "- Note: full settlement accounting uses bounded discovered redeem history plus local mint history. It is stronger than a single digest, but still not a production indexer.",
         ]
       : ["- Settlement accounting is not available."]),
+    "",
+    "### Redeem History Discovery",
+    "",
+    ...(redeemHistoryReadback
+      ? [
+          `- Source: ${redeemHistoryReadback.source}`,
+          `- Event type: ${redeemHistoryReadback.eventType}`,
+          `- Pages read: ${redeemHistoryReadback.scan.pagesRead}/${redeemHistoryReadback.scan.maxPages}`,
+          `- Events scanned: ${redeemHistoryReadback.scan.eventsScanned}`,
+          `- Matching events: ${redeemHistoryReadback.scan.matchingEvents}`,
+          `- Unique digests: ${redeemHistoryReadback.scan.uniqueDigests}`,
+          `- Truncated: ${redeemHistoryReadback.scan.truncated ? "yes" : "no"}`,
+          `- Digests: ${redeemHistoryReadback.digests.join(", ") || "N/A"}`,
+          ...redeemHistoryReadback.notes.map((note) => `- Note: ${note}`),
+        ]
+      : ["- Redeem history discovery did not run; report is using single evidence fallback."]),
     "",
     "## Lifecycle / Redeem Evidence",
     "",

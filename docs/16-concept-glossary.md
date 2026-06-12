@@ -1634,6 +1634,41 @@ Important limitation: settlement accounting v1 is evidence-based. It only uses
 manager readback and loaded `PositionRedeemed` evidence. A production version
 would need broader redeem history discovery or an indexer.
 
+### Redeem History Discovery
+
+Chinese: 赎回历史发现。
+
+`Redeem history discovery` means searching chain history for
+`PositionRedeemed` events that belong to a manager.
+
+PredictGuard's current implementation uses a bounded Sui GraphQL event scan:
+
+- filter recent events by `PositionRedeemed` event type
+- inspect event JSON for `manager_id`
+- collect matching transaction digests
+- refetch those transactions through Sui gRPC
+- parse them with the existing redeem parser
+
+This is broader than a single hardcoded digest, but it is still not a full
+production indexer because the scan has a page limit.
+
+### Realized Hedge PnL
+
+Chinese: 已实现对冲盈亏。
+
+`Realized hedge PnL` estimates the realized result of the hedge after redeem
+evidence is available.
+
+Current formula:
+
+```text
+realized hedge PnL = redeemed payout - local mint cost
+```
+
+Important limitation: local mint cost comes from browser execution history. If
+the mint happened in another browser or before local history existed, the PnL
+can be incomplete until full mint history discovery is added.
+
 ### Evidence Missing
 
 Chinese: 缺少证据。

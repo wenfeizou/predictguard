@@ -48,6 +48,7 @@ import type {
   PredictManagerPositionEntry,
 } from "@/lib/predict/managerReadback";
 import type { PredictRedeemEvidenceReadback } from "@/lib/predict/redeemReadback";
+import type { PredictRedeemHistoryReadback } from "@/lib/predict/redeemHistoryReadback";
 import type { PredictVaultSettlementReadback } from "@/lib/predict/vaultSettlementReadback";
 import type { SizingModeOverride } from "@/lib/ptb/hedgeTransaction";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
@@ -118,6 +119,12 @@ type SettlementAccountingSummary = {
   totalPayoutDusdc: number;
   totalUnresolvedQuantityDusdc: number;
   externalExecutorRedeems: number;
+  totalMintedQuantityDusdc: number;
+  totalMintCostDusdc: number;
+  realizedHedgePnlDusdc?: number;
+  claimedPayoutDusdc: number;
+  unclaimedPayoutDusdc?: number;
+  accountingScope: "loaded-history" | "local-and-loaded-history" | "none";
   status: "no-manager" | "needs-evidence" | "partial-evidence" | "evidence-linked";
   explanation: string;
 };
@@ -143,6 +150,8 @@ export default function Home() {
   >([]);
   const [redeemEvidenceReadback, setRedeemEvidenceReadback] =
     useState<PredictRedeemEvidenceReadback | null>(null);
+  const [redeemHistoryReadback, setRedeemHistoryReadback] =
+    useState<PredictRedeemHistoryReadback | null>(null);
   const [vaultSettlementReadback, setVaultSettlementReadback] =
     useState<PredictVaultSettlementReadback | null>(null);
   const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
@@ -231,14 +240,33 @@ export default function Home() {
     [mintExecutionHistory],
   );
   const managerInventoryReadback = walletReadiness.account?.managerInventory;
-  const redeemExecution = redeemEvidenceReadback?.summary ?? null;
+  const redeemEvidenceReadbacks = useMemo(
+    () =>
+      redeemHistoryReadback?.readbacks.length
+        ? redeemHistoryReadback.readbacks
+        : redeemEvidenceReadback
+          ? [redeemEvidenceReadback]
+          : [],
+    [redeemEvidenceReadback, redeemHistoryReadback],
+  );
+  const redeemExecution = redeemEvidenceReadbacks[0]?.summary ?? null;
+  const redeemSummaries = useMemo(
+    () => dedupeRedeemSummaries(
+      redeemEvidenceReadbacks.flatMap((readback) => readback.summaries),
+    ),
+    [redeemEvidenceReadbacks],
+  );
   const redeemEvidenceLinks = useMemo(
-    () => buildRedeemEvidenceLinks(managerInventoryReadback, redeemEvidenceReadback),
-    [managerInventoryReadback, redeemEvidenceReadback],
+    () => buildRedeemEvidenceLinks(managerInventoryReadback, redeemSummaries),
+    [managerInventoryReadback, redeemSummaries],
   );
   const settlementAccounting = useMemo(
-    () => buildSettlementAccountingSummary(managerInventoryReadback, redeemEvidenceLinks),
-    [managerInventoryReadback, redeemEvidenceLinks],
+    () => buildSettlementAccountingSummary(
+      managerInventoryReadback,
+      redeemEvidenceLinks,
+      mintExecutionHistory,
+    ),
+    [managerInventoryReadback, mintExecutionHistory, redeemEvidenceLinks],
   );
   const redeemOracleIds = useMemo(
     () =>
@@ -298,6 +326,7 @@ export default function Home() {
         liveContext: liveSnapshot?.liveContext,
         mintExecution,
         redeemExecution,
+        redeemHistoryReadback,
         executionRiskSummary,
         managerHistorySummary,
         managerInventoryReadback,
@@ -314,6 +343,7 @@ export default function Home() {
       liveSnapshot?.liveContext,
       mintExecution,
       redeemExecution,
+      redeemHistoryReadback,
       executionRiskSummary,
       managerHistorySummary,
       managerInventoryReadback,
@@ -413,36 +443,53 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
+    const managerId = managerInventoryReadback?.managerObjectId;
 
     async function loadRedeemEvidence() {
       try {
-        const response = await fetch("/api/predict/redeem-evidence", {
-          cache: "no-store",
-        });
+        const response = managerId
+          ? await fetch(
+              `/api/predict/redeem-history?manager=${encodeURIComponent(managerId)}`,
+              {
+                cache: "no-store",
+                signal: controller.signal,
+              },
+            )
+          : await fetch("/api/predict/redeem-evidence", {
+              cache: "no-store",
+              signal: controller.signal,
+            });
 
         if (!response.ok) {
           throw new Error(`Redeem evidence readback returned ${response.status}`);
         }
 
-        const readback = (await response.json()) as PredictRedeemEvidenceReadback;
+        if (managerId) {
+          const readback = (await response.json()) as PredictRedeemHistoryReadback;
 
-        if (active) {
-          setRedeemEvidenceReadback(readback);
+          setRedeemHistoryReadback(readback);
+          setRedeemEvidenceReadback(readback.readbacks[0] ?? null);
+          return;
         }
-      } catch {
-        if (active) {
-          setRedeemEvidenceReadback(null);
+
+        const readback = (await response.json()) as PredictRedeemEvidenceReadback;
+        setRedeemHistoryReadback(null);
+        setRedeemEvidenceReadback(readback);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
         }
+
+        setRedeemHistoryReadback(null);
+        setRedeemEvidenceReadback(null);
       }
     }
 
     void loadRedeemEvidence();
 
-    return () => {
-      active = false;
-    };
-  }, []);
+    return () => controller.abort();
+  }, [managerInventoryReadback?.managerObjectId]);
 
   useEffect(() => {
     if (redeemOracleIds.length === 0) {
@@ -808,7 +855,10 @@ export default function Home() {
                 redeemLinks={redeemEvidenceLinks}
                 settlementAccounting={settlementAccounting}
               />
-              <RedeemEvidencePanel readback={redeemEvidenceReadback} />
+              <RedeemEvidencePanel
+                historyReadback={redeemHistoryReadback}
+                readbacks={redeemEvidenceReadbacks}
+              />
               <RedeemPreviewPanel plan={redeemPreviewPlan} />
             </div>
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
@@ -1573,14 +1623,26 @@ function ManagerExecutionSummaryPanel({
                 label="External redeems"
                 value={String(settlementAccounting.externalExecutorRedeems)}
               />
+              <SummaryTile
+                label="Realized hedge PnL"
+                value={formatDusdcValue(settlementAccounting.realizedHedgePnlDusdc)}
+              />
+              <SummaryTile
+                label="Mint cost"
+                value={formatDusdcValue(settlementAccounting.totalMintCostDusdc)}
+              />
             </div>
             <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
               <ConfigRow label="Active positions" value={String(settlementAccounting.activePositions)} />
               <ConfigRow label="Expired positions" value={String(settlementAccounting.expiredPositions)} />
               <ConfigRow label="Zero quantity" value={String(settlementAccounting.zeroQuantityPositions)} />
+              <ConfigRow label="Minted quantity" value={formatDusdcValue(settlementAccounting.totalMintedQuantityDusdc)} />
               <ConfigRow label="Current quantity" value={formatDusdcValue(settlementAccounting.totalCurrentQuantityDusdc)} />
               <ConfigRow label="Redeemed quantity" value={formatDusdcValue(settlementAccounting.totalRedeemedQuantityDusdc)} />
+              <ConfigRow label="Claimed payout" value={formatDusdcValue(settlementAccounting.claimedPayoutDusdc)} />
+              <ConfigRow label="Unclaimed payout" value={settlementAccounting.unclaimedPayoutDusdc === undefined ? "Unknown" : formatDusdcValue(settlementAccounting.unclaimedPayoutDusdc)} />
               <ConfigRow label="Unresolved quantity" value={formatDusdcValue(settlementAccounting.totalUnresolvedQuantityDusdc)} />
+              <ConfigRow label="Scope" value={settlementAccounting.accountingScope} />
             </dl>
           </div>
           <p className="mt-3 text-xs leading-5 text-[#52615a]">
@@ -1642,7 +1704,14 @@ function ManagerExecutionSummaryPanel({
   );
 }
 
-function RedeemEvidencePanel({ readback }: { readback?: PredictRedeemEvidenceReadback | null }) {
+function RedeemEvidencePanel({
+  historyReadback,
+  readbacks,
+}: {
+  historyReadback?: PredictRedeemHistoryReadback | null;
+  readbacks: PredictRedeemEvidenceReadback[];
+}) {
+  const readback = readbacks[0] ?? null;
   const evidence = readback?.summary ?? null;
 
   if (!evidence) {
@@ -1662,6 +1731,9 @@ function RedeemEvidencePanel({ readback }: { readback?: PredictRedeemEvidenceRea
             <ConfigRow label="Events found" value={readback.eventCount.toString()} />
             <ConfigRow label="Match status" value={readback.matchStatus} />
           </dl>
+        ) : null}
+        {historyReadback ? (
+          <RedeemHistoryScanSummary history={historyReadback} />
         ) : null}
       </div>
     );
@@ -1687,6 +1759,14 @@ function RedeemEvidencePanel({ readback }: { readback?: PredictRedeemEvidenceRea
               This is a permissionless redeem: an external executor submitted
               the transaction, while the payout is credited to the owner&apos;s
               PredictManager.
+            </p>
+          ) : null}
+          {historyReadback ? (
+            <p className="mt-2 text-sm leading-6 text-[#52615a]">
+              Redeem history discovery scanned recent PositionRedeemed events
+              and loaded {historyReadback.readbacks.length} matching digest
+              {historyReadback.readbacks.length === 1 ? "" : "s"} for this
+              manager.
             </p>
           ) : null}
         </div>
@@ -1735,6 +1815,7 @@ function RedeemEvidencePanel({ readback }: { readback?: PredictRedeemEvidenceRea
         <ConfigRow label="Bid price" value={evidence.bidPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 })} />
         <ConfigRow label="Events in tx" value={readback?.eventCount.toString()} />
         <ConfigRow label="Match status" value={readback?.matchStatus} />
+        <ConfigRow label="Loaded digests" value={historyReadback?.digests.length.toString()} />
         <ConfigRow label="Event sequence" value={evidence.eventSequence} />
         <ConfigRow
           label="Expiry"
@@ -1759,6 +1840,10 @@ function RedeemEvidencePanel({ readback }: { readback?: PredictRedeemEvidenceRea
           <ConfigRow label="Executor" value={evidence.executor} />
         </div>
       </dl>
+
+      {historyReadback ? (
+        <RedeemHistoryScanSummary history={historyReadback} />
+      ) : null}
 
       {readback?.summaries && readback.summaries.length > 1 ? (
         <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f6f8f5] p-3">
@@ -1788,6 +1873,29 @@ function RedeemEvidencePanel({ readback }: { readback?: PredictRedeemEvidenceRea
       >
         View redeem digest
       </a>
+    </div>
+  );
+}
+
+function RedeemHistoryScanSummary({ history }: { history: PredictRedeemHistoryReadback }) {
+  return (
+    <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f6f8f5] p-3">
+      <div className="text-xs font-semibold text-[#17211d]">
+        Redeem history discovery
+      </div>
+      <dl className="mt-2 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+        <ConfigRow label="Source" value={history.source} />
+        <ConfigRow label="Unique digests" value={String(history.scan.uniqueDigests)} />
+        <ConfigRow label="Events scanned" value={String(history.scan.eventsScanned)} />
+        <ConfigRow label="Matching events" value={String(history.scan.matchingEvents)} />
+        <ConfigRow label="Pages read" value={`${history.scan.pagesRead}/${history.scan.maxPages}`} />
+        <ConfigRow label="Truncated" value={history.scan.truncated ? "Yes" : "No"} />
+      </dl>
+      <p className="mt-2 text-xs leading-5 text-[#52615a]">
+        This is a bounded GraphQL event scan plus gRPC transaction readback. It
+        improves coverage over a single default digest, but it is still not a
+        production indexer.
+      </p>
     </div>
   );
 }
@@ -2205,9 +2313,9 @@ function formatPct(value: number) {
 
 function buildRedeemEvidenceLinks(
   inventory?: PredictManagerInventoryReadback,
-  readback?: PredictRedeemEvidenceReadback | null,
+  summaries: PredictRedeemExecutionSummary[] = [],
 ): RedeemEvidenceLink[] {
-  if (!inventory || !readback?.summaries.length) {
+  if (!inventory || summaries.length === 0) {
     return [];
   }
 
@@ -2215,7 +2323,7 @@ function buildRedeemEvidenceLinks(
     const evidence = findRedeemEvidenceForEntry(
       inventory,
       entry,
-      readback.summaries,
+      summaries,
     );
 
     return evidence
@@ -2228,10 +2336,41 @@ function buildRedeemEvidenceLinks(
   });
 }
 
+function dedupeRedeemSummaries(summaries: PredictRedeemExecutionSummary[]) {
+  const seen = new Set<string>();
+
+  return summaries.filter((summary) => {
+    const key = [
+      summary.digest,
+      summary.eventSequence ?? summary.eventIndex ?? "unknown",
+      summary.managerId ?? "unknown-manager",
+      summary.oracleId ?? "unknown-oracle",
+      summary.side ?? "unknown-side",
+      summary.strike ?? "unknown-strike",
+    ].join(":");
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 function buildSettlementAccountingSummary(
   inventory?: PredictManagerInventoryReadback,
   redeemLinks: RedeemEvidenceLink[] = [],
+  mintHistory: PredictMintExecutionSummary[] = [],
 ): SettlementAccountingSummary {
+  const mintTotals = mintHistory.reduce(
+    (sum, execution) => ({
+      quantity: sum.quantity + (execution.quantityDusdc ?? 0),
+      cost: sum.cost + (execution.costDusdc ?? 0),
+    }),
+    { quantity: 0, cost: 0 },
+  );
+
   if (!inventory) {
     return {
       totalPositions: 0,
@@ -2245,6 +2384,12 @@ function buildSettlementAccountingSummary(
       totalPayoutDusdc: 0,
       totalUnresolvedQuantityDusdc: 0,
       externalExecutorRedeems: 0,
+      totalMintedQuantityDusdc: mintTotals.quantity,
+      totalMintCostDusdc: mintTotals.cost,
+      realizedHedgePnlDusdc: undefined,
+      claimedPayoutDusdc: 0,
+      unclaimedPayoutDusdc: undefined,
+      accountingScope: mintHistory.length > 0 ? "local-and-loaded-history" : "none",
       status: "no-manager",
       explanation: "Manager inventory has not been loaded yet.",
     };
@@ -2297,6 +2442,9 @@ function buildSettlementAccountingSummary(
     }),
     { quantity: 0, payout: 0, externalExecutors: 0 },
   );
+  const realizedHedgePnlDusdc = redeemedTotals.payout > 0 || mintTotals.cost > 0
+    ? redeemedTotals.payout - mintTotals.cost
+    : undefined;
   const status = totals.evidenceMissing > 0
     ? redeemLinks.length > 0
       ? "partial-evidence"
@@ -2317,6 +2465,14 @@ function buildSettlementAccountingSummary(
     totalPayoutDusdc: redeemedTotals.payout,
     totalUnresolvedQuantityDusdc: totals.unresolvedQuantity,
     externalExecutorRedeems: redeemedTotals.externalExecutors,
+    totalMintedQuantityDusdc: mintTotals.quantity,
+    totalMintCostDusdc: mintTotals.cost,
+    realizedHedgePnlDusdc,
+    claimedPayoutDusdc: redeemedTotals.payout,
+    unclaimedPayoutDusdc: undefined,
+    accountingScope: mintHistory.length > 0
+      ? "local-and-loaded-history"
+      : "loaded-history",
     status,
     explanation: buildSettlementAccountingExplanation(status),
   };

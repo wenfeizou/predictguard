@@ -2212,6 +2212,72 @@ Next implementation step:
   - verify UI copy around external executor and permissionless redeem
   - decide whether broader history discovery is required before final demo
 
+### Round AO: Redeem History Discovery And Full Accounting V2
+
+Status: completed.
+
+Goal:
+
+- Complete the two remaining high-priority lifecycle tasks as far as feasible
+  without building a production indexer:
+  1. broader redeem history discovery
+  2. fuller settlement accounting
+
+Implementation outcome:
+
+- Added `src/lib/predict/redeemHistoryReadback.ts`.
+- Added `/api/predict/redeem-history`.
+- Implemented bounded Sui GraphQL event discovery:
+  - query recent `PositionRedeemed` events by event type
+  - inspect event JSON `manager_id`
+  - collect matching transaction digests
+  - refetch matching digests through Sui gRPC
+  - reuse the normalized redeem parser
+- Updated the page to use manager-specific redeem history when a manager is
+  loaded, with single-digest fallback when no manager is available.
+- Updated redeem evidence linking to use all discovered redeem summaries.
+- Expanded settlement accounting with:
+  - local minted quantity
+  - local mint cost
+  - claimed payout from loaded redeem evidence
+  - unknown unclaimed payout status
+  - realized hedge PnL from loaded payout minus local mint cost
+  - accounting scope
+- Added `Redeem history discovery` UI scan summary.
+- Added redeem history discovery and expanded settlement accounting to
+  Markdown reports.
+- Updated concept glossary and concept map.
+
+Boundary:
+
+- This is broader than one default digest.
+- This is not a full production indexer.
+- The GraphQL scan is bounded by page limits, so older events can still be
+  missed.
+- Realized hedge PnL depends on local mint history until full mint history
+  discovery exists.
+
+Concept note:
+
+- `Redeem History Discovery` / 赎回历史发现 is the bounded search for manager
+  `PositionRedeemed` events.
+- `Realized Hedge PnL` / 已实现对冲盈亏 is currently computed as
+  `redeemed payout - local mint cost`.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `98%`.
+
+Next implementation step:
+
+- Human code review should focus on:
+  - bounded GraphQL scan assumptions
+  - event JSON field reliability
+  - digest deduplication
+  - realized PnL assumptions from local mint history
+  - whether a custom indexer is necessary for final submission
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
