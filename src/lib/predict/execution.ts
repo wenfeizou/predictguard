@@ -33,6 +33,27 @@ export type PredictMintExecutionSummary = {
   gasMist?: string;
 };
 
+export type PredictRedeemExecutionSummary = {
+  digest: string;
+  status: "success" | "failed";
+  error?: string;
+  owner?: string;
+  executor?: string;
+  managerId?: string;
+  oracleId?: string;
+  predictId?: string;
+  quoteAsset?: string;
+  side?: "YES" | "NO";
+  expiryMs?: string;
+  strike?: number;
+  quantityDusdc?: number;
+  payoutDusdc?: number;
+  bidPrice?: number;
+  isSettled?: boolean;
+  dusdcBalanceChange?: number;
+  gasMist?: string;
+};
+
 export type ExecutionAdjustedRiskSummary = {
   recommendedNotionalDusdc: number;
   executedQuantityDusdc: number;
@@ -219,6 +240,45 @@ export function summarizePredictMintExecution(
     quantityDusdc: scaleNumber(fields.quantity, DUSDC_DECIMALS),
     costDusdc: scaleNumber(fields.cost, DUSDC_DECIMALS),
     askPrice: scaleNumber(fields.ask_price, ORACLE_PRICE_DECIMALS),
+    dusdcBalanceChange: getDusdcBalanceChange(transaction.balanceChanges),
+    gasMist: getGasMist(transaction.effects?.gasUsed),
+  };
+}
+
+export function summarizePredictRedeemExecution(
+  transaction: TransactionWithExecutionData,
+): PredictRedeemExecutionSummary | undefined {
+  const positionEvent = transaction.events?.find((event) =>
+    event.eventType.endsWith("::predict::PositionRedeemed"),
+  );
+
+  if (!positionEvent) {
+    return undefined;
+  }
+
+  const fields = positionEvent.json ?? {};
+
+  return {
+    digest: transaction.digest,
+    status: transaction.status.success ? "success" : "failed",
+    error: transaction.status.error?.message,
+    owner: readString(fields.owner),
+    executor: readString(fields.executor),
+    managerId: readString(fields.manager_id),
+    oracleId: readString(fields.oracle_id),
+    predictId: readString(fields.predict_id),
+    quoteAsset: readString(fields.quote_asset),
+    side: readBoolean(fields.is_up) === undefined
+      ? undefined
+      : readBoolean(fields.is_up)
+        ? "YES"
+        : "NO",
+    expiryMs: readString(fields.expiry),
+    strike: scaleNumber(fields.strike, ORACLE_PRICE_DECIMALS),
+    quantityDusdc: scaleNumber(fields.quantity, DUSDC_DECIMALS),
+    payoutDusdc: scaleNumber(fields.payout, DUSDC_DECIMALS),
+    bidPrice: scaleNumber(fields.bid_price, ORACLE_PRICE_DECIMALS),
+    isSettled: readBoolean(fields.is_settled),
     dusdcBalanceChange: getDusdcBalanceChange(transaction.balanceChanges),
     gasMist: getGasMist(transaction.effects?.gasUsed),
   };

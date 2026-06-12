@@ -42,7 +42,7 @@ Chinese-English map. Use it before reading the full glossary in
 | MarketKey | 市场键 | PTB, Manager readback | Canonical market identity: oracle, expiry, strike, direction. |
 | RangeKey | 区间仓位键 | Docs/roadmap | Used by range positions; not central to current UI. |
 | PositionMinted | 仓位铸造事件 | Wallet execution, report | Event proving what the chain accepted after mint. |
-| PositionRedeemed | 仓位赎回事件 | Settlement feasibility | Needed for full settlement accounting and redeemed payout history. |
+| PositionRedeemed | 仓位赎回事件 | Settlement feasibility, report | Needed for full settlement accounting and redeemed payout history. |
 
 ## Sui And Wallet Execution
 
@@ -125,6 +125,9 @@ Chinese-English map. Use it before reading the full glossary in
 | Settlement-Aware Reconstruction | 考虑结算状态的仓位重建 | Manager/account summary | Classifies positions without claiming full settlement accounting. |
 | Full Settlement Accounting | 完整结算核算 | Settlement feasibility doc | Future work: winning side, claimable, claimed, unclaimed amount. |
 | Claimed / Unclaimed | 已领取/未领取 | Settlement roadmap | Needed after redeem history and settlement state are available. |
+| Lifecycle Readiness | 生命周期准备状态 | Manager/account summary, report | Read-only state explaining whether a position is active, expired, zero, or needs redeem evidence. |
+| Redeem Evidence | 赎回证据 | Report, lifecycle roadmap | Confirmed PositionRedeemed data used to prove payout and realized result. |
+| Redeemability | 可赎回性 | Lifecycle roadmap | Stronger future claim that a position can safely be redeemed now. |
 
 ## Page Sections
 
@@ -145,6 +148,7 @@ Chinese-English map. Use it before reading the full glossary in
 | Wallet Execution | 钱包执行 | PTB | Sign button, budget, quote evidence, and mint result. |
 | Execution-Adjusted Risk | 执行后校正风险 | PTB | Compares recommendation with actual executed quantity/cost. |
 | Manager/account Summary | Manager/账户摘要 | PTB | Shows direct manager inventory and decoded positions. |
+| Lifecycle / Redeem Readiness | 生命周期/赎回准备状态 | Manager/account summary | Explains post-expiry follow-up without enabling unsafe redeem actions. |
 | Sui SDK Transaction | Sui SDK 交易代码 | PTB | Human-readable transaction skeleton. |
 | Risk Report | 风险报告 | Report | Exportable Markdown evidence for the demo. |
 
@@ -182,4 +186,3 @@ Chinese-English map. Use it before reading the full glossary in
 | 95% MVP/Judge Demo Complete | MVP/评审演示约 95% 完成 | Core product loop is implemented and explainable. |
 | Not Production Complete | 不是生产级 100% | Still lacks final settlement accounting, full live exposure reconstruction, and final submission assets. |
 | Remaining 5% | 剩余 5% | Official contract re-check, final validation, screenshots, video, submission text. |
-

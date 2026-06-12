@@ -192,6 +192,7 @@ export default function Home() {
         recommendation,
         liveContext: liveSnapshot?.liveContext,
         mintExecution,
+        redeemExecution: null,
         executionRiskSummary,
         managerHistorySummary,
         managerInventoryReadback,
@@ -1251,6 +1252,9 @@ function ManagerExecutionSummaryPanel({
                         <div className={`mt-1 w-fit rounded-full border px-2 py-0.5 font-semibold ${getPositionStatusClass(entry.status.code)}`}>
                           {entry.status.label}
                         </div>
+                        <div className={`mt-1 w-fit rounded-full border px-2 py-0.5 font-semibold ${getLifecycleStatusClass(entry.lifecycle.code)}`}>
+                          {entry.lifecycle.label}
+                        </div>
                       </div>
                       <div>
                         {(entry.quantityDusdc ?? 0).toLocaleString("en-US", {
@@ -1283,15 +1287,30 @@ function ManagerExecutionSummaryPanel({
                     <p className="mt-2 leading-5">
                       {entry.status.explanation}
                     </p>
+                    <p className="mt-2 leading-5">
+                      {entry.lifecycle.explanation}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
           ) : null}
+          <div className="mt-4 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-[#52615a]">
+              Lifecycle / redeem readiness
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[#52615a]">
+              PredictGuard now classifies each decoded position for lifecycle
+              follow-up. This is read-only evidence: expired or zero-quantity
+              entries still need PositionRedeemed history plus oracle/vault
+              settlement state before the app can prove payout or redeemability.
+            </p>
+          </div>
           <p className="mt-3 text-xs leading-5 text-[#52615a]">
             Direct chain readback via Sui gRPC. MarketKey is decoded from Table
-            dynamic-field names; settlement-aware position reconstruction
-            remains a follow-up task.
+            dynamic-field names. Lifecycle readiness is read-only and does not
+            prove redeemability without PositionRedeemed history plus oracle/vault
+            settlement state.
           </p>
         </>
       ) : null}
@@ -1654,4 +1673,20 @@ function getPositionStatusClass(status: string) {
   }
 
   return "border-[#c94f4f] bg-[#fff1f1] text-[#9a2f2f]";
+}
+
+function getLifecycleStatusClass(status: string) {
+  if (status === "active") {
+    return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+  }
+
+  if (status === "expired-needs-settlement-check" || status === "redeem-candidate") {
+    return "border-[#c78b2d] bg-[#fff7e6] text-[#8b5d14]";
+  }
+
+  if (status === "redeemed-evidence-missing") {
+    return "border-[#7b6fd6] bg-[#f0efff] text-[#4f45a3]";
+  }
+
+  return "border-[#dce3dd] bg-white text-[#52615a]";
 }

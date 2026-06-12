@@ -1709,6 +1709,47 @@ Tomorrow's recommended development start:
 4. Extend Markdown reports with lifecycle readiness and redeem evidence when
    present.
 
+### Round AD: Lifecycle Readiness And Redeem Parser V1
+
+Status: completed.
+
+Goal:
+
+- Start the lifecycle extension without enabling unsafe wallet-signed redeem.
+
+Implementation outcome:
+
+- Extended direct manager position entries with read-only lifecycle readiness:
+  - active, not redeem-ready
+  - expired, needs settlement check
+  - zero quantity, redeem evidence needed
+  - unknown lifecycle
+- Added lifecycle labels and explanations to the manager/account summary UI.
+- Added lifecycle readiness to Markdown reports.
+- Added `PredictRedeemExecutionSummary`.
+- Added a defensive `summarizePredictRedeemExecution()` parser for
+  `predict::PositionRedeemed`.
+- Added a `Lifecycle / Redeem Evidence` report section.
+- Updated glossary, concept map, settlement feasibility, and lifecycle extension
+  plan docs.
+
+Concept note:
+
+- Lifecycle readiness is not the same as redeemability. It is a conservative
+  read-only classification that tells the user what follow-up evidence is
+  needed after expiry. A true redeem button still requires oracle/vault
+  settlement checks and official PTB verification.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `96%`.
+- Lifecycle extension target: about `50-55%`.
+
+Next implementation step:
+
+- Investigate redeem PTB preview from official source, but keep wallet-signed
+  redeem disabled until a live redeemable test path is clear.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

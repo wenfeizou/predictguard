@@ -1456,6 +1456,81 @@ against a settled oracle.
 PredictGuard needs this event history, plus oracle/vault settlement readback, to
 move from settlement-aware v1 to full settlement accounting.
 
+Current implementation note:
+
+PredictGuard has a defensive `PositionRedeemed` parser. When a transaction with
+this event is available, the parser can normalize:
+
+- owner
+- executor
+- manager
+- oracle
+- side
+- expiry
+- strike
+- quantity
+- payout
+- bid price
+- `is_settled`
+
+This parser is lifecycle evidence infrastructure. It does not by itself prove
+that every expired position is redeemable.
+
+### Lifecycle Readiness
+
+Chinese: 生命周期准备状态。
+
+`Lifecycle readiness` is PredictGuard's read-only classification for what should
+happen after a position is minted and later reaches expiry.
+
+Current lifecycle states:
+
+- `Active, not redeem-ready`: the position has non-zero quantity and future
+  expiry.
+- `Expired, needs settlement check`: expiry is in the past, but PredictGuard
+  still needs oracle/vault settlement state or redeem events before claiming it
+  is redeemable.
+- `Zero quantity, redeem evidence needed`: the manager table quantity is zero,
+  but `PositionRedeemed` history is needed to prove payout.
+- `Unknown lifecycle`: fields are missing or undecodable.
+
+This is intentionally conservative. It helps users understand what needs
+follow-up without pretending to be a full settlement engine.
+
+### Redeem Evidence
+
+Chinese: 赎回证据。
+
+`Redeem evidence` is proof that a position was redeemed. In PredictGuard, the
+primary redeem evidence is a confirmed `PositionRedeemed` event.
+
+Important fields:
+
+- payout: amount received by the manager
+- bid price: per-unit redeem price
+- `is_settled`: whether the redeem used settled oracle behavior
+- owner and executor: who owned the manager and who submitted the transaction
+
+Redeem evidence is needed to calculate realized hedge result after expiry.
+
+### Redeemability
+
+Chinese: 可赎回性。
+
+`Redeemability` means whether a position can safely be redeemed now.
+
+PredictGuard does not yet claim full redeemability. A safe redeem decision needs
+more than manager position status:
+
+- decoded `MarketKey`
+- non-zero quantity
+- oracle quoteable or settled state
+- vault settlement state for settled redemptions
+- correct redeem PTB inputs
+
+Until those checks are implemented, PredictGuard uses read-only lifecycle
+readiness instead of enabling wallet-signed redeem.
+
 ### Active Position Quantity
 
 Chinese: 活跃仓位数量。

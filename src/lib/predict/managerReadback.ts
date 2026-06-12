@@ -39,6 +39,7 @@ export type PredictManagerPositionEntry = {
   quantityDusdc?: number;
   marketKey?: PredictMarketKeyReadback;
   status: PredictPositionStatusReadback;
+  lifecycle: PredictPositionLifecycleReadiness;
 };
 
 export type PredictMarketKeyReadback = {
@@ -58,6 +59,18 @@ export type PredictPositionStatusReadback = {
   label: string;
   explanation: string;
   countedInActiveRisk: boolean;
+};
+
+export type PredictPositionLifecycleReadiness = {
+  code:
+    | "active"
+    | "expired-needs-settlement-check"
+    | "redeem-candidate"
+    | "redeemed-evidence-missing"
+    | "unknown";
+  label: string;
+  explanation: string;
+  requiresRedeemEvidence: boolean;
 };
 
 type ManagerJson = {
@@ -135,6 +148,11 @@ export async function fetchPredictManagerInventoryReadback(
       ? readDynamicFieldU64(field) / DUSDC_DECIMALS
       : undefined;
     const marketKey = decodeMarketKey(field);
+    const status = reconstructPositionStatus({
+      marketKey,
+      quantityDusdc,
+      nowMs: reconstructedAtMs,
+    });
 
     return {
       fieldId: field.fieldId,
@@ -142,10 +160,11 @@ export async function fetchPredictManagerInventoryReadback(
       valueType: field.valueType,
       quantityDusdc,
       marketKey,
-      status: reconstructPositionStatus({
+      status,
+      lifecycle: reconstructPositionLifecycleReadiness({
+        status,
         marketKey,
         quantityDusdc,
-        nowMs: reconstructedAtMs,
       }),
     };
   });
@@ -186,6 +205,7 @@ export async function fetchPredictManagerInventoryReadback(
       "Position quantities are parsed from u64 dynamic-field values.",
       "MarketKey dynamic-field names are decoded as oracle ID, expiry, strike, and UP/DOWN direction.",
       "Position status is reconstructed from decoded expiry, quantity, and current read time.",
+      "Lifecycle readiness is read-only and does not prove redeemability without PositionRedeemed history plus oracle/vault settlement state.",
       "Full settlement accounting still requires PositionRedeemed event history plus oracle and vault settlement readback.",
     ],
   };
@@ -320,5 +340,54 @@ function reconstructPositionStatus(input: {
     label: "Active",
     explanation: "The position has non-zero quantity and its expiry is still in the future, so PredictGuard counts it as active hedge coverage.",
     countedInActiveRisk: true,
+  };
+}
+
+function reconstructPositionLifecycleReadiness(input: {
+  status: PredictPositionStatusReadback;
+  marketKey?: PredictMarketKeyReadback;
+  quantityDusdc?: number;
+}): PredictPositionLifecycleReadiness {
+  if (!input.marketKey || input.quantityDusdc === undefined) {
+    return {
+      code: "unknown",
+      label: "Unknown lifecycle",
+      explanation: "PredictGuard cannot decode enough chain fields to reason about this position lifecycle.",
+      requiresRedeemEvidence: true,
+    };
+  }
+
+  if (input.status.code === "active") {
+    return {
+      code: "active",
+      label: "Active, not redeem-ready",
+      explanation: "This position is still before expiry. It remains part of active hedge coverage and is not a redeem candidate yet.",
+      requiresRedeemEvidence: false,
+    };
+  }
+
+  if (input.status.code === "expired") {
+    return {
+      code: "expired-needs-settlement-check",
+      label: "Expired, needs settlement check",
+      explanation: "The position is past expiry, but PredictGuard still needs oracle/vault settlement state or redeem events before claiming it is redeemable.",
+      requiresRedeemEvidence: true,
+    };
+  }
+
+  if (input.status.code === "zero") {
+    return {
+      code: "redeemed-evidence-missing",
+      label: "Zero quantity, redeem evidence needed",
+      explanation: "The stored position quantity is zero. This may mean it was redeemed or otherwise decreased, but PositionRedeemed history is needed to prove payout.",
+      requiresRedeemEvidence: true,
+    };
+  }
+
+  return {
+    code: "unknown",
+    label: "Unknown lifecycle",
+    explanation: "PredictGuard cannot safely classify this lifecycle state from the decoded fields.",
+    requiresRedeemEvidence: true,
   };
 }

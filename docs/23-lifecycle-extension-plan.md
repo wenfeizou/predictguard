@@ -110,6 +110,8 @@ Commercial product target:
 
 ### Round 1: Settlement Readiness Panel
 
+Status: completed as read-only v1.
+
 Goal:
 
 - Extend manager readback from active/expired/zero status into a clearer
@@ -144,6 +146,8 @@ Expected completion gain:
 
 ### Round 2: PositionRedeemed Event Parser
 
+Status: completed as defensive parser v1.
+
 Goal:
 
 - Parse DeepBook Predict `PositionRedeemed` events the same way we currently
@@ -173,9 +177,8 @@ Acceptance:
 
 Risk:
 
-- Medium. Needs access to a redeem transaction or test fixture. If no live
-  redeemable position is available, fixture-based parser validation is enough
-  for the first pass.
+- Medium. Needs access to a redeem transaction for live validation. The parser
+  exists, but no live redeem flow is enabled yet.
 
 Expected completion gain:
 
@@ -277,19 +280,25 @@ Expected completion gain:
 - Competition MVP: `99% -> 100%` for lifecycle story completeness if verified.
 - Lifecycle extension: `80% -> 90%`
 
-## Recommended Tomorrow Plan
+## Current Implementation Checkpoint
 
-Start with Round 1 and Round 2 only.
+Round 1 and Round 2 have started as conservative v1 work.
 
-Tomorrow's concrete tasks:
+Completed:
 
-1. Add lifecycle readiness concepts to `docs/16-concept-glossary.md` and
-   `docs/21-concept-map-cn-en.md`.
-2. Add a read-only settlement readiness section to manager/account readback.
-3. Add a `PositionRedeemed` parser with a fixture or defensively typed parser.
-4. Extend Markdown report with lifecycle readiness and redeem evidence when
-   present.
-5. Run:
+1. Completed: add lifecycle readiness concepts to `docs/16-concept-glossary.md`
+   and `docs/21-concept-map-cn-en.md`.
+2. Completed: add a read-only settlement readiness section to manager/account
+   readback.
+3. Completed: add a defensive `PositionRedeemed` parser.
+4. Completed: extend Markdown report with lifecycle readiness and redeem
+   evidence when present.
+
+Next:
+
+- Investigate redeem PTB preview only after official source verification and a
+  realistic redeemable-position test path.
+- Run:
 
 ```bash
 bun run typecheck

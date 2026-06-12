@@ -10,6 +10,7 @@ import type {
   ExecutionAdjustedRiskSummary,
   ManagerExecutionHistorySummary,
   PredictMintExecutionSummary,
+  PredictRedeemExecutionSummary,
 } from "@/lib/predict/execution";
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import type { ExecutedStressSummary } from "@/lib/risk/executedStress";
@@ -22,6 +23,7 @@ export function buildMarkdownReport(input: {
   recommendation: HedgeRecommendation;
   liveContext?: NormalizedPredictLiveContext;
   mintExecution?: PredictMintExecutionSummary | null;
+  redeemExecution?: PredictRedeemExecutionSummary | null;
   executionRiskSummary?: ExecutionAdjustedRiskSummary;
   managerHistorySummary?: ManagerExecutionHistorySummary;
   managerInventoryReadback?: PredictManagerInventoryReadback;
@@ -44,6 +46,7 @@ export function buildMarkdownReport(input: {
     recommendation,
     liveContext,
     mintExecution,
+    redeemExecution,
     executionRiskSummary,
     managerHistorySummary,
     managerInventoryReadback,
@@ -71,6 +74,8 @@ export function buildMarkdownReport(input: {
     `- Hedge recommendation: ${recommendation.recommendedHedge ? "complete" : "blocked"}`,
     `- Wallet execution: ${mintExecution ? "complete" : "pending"}`,
     `- Manager readback: ${managerInventoryReadback ? "complete" : "pending"}`,
+    `- Lifecycle readiness: ${managerInventoryReadback ? "read-only" : "pending"}`,
+    `- Redeem evidence: ${redeemExecution ? "available" : "not captured"}`,
     `- Active position quantity: ${formatDusdc(managerInventoryReadback?.directActivePositionQuantityDusdc)}`,
     "",
     "## Metrics",
@@ -183,11 +188,12 @@ export function buildMarkdownReport(input: {
           `- On-chain position quantity: ${formatDusdc(managerInventoryReadback.directPositionQuantityDusdc)}`,
           `- Active position quantity: ${formatDusdc(managerInventoryReadback.directActivePositionQuantityDusdc)}`,
           `- Reconstructed at: ${managerInventoryReadback.reconstructedAtIso}`,
+          `- Lifecycle readiness: read-only`,
           `- Balances table: ${managerInventoryReadback.balancesTableId ?? "N/A"}`,
           `- Positions table: ${managerInventoryReadback.positionsTableId ?? "N/A"}`,
           "- Decoded positions:",
           ...formatDecodedPositions(managerInventoryReadback),
-          "- Note: direct readback decodes MarketKey from Table dynamic-field names; settlement-aware reconstruction remains pending.",
+          "- Note: lifecycle readiness does not prove redeemability without PositionRedeemed history plus oracle/vault settlement state.",
           "",
         ]
       : [
@@ -206,6 +212,28 @@ export function buildMarkdownReport(input: {
           "- Note: this is a local event-history estimate until direct manager inventory readback is implemented.",
         ]
       : ["- No local manager execution history available."]),
+    "",
+    "## Lifecycle / Redeem Evidence",
+    "",
+    ...(redeemExecution
+      ? [
+          `- Status: ${redeemExecution.status}`,
+          `- Digest: ${redeemExecution.digest}`,
+          `- SuiVision: https://testnet.suivision.xyz/txblock/${redeemExecution.digest}`,
+          `- Position: ${redeemExecution.side ?? "N/A"} ${redeemExecution.strike?.toLocaleString("en-US") ?? "N/A"}`,
+          `- Quantity: ${formatDusdc(redeemExecution.quantityDusdc)}`,
+          `- Payout: ${formatDusdc(redeemExecution.payoutDusdc)}`,
+          `- Bid price: ${redeemExecution.bidPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 }) ?? "N/A"}`,
+          `- Is settled: ${redeemExecution.isSettled === undefined ? "N/A" : redeemExecution.isSettled ? "yes" : "no"}`,
+          `- Manager: ${redeemExecution.managerId ?? "N/A"}`,
+          `- Oracle: ${redeemExecution.oracleId ?? "N/A"}`,
+          `- Owner: ${redeemExecution.owner ?? "N/A"}`,
+          `- Executor: ${redeemExecution.executor ?? "N/A"}`,
+        ]
+      : [
+          "- No PositionRedeemed evidence has been captured in this browser session.",
+          "- Current lifecycle readiness is read-only and based on manager position status.",
+        ]),
     "",
     "## Assumptions",
     "",
@@ -236,6 +264,7 @@ function formatDecodedPositions(readback: PredictManagerInventoryReadback) {
       })}`,
       `quantity ${formatDusdc(entry.quantityDusdc)}`,
       `status ${entry.status.label}`,
+      `lifecycle ${entry.lifecycle.label}`,
       `expiry ${entry.marketKey.expiryIso}`,
       `oracle ${entry.marketKey.oracleId}`,
     ].join("; ");

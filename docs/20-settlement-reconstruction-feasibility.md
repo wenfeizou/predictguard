@@ -15,6 +15,10 @@ PredictGuard has settlement-aware position reconstruction v1:
   - `Zero quantity`
   - `Unknown`
 - excludes zero and expired positions from active hedge coverage
+- adds read-only lifecycle readiness labels for active, expired, zero, and
+  unknown entries
+- includes a defensive `PositionRedeemed` parser for future redeem transaction
+  evidence
 
 This is not full settlement accounting.
 
@@ -57,7 +61,7 @@ Feasible with current reads:
 
 Feasible with additional event/indexer work:
 
-- parse historical `PositionRedeemed` events
+- parse historical `PositionRedeemed` events; latest-transaction parser exists
 - reconstruct redeemed quantity and payout history
 - show latest known claimed/redeemed amounts
 - distinguish live redemption from settled redemption using `is_settled`
