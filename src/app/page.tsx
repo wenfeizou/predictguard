@@ -46,6 +46,7 @@ import {
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import type { PredictRedeemEvidenceReadback } from "@/lib/predict/redeemReadback";
 import type { PredictVaultSettlementReadback } from "@/lib/predict/vaultSettlementReadback";
+import type { SizingModeOverride } from "@/lib/ptb/hedgeTransaction";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
 import {
   buildPredictRedeemPreviewPlan,
@@ -61,6 +62,7 @@ import {
   type ExecutedStressSummary,
 } from "@/lib/risk/executedStress";
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
+import type { HedgeCandidate, Side } from "@/lib/types";
 
 const market = seedMarketState;
 const PtbExecuteClient = dynamic(
@@ -95,6 +97,13 @@ const workflowNavItems = [
   { label: "Report", href: "#report", sectionId: "report" },
 ];
 
+function overrideHedgeSide(
+  hedge: HedgeCandidate | undefined,
+  side: Side,
+): HedgeCandidate | undefined {
+  return hedge ? { ...hedge, side } : undefined;
+}
+
 export default function Home() {
   const [walletReadiness, setWalletReadiness] = useState<WalletReadinessInput>({
     connected: false,
@@ -112,6 +121,10 @@ export default function Home() {
   const [vaultSettlementReadback, setVaultSettlementReadback] =
     useState<PredictVaultSettlementReadback | null>(null);
   const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
+  const [selectedOracleId, setSelectedOracleId] = useState<string | null>(null);
+  const [executionSide, setExecutionSide] = useState<Side>("YES");
+  const [sizingModeOverride, setSizingModeOverride] =
+    useState<SizingModeOverride>("auto");
   const [activeSectionId, setActiveSectionId] = useState("workflow");
   const selectedScenario =
     scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
@@ -119,6 +132,20 @@ export default function Home() {
   const exposureMatrix = useMemo(() => buildExposureMatrix(market), []);
   const metrics = useMemo(() => computeRiskMetrics(market, scenarios), []);
   const recommendation = useMemo(() => buildHedgeRecommendation(market, scenarios), []);
+  const activeOracleOptions = useMemo(
+    () => liveSnapshot?.liveContext?.activeOracles ?? [],
+    [liveSnapshot?.liveContext?.activeOracles],
+  );
+  const selectedOracle = useMemo(
+    () =>
+      activeOracleOptions.find((oracle) => oracle.oracleId === selectedOracleId) ??
+      liveSnapshot?.liveContext?.latestActiveOracle,
+    [activeOracleOptions, liveSnapshot?.liveContext?.latestActiveOracle, selectedOracleId],
+  );
+  const executionHedge = useMemo(
+    () => overrideHedgeSide(recommendation.recommendedHedge, executionSide),
+    [recommendation.recommendedHedge, executionSide],
+  );
   const selectedResult = useMemo(
     () => runScenarioSet(market, [selectedScenario], recommendation.recommendedHedge)[0],
     [selectedScenario, recommendation.recommendedHedge],
@@ -139,26 +166,28 @@ export default function Home() {
   );
   const ptbInput = useMemo(
     () => ({
-      hedge: recommendation.recommendedHedge,
+      hedge: executionHedge,
       wallet: walletReadiness,
       account: walletReadiness.account,
-      oracleObjectId: liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
-      oracleExpiryMs: liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
-      oracleMinStrike: liveSnapshot?.liveContext?.latestActiveOracle?.minStrike,
-      oracleTickSize: liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
-      oracleReferencePrice: liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
+      oracleObjectId: selectedOracle?.oracleId,
+      oracleExpiryMs: selectedOracle?.expiry,
+      oracleMinStrike: selectedOracle?.minStrike,
+      oracleTickSize: selectedOracle?.tickSize,
+      oracleReferencePrice: selectedOracle?.referencePrice,
       quoteAskPrice: mintExecution?.askPrice,
+      sizingModeOverride,
       maxHedgeBudgetDusdc,
     }),
     [
-      recommendation.recommendedHedge,
+      executionHedge,
       walletReadiness,
-      liveSnapshot?.liveContext?.latestActiveOracle?.expiry,
-      liveSnapshot?.liveContext?.latestActiveOracle?.minStrike,
-      liveSnapshot?.liveContext?.latestActiveOracle?.oracleId,
-      liveSnapshot?.liveContext?.latestActiveOracle?.referencePrice,
-      liveSnapshot?.liveContext?.latestActiveOracle?.tickSize,
+      selectedOracle?.expiry,
+      selectedOracle?.minStrike,
+      selectedOracle?.oracleId,
+      selectedOracle?.referencePrice,
+      selectedOracle?.tickSize,
       mintExecution?.askPrice,
+      sizingModeOverride,
       maxHedgeBudgetDusdc,
     ],
   );
@@ -725,6 +754,13 @@ export default function Home() {
               plan={ptbPlan}
               maxHedgeBudgetDusdc={maxHedgeBudgetDusdc}
               onBudgetChange={setMaxHedgeBudgetDusdc}
+              oracleOptions={activeOracleOptions}
+              selectedOracleId={selectedOracle?.oracleId}
+              onOracleChange={setSelectedOracleId}
+              executionSide={executionSide}
+              onExecutionSideChange={setExecutionSide}
+              sizingModeOverride={sizingModeOverride}
+              onSizingModeChange={setSizingModeOverride}
               onExecution={handleExecution}
             />
             <ExecutionAdjustedRiskPanel summary={executionRiskSummary} />
@@ -793,6 +829,9 @@ export default function Home() {
                 oracleMinStrike: ptbPlan.inputs.oracleMinStrike,
                 oracleTickSize: ptbPlan.inputs.oracleTickSize,
                 oracleReferencePrice: ptbPlan.inputs.oracleReferencePrice,
+                quoteAskPrice: ptbInput.quoteAskPrice,
+                sizingModeOverride: ptbInput.sizingModeOverride,
+                maxHedgeBudgetDusdc: ptbInput.maxHedgeBudgetDusdc,
               })}
             </pre>
           </Panel>

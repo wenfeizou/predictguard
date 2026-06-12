@@ -14,19 +14,36 @@ import {
   buildPredictHedgeTransactionPreview,
   type PredictHedgeMintInput,
   type PredictHedgePtbPlan,
+  type SizingModeOverride,
 } from "@/lib/ptb/hedgeTransaction";
+import type { NormalizedPredictLiveContext } from "@/lib/predict/normalize";
+import type { Side } from "@/lib/types";
 
 export function PtbExecuteClient({
   input,
   plan,
   maxHedgeBudgetDusdc,
   onBudgetChange,
+  oracleOptions,
+  selectedOracleId,
+  onOracleChange,
+  executionSide,
+  onExecutionSideChange,
+  sizingModeOverride,
+  onSizingModeChange,
   onExecution,
 }: {
   input: PredictHedgeMintInput;
   plan: PredictHedgePtbPlan;
   maxHedgeBudgetDusdc: number;
   onBudgetChange: (budget: number) => void;
+  oracleOptions: NormalizedPredictLiveContext["activeOracles"];
+  selectedOracleId?: string;
+  onOracleChange: (oracleId: string) => void;
+  executionSide: Side;
+  onExecutionSideChange: (side: Side) => void;
+  sizingModeOverride: SizingModeOverride;
+  onSizingModeChange: (mode: SizingModeOverride) => void;
   onExecution?: (execution: PredictMintExecutionSummary) => void;
 }) {
   const dAppKit = useDAppKit();
@@ -112,6 +129,65 @@ export function PtbExecuteClient({
           <Send className="h-4 w-4" />
           {pending ? "Waiting" : plan.readiness.canBuildTransaction ? "Sign PTB" : "Blocked"}
         </button>
+      </div>
+
+      <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+        <div className="flex flex-col gap-1">
+          <div className="text-xs font-semibold text-[#17211d]">Demo execution controls</div>
+          <p className="text-xs leading-5 text-[#52615a]">
+            Choose a short active oracle, side, and sizing mode before signing a small test position.
+          </p>
+        </div>
+        <div className="mt-3 grid gap-3 lg:grid-cols-[1.3fr_0.7fr_1fr]">
+          <label className="block">
+            <span className="text-xs font-semibold text-[#17211d]">Oracle / expiry</span>
+            <select
+              value={selectedOracleId ?? ""}
+              onChange={(event) => onOracleChange(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-[#dce3dd] bg-white px-2 text-xs font-semibold text-[#17211d] outline-none focus:border-[#1f8a70]"
+            >
+              {oracleOptions.length === 0 ? (
+                <option value="">No active oracle</option>
+              ) : null}
+              {oracleOptions.slice(0, 16).map((oracle) => (
+                <option key={oracle.oracleId} value={oracle.oracleId}>
+                  {oracle.underlyingAsset} / {oracle.minutesToExpiry}m / {formatExpiry(String(oracle.expiry))}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <div className="text-xs font-semibold text-[#17211d]">Side</div>
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              {(["YES", "NO"] as const).map((side) => (
+                <button
+                  key={side}
+                  type="button"
+                  onClick={() => onExecutionSideChange(side)}
+                  className={`h-10 rounded-md border px-3 text-xs font-semibold transition ${
+                    executionSide === side
+                      ? "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]"
+                      : "border-[#dce3dd] bg-white text-[#52615a] hover:border-[#1f8a70]"
+                  }`}
+                >
+                  {side}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="block">
+            <span className="text-xs font-semibold text-[#17211d]">Sizing mode</span>
+            <select
+              value={sizingModeOverride}
+              onChange={(event) => onSizingModeChange(event.target.value as SizingModeOverride)}
+              className="mt-1 h-10 w-full rounded-md border border-[#dce3dd] bg-white px-2 text-xs font-semibold text-[#17211d] outline-none focus:border-[#1f8a70]"
+            >
+              <option value="auto">Auto</option>
+              <option value="probe">Probe</option>
+              <option value="quote-aware">Quote-aware</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
@@ -284,6 +360,10 @@ export function PtbExecuteClient({
 }
 
 async function refreshPtbInputWithLiveOracle(input: PredictHedgeMintInput) {
+  if (input.oracleObjectId && input.oracleExpiryMs) {
+    return input;
+  }
+
   const response = await fetch("/api/predict/status", {
     cache: "no-store",
   });

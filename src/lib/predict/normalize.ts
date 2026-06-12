@@ -16,6 +16,16 @@ export type NormalizedPredictLiveContext = {
   maxCheckpointLag?: number;
   maxTimeLagSeconds?: number;
   activeOracleCount: number;
+  activeOracles: {
+    oracleId: string;
+    underlyingAsset: string;
+    expiry: number;
+    minutesToExpiry: number;
+    minStrike: number;
+    tickSize: number;
+    referencePrice?: number;
+    status: string;
+  }[];
   latestActiveOracle?: {
     oracleId: string;
     underlyingAsset: string;
@@ -60,6 +70,22 @@ export function normalizePredictLiveContext(input: {
     .filter((oracle) => oracle.settlement_price)
     .sort((a, b) => (b.settled_at ?? 0) - (a.settled_at ?? 0))[0]?.settlement_price;
 
+  const normalizedActiveOracles = activeOracles.map((oracle) => ({
+    oracleId: oracle.oracle_id,
+    underlyingAsset: oracle.underlying_asset,
+    expiry: oracle.expiry,
+    minutesToExpiry: Math.max(
+      0,
+      Math.round((oracle.expiry - now) / 60_000),
+    ),
+    minStrike: oracle.min_strike / 1_000_000_000,
+    tickSize: oracle.tick_size / 1_000_000_000,
+    referencePrice: latestReferencePrice
+      ? latestReferencePrice / 1_000_000_000
+      : undefined,
+    status: oracle.status,
+  }));
+
   return {
     dataSource: input.reachable ? "mixed-live-and-simulated" : "simulated",
     reachable: input.reachable,
@@ -68,22 +94,9 @@ export function normalizePredictLiveContext(input: {
     maxCheckpointLag: input.status?.max_checkpoint_lag,
     maxTimeLagSeconds: input.status?.max_time_lag_seconds,
     activeOracleCount: activeOracles.length,
+    activeOracles: normalizedActiveOracles,
     latestActiveOracle: latestActiveOracle
-      ? {
-          oracleId: latestActiveOracle.oracle_id,
-          underlyingAsset: latestActiveOracle.underlying_asset,
-          expiry: latestActiveOracle.expiry,
-          minutesToExpiry: Math.max(
-            0,
-            Math.round((latestActiveOracle.expiry - now) / 60_000),
-          ),
-          minStrike: latestActiveOracle.min_strike / 1_000_000_000,
-          tickSize: latestActiveOracle.tick_size / 1_000_000_000,
-          referencePrice: latestReferencePrice
-            ? latestReferencePrice / 1_000_000_000
-            : undefined,
-          status: latestActiveOracle.status,
-        }
+      ? normalizedActiveOracles.find((oracle) => oracle.oracleId === latestActiveOracle.oracle_id)
       : undefined,
     vault: input.vaultSummary
       ? {

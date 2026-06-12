@@ -147,6 +147,7 @@ Chinese-English map. Use it before reading the full glossary in
 | Recommended Action | 推荐动作 | Overview | Condensed hedge suggestion. |
 | Tradeoffs | 取舍说明 | Hedge | Explains hedge cost and limitations. |
 | PTB Preview | PTB 预览 | PTB | Shows readiness, transaction skeleton, and execution controls. |
+| Demo Execution Controls | 演示执行控制项 | Wallet execution | Lets the demo choose active oracle/expiry, YES/NO side, and sizing mode. |
 | Wallet Readiness | 钱包准备状态 | PTB | Checks wallet, testnet, dUSDC, manager. |
 | Execution Readiness | 执行准备状态 | PTB | Shows whether a signable PTB can be built. |
 | Wallet Execution | 钱包执行 | PTB | Sign button, budget, quote evidence, and mint result. |

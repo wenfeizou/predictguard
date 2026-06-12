@@ -31,6 +31,9 @@ export function buildMarkdownReport(input: {
   ptbPlan?: {
     inputs: {
       sizingMode?: string;
+      side?: string;
+      oracleObjectId?: string;
+      oracleExpiryMs?: number;
       quoteSource?: string;
       quoteFreshness?: string;
       quoteAskPrice?: number;
@@ -109,6 +112,10 @@ export function buildMarkdownReport(input: {
     "",
     `- Risk identification: ${metrics.riskScore > 0 ? "complete" : "blocked"} (${metrics.riskScore}/100)`,
     `- Hedge recommendation: ${recommendation.recommendedHedge ? "complete" : "blocked"}`,
+    `- Demo execution side: ${ptbPlan?.inputs.side ?? "N/A"}`,
+    `- Demo oracle: ${ptbPlan?.inputs.oracleObjectId ?? "N/A"}`,
+    `- Demo oracle expiry: ${ptbPlan?.inputs.oracleExpiryMs ?? "N/A"}`,
+    `- Demo sizing mode: ${ptbPlan?.inputs.sizingMode ?? "N/A"}`,
     `- Wallet execution: ${mintExecution ? "complete" : "pending"}`,
     `- Manager readback: ${managerInventoryReadback ? "complete" : "pending"}`,
     `- Lifecycle readiness: ${managerInventoryReadback ? "read-only" : "pending"}`,

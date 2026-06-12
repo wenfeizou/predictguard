@@ -14,6 +14,8 @@ export type QuoteSource = "last-executed-ask" | "none";
 
 export type QuoteFreshness = "available" | "unavailable";
 
+export type SizingModeOverride = "auto" | "probe" | "quote-aware";
+
 export type PredictHedgeMintInput = {
   hedge?: HedgeCandidate;
   wallet?: WalletReadinessInput;
@@ -25,6 +27,7 @@ export type PredictHedgeMintInput = {
   oracleTickSize?: number;
   oracleReferencePrice?: number;
   quoteAskPrice?: number;
+  sizingModeOverride?: SizingModeOverride;
   maxHedgeBudgetDusdc?: number;
   dusdcCoinObjectId?: string;
   recipientAddress?: string;
@@ -320,9 +323,16 @@ export function priceToOracleScale(price: number): string {
 
 function getExecutionSizing(input: PredictHedgeMintInput) {
   const maxBudgetDusdc = input.maxHedgeBudgetDusdc ?? DEFAULT_MAX_HEDGE_BUDGET_DUSDC;
-  const askPrice = input.quoteAskPrice;
+  const askPrice = input.sizingModeOverride === "probe"
+    ? undefined
+    : input.quoteAskPrice;
 
-  if (askPrice === undefined || askPrice <= 0 || maxBudgetDusdc <= 0) {
+  if (
+    input.sizingModeOverride === "probe" ||
+    askPrice === undefined ||
+    askPrice <= 0 ||
+    maxBudgetDusdc <= 0
+  ) {
     return {
       mode: "probe" as const,
       maxBudgetDusdc,

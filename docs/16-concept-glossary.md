@@ -279,6 +279,25 @@ recommended notional = how much exposure to protect
 max hedge budget = how much the user is willing to spend
 ```
 
+### Demo Execution Controls
+
+Chinese: 演示执行控制项。
+
+`Demo execution controls` are the manual controls in the Wallet execution panel
+that help create a suitable small test position for demo and redeem validation.
+
+Current controls:
+
+- `Oracle / expiry`: choose an active BTC oracle, usually the shortest safe
+  expiry, so a small test position reaches settlement sooner.
+- `Side`: choose `YES` or `NO` for the mint.
+- `Sizing mode`: choose `Auto`, `Probe`, or `Quote-aware`.
+- `Max hedge budget`: cap the dUSDC amount used for sizing.
+
+PredictGuard still keeps `strike` automatic. The app derives execution strike
+from the selected oracle grid and reference price because a manual strike can
+easily fail protocol checks such as `assert_mintable_ask`.
+
 ### Deposit
 
 Chinese: 存入、充值到 PredictManager。

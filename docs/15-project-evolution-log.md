@@ -1972,6 +1972,45 @@ Next implementation step:
 - After a non-zero position expires and oracle/vault evidence is present,
   implement the wallet-signed redeem execution path behind the guard checklist.
 
+### Round AJ: Demo Execution Controls V1
+
+Status: completed.
+
+Goal:
+
+- Let the user deliberately create a small, suitable test position for future
+  redeem validation.
+
+Implementation outcome:
+
+- Added active oracle/expiry options to normalized Predict live context.
+- Added Wallet execution controls for:
+  - active oracle / expiry
+  - YES / NO side
+  - sizing mode override: `Auto`, `Probe`, `Quote-aware`
+  - existing max hedge budget
+- Preserved the selected oracle at signing time instead of refreshing back to
+  the latest active oracle.
+- Kept execution strike automatic from oracle grid/reference price.
+- Added demo execution choices to the Markdown report.
+- Updated concept glossary and concept map.
+
+Concept note:
+
+- `Demo Execution Controls` / 演示执行控制项 give the demo enough control to
+  create a small short-expiry position while keeping unsafe manual strike input
+  disabled.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `80-82%`.
+
+Next implementation step:
+
+- Use the new controls to mint a small short-expiry position, wait for expiry
+  and settlement evidence, then validate guarded redeem execution.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
