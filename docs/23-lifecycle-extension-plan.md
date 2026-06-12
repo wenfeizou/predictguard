@@ -187,7 +187,7 @@ Expected completion gain:
 
 ### Round 3: Redeem PTB Preview
 
-Status: completed as read-only preview v1.
+Status: completed as read-only, evidence-aware preview v1.
 
 Goal:
 
@@ -205,6 +205,9 @@ Build:
   - `MarketKey`
   - `Clock`
   - show why signing is blocked while redeemability is uncertain
+  - match the candidate oracle against the public Predict API oracle snapshot
+  - show oracle status, settlement evidence, and the remaining vault evidence
+    gap
 
 Acceptance:
 
@@ -301,8 +304,9 @@ Completed:
 
 Next:
 
-- Investigate live redeemability checks and a realistic redeemable-position test
-  path before enabling wallet-signed redeem.
+- Investigate how to prove `vault.has_settled_oracle(oracle_id)` or otherwise
+  validate a realistic redeemable-position test path before enabling
+  wallet-signed redeem.
 - Run:
 
 ```bash

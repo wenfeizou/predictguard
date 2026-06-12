@@ -1531,6 +1531,15 @@ more than manager position status:
 Until those checks are implemented, PredictGuard uses read-only lifecycle
 readiness instead of enabling wallet-signed redeem.
 
+Current evidence status:
+
+- PredictGuard can match a decoded position's oracle ID against the Predict
+  public API oracle summary.
+- The app can display oracle status and settlement price evidence when present.
+- The app still cannot prove `vault.has_settled_oracle(oracle_id)` from the
+  current readback path.
+- Because of that missing vault evidence, wallet-signed redeem remains disabled.
+
 ### Redeem PTB Preview
 
 Chinese: 赎回 PTB 预览。
@@ -1547,6 +1556,8 @@ The preview includes:
 - rebuilt `MarketKey`
 - quantity
 - lifecycle state
+- oracle status and settlement evidence
+- missing vault settlement evidence
 - guardrails explaining why signing is disabled
 
 This is not wallet execution. It is a safe intermediate step before implementing

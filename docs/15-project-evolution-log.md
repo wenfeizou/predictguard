@@ -1790,6 +1790,48 @@ Next implementation step:
 - Investigate how to prove live redeemability from oracle/vault state or find a
   real redeemable testnet position for validation.
 
+### Round AF: Redeemability Evidence V1
+
+Status: completed.
+
+Goal:
+
+- Make the redeem preview evidence-aware without claiming a position is safely
+  redeemable.
+
+Implementation outcome:
+
+- Passed Predict public API oracle summaries into the redeem preview builder.
+- Matched the selected decoded position's oracle ID against the current oracle
+  snapshot when available.
+- Added oracle evidence fields to the redeem preview:
+  - oracle matched
+  - oracle status
+  - oracle quoteable evidence
+  - oracle settled evidence
+  - settlement price / settled timestamp when present
+- Added explicit vault evidence gap:
+  - `vaultSettledEvidence: unavailable`
+  - `redeemability: needs-vault-evidence` or `blocked`
+- Added evidence notes to the UI and Markdown report.
+- Updated settlement feasibility, lifecycle plan, glossary, and concept map.
+
+Concept note:
+
+- The public API gives useful oracle-level evidence, but safe redeemability also
+  needs vault settlement proof. PredictGuard now shows that gap instead of
+  enabling a redeem button prematurely.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `98%`.
+- Lifecycle extension target: about `68-70%`.
+
+Next implementation step:
+
+- Investigate whether direct Predict object/vault readback or public API data
+  can prove `vault.has_settled_oracle(oracle_id)`.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

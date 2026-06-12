@@ -54,6 +54,17 @@ export function buildMarkdownReport(input: {
       side?: string;
       quantityDusdc?: number;
       lifecycle?: string;
+      oracleStatus?: string;
+      settlementPrice?: number;
+      settledAt?: number;
+    };
+    evidence: {
+      oracleMatched: boolean;
+      oracleQuoteable: boolean;
+      oracleSettled: boolean;
+      vaultSettledEvidence: string;
+      redeemability: string;
+      notes: string[];
     };
   };
 }): string {
@@ -266,8 +277,15 @@ export function buildMarkdownReport(input: {
           `- Position: ${redeemPreviewPlan.inputs.side ?? "N/A"} ${redeemPreviewPlan.inputs.strike?.toLocaleString("en-US") ?? "N/A"}`,
           `- Quantity: ${formatDusdc(redeemPreviewPlan.inputs.quantityDusdc)}`,
           `- Lifecycle: ${redeemPreviewPlan.inputs.lifecycle ?? "N/A"}`,
+          `- Oracle status: ${redeemPreviewPlan.inputs.oracleStatus ?? "N/A"}`,
+          `- Oracle matched: ${redeemPreviewPlan.evidence.oracleMatched ? "yes" : "no"}`,
+          `- Oracle quoteable evidence: ${redeemPreviewPlan.evidence.oracleQuoteable ? "yes" : "no"}`,
+          `- Oracle settled evidence: ${redeemPreviewPlan.evidence.oracleSettled ? "yes" : "no"}`,
+          `- Vault settled evidence: ${redeemPreviewPlan.evidence.vaultSettledEvidence}`,
+          `- Redeemability: ${redeemPreviewPlan.evidence.redeemability}`,
           `- Manager: ${redeemPreviewPlan.inputs.managerObjectId ?? "N/A"}`,
           `- Oracle: ${redeemPreviewPlan.inputs.oracleObjectId ?? "N/A"}`,
+          ...redeemPreviewPlan.evidence.notes.map((note) => `- Evidence note: ${note}`),
           ...(redeemPreviewPlan.readiness.missing.length > 0
             ? [`- Missing: ${redeemPreviewPlan.readiness.missing.join(", ")}`]
             : []),

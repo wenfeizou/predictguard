@@ -171,8 +171,12 @@ export default function Home() {
   );
   const managerInventoryReadback = walletReadiness.account?.managerInventory;
   const redeemPreviewPlan = useMemo(
-    () => buildPredictRedeemPreviewPlan({ inventory: managerInventoryReadback }),
-    [managerInventoryReadback],
+    () =>
+      buildPredictRedeemPreviewPlan({
+        inventory: managerInventoryReadback,
+        oracles: liveSnapshot?.oracles,
+      }),
+    [managerInventoryReadback, liveSnapshot?.oracles],
   );
   const demoFlowSteps = useMemo(
     () => buildDemoFlowSteps({
@@ -1402,6 +1406,16 @@ function RedeemPreviewPanel({ plan }: { plan: PredictRedeemPreviewPlan }) {
       <dl className="mt-4 grid gap-3 text-xs text-[#52615a] sm:grid-cols-2">
         <ConfigRow label="Target" value={plan.target} />
         <ConfigRow label="Mode" value={plan.mode} />
+        <ConfigRow label="Oracle status" value={plan.inputs.oracleStatus} />
+        <ConfigRow
+          label="Oracle settled"
+          value={plan.evidence.oracleSettled ? "Yes" : "No"}
+        />
+        <ConfigRow
+          label="Vault settled evidence"
+          value={plan.evidence.vaultSettledEvidence}
+        />
+        <ConfigRow label="Redeemability" value={plan.evidence.redeemability} />
         <ConfigRow label="Manager" value={plan.inputs.managerObjectId} />
         <ConfigRow label="Oracle" value={plan.inputs.oracleObjectId} />
         <ConfigRow label="Expiry" value={plan.inputs.oracleExpiryMs} />
@@ -1445,9 +1459,12 @@ function RedeemPreviewPanel({ plan }: { plan: PredictRedeemPreviewPlan }) {
 
       <div className="mt-4">
         <div className="text-xs font-semibold uppercase tracking-normal text-[#17211d]">
-          Guardrails
+          Evidence and guardrails
         </div>
         <ul className="mt-2 space-y-2 text-xs leading-5 text-[#52615a]">
+          {plan.evidence.notes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
           {plan.readiness.warnings.map((warning) => (
             <li key={warning}>{warning}</li>
           ))}

@@ -58,6 +58,9 @@ Feasible with current reads:
 - show decoded position identity
 - show manager dUSDC balance
 - parse `PositionMinted` from the latest transaction
+- match decoded position oracle ID against Predict public API oracle summaries
+- show oracle `status`, `settlement_price`, and `settled_at` evidence when the
+  oracle is present in the current API snapshot
 
 Feasible with additional event/indexer work:
 
@@ -68,9 +71,10 @@ Feasible with additional event/indexer work:
 
 Feasible with deeper oracle/vault readback:
 
-- read oracle settled state
+- read oracle settled state; public API summary now gives partial evidence
 - read settlement price
 - infer whether YES/NO won
+- prove whether the Predict vault compacted settled oracle state
 - compute theoretical payout for remaining quantity
 - compare theoretical claimable amount with actual redeemed events
 
@@ -84,6 +88,7 @@ PredictGuard does not yet compute:
 - claimed amount
 - unclaimed amount
 - full historical position lifecycle
+- vault compacted-settlement proof
 
 ## Product Decision
 
@@ -100,6 +105,8 @@ This is strong enough for judge-demo readiness because the app already proves:
 - decoded `MarketKey`
 - active coverage accounting
 - explicit limits around full settlement
+- oracle evidence for redeem preview, while clearly marking vault evidence as
+  unavailable
 
 ## Next Implementation Path
 
