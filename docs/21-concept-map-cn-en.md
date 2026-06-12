@@ -131,6 +131,7 @@ Chinese-English map. Use it before reading the full glossary in
 | Permissionless Redeem | 无需持有人签名的赎回 | Redeem evidence readback | Settled position can be redeemed by an external executor while payout remains tied to the manager owner. |
 | External Executor | 外部执行者 | Redeem evidence readback | Address that submitted the redeem transaction; can differ from the manager owner. |
 | Multi-Event Redeem Matching | 多赎回事件匹配 | Redeem evidence readback | Match event by manager/oracle/side/strike when one transaction emits multiple PositionRedeemed events. |
+| Redeem Evidence Link | 赎回证据关联 | Manager/account summary | Connects a decoded manager position to matching PositionRedeemed evidence. |
 | Redeemability | 可赎回性 | Lifecycle roadmap | Stronger future claim that a position can safely be redeemed now. |
 | Oracle Evidence | 预言机证据 | Redeem PTB preview | Current API evidence for oracle status and settlement price. |
 | Vault Settled Evidence | 金库结算证据 | Redeem PTB preview | Direct Sui gRPC proof from `vault.settled_oracles` for the candidate oracle. |

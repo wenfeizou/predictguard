@@ -2104,6 +2104,49 @@ Next implementation step:
 - Use the richer redeem readback to connect manager zero-quantity entries to
   matched `PositionRedeemed` evidence in the manager/account summary.
 
+### Round AM: Manager Position Redeem Link V1
+
+Status: completed.
+
+Goal:
+
+- Connect decoded manager positions with matching `PositionRedeemed` evidence
+  so the UI shows a clearer lifecycle chain from manager inventory to redeem
+  result.
+
+Implementation outcome:
+
+- Added local redeem evidence linking between manager inventory entries and
+  parsed redeem summaries.
+- Matching requires manager ID, oracle ID, side, and strike to all match.
+- Added `Redeem evidence linked` badge to decoded positions.
+- Added matched payout, quantity, executor, and digest link under the decoded
+  position card.
+- Added redeem link count and per-position link details to the exported
+  Markdown report.
+
+Concept note:
+
+- `Redeem evidence link` / 赎回证据关联 means PredictGuard can connect a
+  manager position entry to a specific `PositionRedeemed` event instead of only
+  showing a separate historical transaction.
+- This is still evidence linking, not a full historical indexer. It only links
+  evidence already loaded by the current readback.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `87%`.
+
+Remaining task plan:
+
+- Add broader redeem history discovery beyond one default digest.
+- Compute full settlement accounting: minted quantity, redeemed payout,
+  unclaimed amount, and realized hedge PnL.
+- Tighten final README, pitch, screenshots, and 5-minute demo script.
+- Keep wallet-signed redeem as a stretch path if a suitable live redeemable
+  position is available before an external executor redeems it.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

@@ -27,6 +27,11 @@ export function buildMarkdownReport(input: {
   executionRiskSummary?: ExecutionAdjustedRiskSummary;
   managerHistorySummary?: ManagerExecutionHistorySummary;
   managerInventoryReadback?: PredictManagerInventoryReadback;
+  redeemEvidenceLinks?: {
+    entryFieldId: string;
+    evidence: PredictRedeemExecutionSummary;
+    confidence: string;
+  }[];
   executedStressSummary?: ExecutedStressSummary;
   ptbPlan?: {
     inputs: {
@@ -89,6 +94,7 @@ export function buildMarkdownReport(input: {
     executionRiskSummary,
     managerHistorySummary,
     managerInventoryReadback,
+    redeemEvidenceLinks,
     executedStressSummary,
     ptbPlan,
     redeemPreviewPlan,
@@ -233,10 +239,11 @@ export function buildMarkdownReport(input: {
           `- Active position quantity: ${formatDusdc(managerInventoryReadback.directActivePositionQuantityDusdc)}`,
           `- Reconstructed at: ${managerInventoryReadback.reconstructedAtIso}`,
           `- Lifecycle readiness: read-only`,
+          `- Redeem evidence links: ${redeemEvidenceLinks?.length ?? 0}`,
           `- Balances table: ${managerInventoryReadback.balancesTableId ?? "N/A"}`,
           `- Positions table: ${managerInventoryReadback.positionsTableId ?? "N/A"}`,
           "- Decoded positions:",
-          ...formatDecodedPositions(managerInventoryReadback),
+          ...formatDecodedPositions(managerInventoryReadback, redeemEvidenceLinks ?? []),
           "- Note: lifecycle readiness does not prove redeemability without PositionRedeemed history plus oracle/vault settlement state.",
           "",
         ]
@@ -341,12 +348,21 @@ function normalizeObjectId(value: string) {
   return value.startsWith("0x") ? value.slice(2).toLowerCase() : value.toLowerCase();
 }
 
-function formatDecodedPositions(readback: PredictManagerInventoryReadback) {
+function formatDecodedPositions(
+  readback: PredictManagerInventoryReadback,
+  redeemEvidenceLinks: {
+    entryFieldId: string;
+    evidence: PredictRedeemExecutionSummary;
+    confidence: string;
+  }[],
+) {
   if (readback.positionEntries.length === 0) {
     return ["  - None"];
   }
 
   return readback.positionEntries.slice(0, 6).map((entry) => {
+    const redeemLink = redeemEvidenceLinks.find((link) => link.entryFieldId === entry.fieldId);
+
     if (!entry.marketKey) {
       return `  - Undecoded MarketKey: ${formatDusdc(entry.quantityDusdc)}`;
     }
@@ -360,6 +376,9 @@ function formatDecodedPositions(readback: PredictManagerInventoryReadback) {
       `lifecycle ${entry.lifecycle.label}`,
       `expiry ${entry.marketKey.expiryIso}`,
       `oracle ${entry.marketKey.oracleId}`,
+      redeemLink
+        ? `redeem linked payout ${formatDusdc(redeemLink.evidence.payoutDusdc)} via ${redeemLink.confidence}`
+        : "redeem linked none",
     ].join("; ");
   });
 }

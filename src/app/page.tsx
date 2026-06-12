@@ -43,7 +43,10 @@ import {
   type PredictMintExecutionSummary,
   type PredictRedeemExecutionSummary,
 } from "@/lib/predict/execution";
-import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
+import type {
+  PredictManagerInventoryReadback,
+  PredictManagerPositionEntry,
+} from "@/lib/predict/managerReadback";
 import type { PredictRedeemEvidenceReadback } from "@/lib/predict/redeemReadback";
 import type { PredictVaultSettlementReadback } from "@/lib/predict/vaultSettlementReadback";
 import type { SizingModeOverride } from "@/lib/ptb/hedgeTransaction";
@@ -96,6 +99,12 @@ const workflowNavItems = [
   { label: "Readback", href: "#readback", sectionId: "readback" },
   { label: "Report", href: "#report", sectionId: "report" },
 ];
+
+type RedeemEvidenceLink = {
+  entryFieldId: string;
+  evidence: PredictRedeemExecutionSummary;
+  confidence: "matched-manager-oracle-side-strike";
+};
 
 function overrideHedgeSide(
   hedge: HedgeCandidate | undefined,
@@ -207,6 +216,10 @@ export default function Home() {
   );
   const managerInventoryReadback = walletReadiness.account?.managerInventory;
   const redeemExecution = redeemEvidenceReadback?.summary ?? null;
+  const redeemEvidenceLinks = useMemo(
+    () => buildRedeemEvidenceLinks(managerInventoryReadback, redeemEvidenceReadback),
+    [managerInventoryReadback, redeemEvidenceReadback],
+  );
   const redeemOracleIds = useMemo(
     () =>
       Array.from(
@@ -268,6 +281,7 @@ export default function Home() {
         executionRiskSummary,
         managerHistorySummary,
         managerInventoryReadback,
+        redeemEvidenceLinks,
         redeemPreviewPlan,
         executedStressSummary,
         ptbPlan,
@@ -282,6 +296,7 @@ export default function Home() {
       executionRiskSummary,
       managerHistorySummary,
       managerInventoryReadback,
+      redeemEvidenceLinks,
       redeemPreviewPlan,
       executedStressSummary,
       ptbPlan,
@@ -768,6 +783,7 @@ export default function Home() {
               <ManagerExecutionSummaryPanel
                 summary={managerHistorySummary}
                 inventory={managerInventoryReadback}
+                redeemLinks={redeemEvidenceLinks}
               />
               <RedeemEvidencePanel readback={redeemEvidenceReadback} />
               <RedeemPreviewPanel plan={redeemPreviewPlan} />
@@ -1325,9 +1341,11 @@ function ExecutionAdjustedRiskPanel({
 function ManagerExecutionSummaryPanel({
   summary,
   inventory,
+  redeemLinks,
 }: {
   summary?: ManagerExecutionHistorySummary;
   inventory?: PredictManagerInventoryReadback;
+  redeemLinks: RedeemEvidenceLink[];
 }) {
   if (!summary && !inventory) {
     return (
@@ -1396,63 +1414,95 @@ function ManagerExecutionSummaryPanel({
                 Decoded positions
               </div>
               <div className="mt-2 space-y-2">
-                {inventory.positionEntries.slice(0, 4).map((entry) => (
-                  <div
-                    key={entry.fieldId}
-                    className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-xs text-[#52615a]"
-                  >
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="font-semibold text-[#17211d]">
-                          {entry.marketKey
-                            ? `${entry.marketKey.side} ${entry.marketKey.strike.toLocaleString("en-US", {
-                                maximumFractionDigits: 6,
-                              })}`
-                            : "Undecoded MarketKey"}
+                {inventory.positionEntries.slice(0, 4).map((entry) => {
+                  const redeemLink = redeemLinks.find((link) => link.entryFieldId === entry.fieldId);
+
+                  return (
+                    <div
+                      key={entry.fieldId}
+                      className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-xs text-[#52615a]"
+                    >
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="font-semibold text-[#17211d]">
+                            {entry.marketKey
+                              ? `${entry.marketKey.side} ${entry.marketKey.strike.toLocaleString("en-US", {
+                                  maximumFractionDigits: 6,
+                                })}`
+                              : "Undecoded MarketKey"}
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <div className={`w-fit rounded-full border px-2 py-0.5 font-semibold ${getPositionStatusClass(entry.status.code)}`}>
+                              {entry.status.label}
+                            </div>
+                            <div className={`w-fit rounded-full border px-2 py-0.5 font-semibold ${getLifecycleStatusClass(entry.lifecycle.code)}`}>
+                              {entry.lifecycle.label}
+                            </div>
+                            {redeemLink ? (
+                              <div className="w-fit rounded-full border border-[#1f8a70] bg-[#e8f4ef] px-2 py-0.5 font-semibold text-[#1f8a70]">
+                                Redeem evidence linked
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
-                        <div className={`mt-1 w-fit rounded-full border px-2 py-0.5 font-semibold ${getPositionStatusClass(entry.status.code)}`}>
-                          {entry.status.label}
-                        </div>
-                        <div className={`mt-1 w-fit rounded-full border px-2 py-0.5 font-semibold ${getLifecycleStatusClass(entry.lifecycle.code)}`}>
-                          {entry.lifecycle.label}
+                        <div>
+                          {(entry.quantityDusdc ?? 0).toLocaleString("en-US", {
+                            maximumFractionDigits: 6,
+                          })}{" "}
+                          dUSDC
                         </div>
                       </div>
-                      <div>
-                        {(entry.quantityDusdc ?? 0).toLocaleString("en-US", {
-                          maximumFractionDigits: 6,
-                        })}{" "}
-                        dUSDC
-                      </div>
+                      <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <ConfigRow
+                          label="Expiry"
+                          value={
+                            entry.marketKey
+                              ? formatIsoDateTime(entry.marketKey.expiryIso)
+                              : undefined
+                          }
+                        />
+                        <ConfigRow
+                          label="Direction"
+                          value={
+                            entry.marketKey
+                              ? `${entry.marketKey.direction} (${entry.marketKey.directionCode})`
+                              : undefined
+                          }
+                        />
+                        <div className="sm:col-span-2">
+                          <ConfigRow label="Oracle" value={entry.marketKey?.oracleId} />
+                        </div>
+                      </dl>
+                      <p className="mt-2 leading-5">
+                        {entry.status.explanation}
+                      </p>
+                      <p className="mt-2 leading-5">
+                        {entry.lifecycle.explanation}
+                      </p>
+                      {redeemLink ? (
+                        <div className="mt-3 rounded-md border border-[#cfe2d8] bg-white p-3">
+                          <div className="text-xs font-semibold text-[#17211d]">
+                            Matched redeem evidence
+                          </div>
+                          <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+                            <ConfigRow label="Payout" value={formatDusdcValue(redeemLink.evidence.payoutDusdc)} />
+                            <ConfigRow label="Quantity" value={formatDusdcValue(redeemLink.evidence.quantityDusdc)} />
+                            <ConfigRow label="Executor" value={shortObjectId(redeemLink.evidence.executor)} />
+                            <ConfigRow label="Match" value="manager/oracle/side/strike" />
+                          </dl>
+                          <a
+                            href={`https://testnet.suivision.xyz/txblock/${redeemLink.evidence.digest}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-flex w-fit rounded-md border border-[#1f8a70] px-3 py-2 text-xs font-semibold text-[#1f8a70] hover:bg-[#e8f4ef]"
+                          >
+                            View matched redeem
+                          </a>
+                        </div>
+                      ) : null}
                     </div>
-                    <dl className="mt-2 grid gap-2 sm:grid-cols-2">
-                      <ConfigRow
-                        label="Expiry"
-                        value={
-                          entry.marketKey
-                            ? formatIsoDateTime(entry.marketKey.expiryIso)
-                            : undefined
-                        }
-                      />
-                      <ConfigRow
-                        label="Direction"
-                        value={
-                          entry.marketKey
-                            ? `${entry.marketKey.direction} (${entry.marketKey.directionCode})`
-                            : undefined
-                        }
-                      />
-                      <div className="sm:col-span-2">
-                        <ConfigRow label="Oracle" value={entry.marketKey?.oracleId} />
-                      </div>
-                    </dl>
-                    <p className="mt-2 leading-5">
-                      {entry.status.explanation}
-                    </p>
-                    <p className="mt-2 leading-5">
-                      {entry.lifecycle.explanation}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : null}
@@ -2087,6 +2137,50 @@ function formatPct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function buildRedeemEvidenceLinks(
+  inventory?: PredictManagerInventoryReadback,
+  readback?: PredictRedeemEvidenceReadback | null,
+): RedeemEvidenceLink[] {
+  if (!inventory || !readback?.summaries.length) {
+    return [];
+  }
+
+  return inventory.positionEntries.flatMap((entry) => {
+    const evidence = findRedeemEvidenceForEntry(
+      inventory,
+      entry,
+      readback.summaries,
+    );
+
+    return evidence
+      ? [{
+          entryFieldId: entry.fieldId,
+          evidence,
+          confidence: "matched-manager-oracle-side-strike" as const,
+        }]
+      : [];
+  });
+}
+
+function findRedeemEvidenceForEntry(
+  inventory: PredictManagerInventoryReadback,
+  entry: PredictManagerPositionEntry,
+  summaries: PredictRedeemExecutionSummary[],
+) {
+  const key = entry.marketKey;
+
+  if (!key) {
+    return undefined;
+  }
+
+  return summaries.find((summary) =>
+    sameObjectId(summary.managerId, inventory.managerObjectId) &&
+    sameObjectId(summary.oracleId, key.oracleId) &&
+    summary.side === key.side &&
+    summary.strike === key.strike
+  );
+}
+
 function formatDusdcValue(value?: number) {
   return value === undefined
     ? "N/A"
@@ -2095,6 +2189,18 @@ function formatDusdcValue(value?: number) {
 
 function shortObjectId(value?: string) {
   return value && value.length > 12 ? `${value.slice(0, 6)}...${value.slice(-4)}` : value ?? "N/A";
+}
+
+function sameObjectId(left?: string, right?: string) {
+  if (!left || !right) {
+    return false;
+  }
+
+  return normalizeObjectId(left) === normalizeObjectId(right);
+}
+
+function normalizeObjectId(value: string) {
+  return value.startsWith("0x") ? value.slice(2).toLowerCase() : value.toLowerCase();
 }
 
 function formatIsoDateTime(value: string) {

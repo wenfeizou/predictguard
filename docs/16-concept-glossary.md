@@ -1588,6 +1588,27 @@ It must match redeem evidence by fields such as:
 This prevents the UI from attributing another manager's redeemed position to
 the current user.
 
+### Redeem Evidence Link
+
+Chinese: 赎回证据关联。
+
+`Redeem evidence link` means PredictGuard connects a decoded manager position
+entry to a specific `PositionRedeemed` event.
+
+Current matching fields:
+
+- manager ID
+- oracle ID
+- side
+- strike
+
+When these fields match, the UI can show that a zero-quantity or expired
+position has corresponding redeem evidence, including payout, quantity,
+executor, and digest.
+
+Important limitation: this is not a complete indexer yet. PredictGuard can only
+link redeem evidence that it has already loaded.
+
 ### Redeemability
 
 Chinese: 可赎回性。
