@@ -187,6 +187,8 @@ Expected completion gain:
 
 ### Round 3: Redeem PTB Preview
 
+Status: completed as read-only preview v1.
+
 Goal:
 
 - Prepare the transaction path for redeem without enabling wallet signing by
@@ -194,23 +196,26 @@ Goal:
 
 Build:
 
-- Add a redeem transaction preview for a selected decoded position.
-- Show required objects:
+- Completed:
+  - add a redeem transaction preview for a selected decoded position
+  - show required objects:
   - `Predict`
   - `PredictManager`
   - `OracleSVI`
   - `MarketKey`
   - `Clock`
-- Show why signing is blocked when status is uncertain.
+  - show why signing is blocked while redeemability is uncertain
 
 Acceptance:
 
-- The UI can explain what would be redeemed and what protocol state is needed.
-- No wallet action is exposed unless readiness is clear.
+- Completed:
+  - the UI can explain what would be redeemed and what protocol state is needed
+  - no wallet action is exposed
 
 Risk:
 
-- Medium. Requires careful official source verification before PTB construction.
+- Reduced from medium to low-medium for preview. Still high for real execution
+  because redeemability and live testnet validation are unresolved.
 
 Expected completion gain:
 
@@ -296,8 +301,8 @@ Completed:
 
 Next:
 
-- Investigate redeem PTB preview only after official source verification and a
-  realistic redeemable-position test path.
+- Investigate live redeemability checks and a realistic redeemable-position test
+  path before enabling wallet-signed redeem.
 - Run:
 
 ```bash

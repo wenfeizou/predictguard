@@ -44,6 +44,11 @@ import {
 } from "@/lib/predict/execution";
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
+import {
+  buildPredictRedeemPreviewPlan,
+  buildPredictRedeemSdkSkeleton,
+  type PredictRedeemPreviewPlan,
+} from "@/lib/ptb/redeemTransaction";
 import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
 import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
 import { buildMarkdownReport } from "@/lib/report/markdown";
@@ -165,6 +170,10 @@ export default function Home() {
     [mintExecutionHistory],
   );
   const managerInventoryReadback = walletReadiness.account?.managerInventory;
+  const redeemPreviewPlan = useMemo(
+    () => buildPredictRedeemPreviewPlan({ inventory: managerInventoryReadback }),
+    [managerInventoryReadback],
+  );
   const demoFlowSteps = useMemo(
     () => buildDemoFlowSteps({
       riskScore: metrics.riskScore,
@@ -196,6 +205,7 @@ export default function Home() {
         executionRiskSummary,
         managerHistorySummary,
         managerInventoryReadback,
+        redeemPreviewPlan,
         executedStressSummary,
         ptbPlan,
       }),
@@ -208,6 +218,7 @@ export default function Home() {
       executionRiskSummary,
       managerHistorySummary,
       managerInventoryReadback,
+      redeemPreviewPlan,
       executedStressSummary,
       ptbPlan,
     ],
@@ -613,6 +624,7 @@ export default function Home() {
                 summary={managerHistorySummary}
                 inventory={managerInventoryReadback}
               />
+              <RedeemPreviewPanel plan={redeemPreviewPlan} />
             </div>
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
@@ -1361,6 +1373,90 @@ function ManagerExecutionSummaryPanel({
       </p>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function RedeemPreviewPanel({ plan }: { plan: PredictRedeemPreviewPlan }) {
+  return (
+    <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[#17211d]">Redeem PTB preview</div>
+          <p className="mt-2 text-sm leading-6 text-[#52615a]">
+            Preview the DeepBook Predict redeem call shape from decoded manager
+            positions. Signing remains disabled until redeemability checks and a
+            live redeemable test path are verified.
+          </p>
+        </div>
+        <div className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
+          plan.readiness.status === "preview-ready"
+            ? "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]"
+            : "border-[#c94f4f] bg-[#fff1ed] text-[#c75c48]"
+        }`}
+        >
+          {plan.readiness.status === "preview-ready" ? "Preview only" : "Blocked"}
+        </div>
+      </div>
+
+      <dl className="mt-4 grid gap-3 text-xs text-[#52615a] sm:grid-cols-2">
+        <ConfigRow label="Target" value={plan.target} />
+        <ConfigRow label="Mode" value={plan.mode} />
+        <ConfigRow label="Manager" value={plan.inputs.managerObjectId} />
+        <ConfigRow label="Oracle" value={plan.inputs.oracleObjectId} />
+        <ConfigRow label="Expiry" value={plan.inputs.oracleExpiryMs} />
+        <ConfigRow
+          label="Position"
+          value={
+            plan.inputs.side && plan.inputs.strike !== undefined
+              ? `${plan.inputs.side} ${plan.inputs.strike.toLocaleString("en-US", {
+                  maximumFractionDigits: 6,
+                })}`
+              : undefined
+          }
+        />
+        <ConfigRow
+          label="Quantity"
+          value={
+            plan.inputs.quantityDusdc === undefined
+              ? undefined
+              : `${plan.inputs.quantityDusdc.toLocaleString("en-US", {
+                  maximumFractionDigits: 6,
+                })} dUSDC`
+          }
+        />
+        <ConfigRow label="Lifecycle" value={plan.inputs.lifecycle} />
+      </dl>
+
+      {plan.readiness.missing.length > 0 ? (
+        <div className="mt-4">
+          <div className="text-xs font-semibold uppercase tracking-normal text-[#17211d]">
+            Missing preview inputs
+          </div>
+          <ul className="mt-2 flex flex-wrap gap-2 text-xs text-[#52615a]">
+            {plan.readiness.missing.map((item) => (
+              <li key={item} className="rounded-full border border-[#dce3dd] bg-[#f5f7f4] px-3 py-1">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <div className="mt-4">
+        <div className="text-xs font-semibold uppercase tracking-normal text-[#17211d]">
+          Guardrails
+        </div>
+        <ul className="mt-2 space-y-2 text-xs leading-5 text-[#52615a]">
+          {plan.readiness.warnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      </div>
+
+      <pre className="mt-4 max-h-72 overflow-auto rounded-md bg-[#17211d] p-4 text-xs leading-5 text-[#e8f4ef]">
+        {buildPredictRedeemSdkSkeleton(plan)}
+      </pre>
     </div>
   );
 }

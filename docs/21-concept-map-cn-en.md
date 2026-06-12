@@ -52,6 +52,7 @@ Chinese-English map. Use it before reading the full glossary in
 | Wallet Connection | 钱包连接 | Wallet readiness | Required before signing a real transaction. |
 | Slush Wallet | Slush 钱包插件 | Manual testing | Browser wallet used to approve connection and transactions. |
 | PTB | Programmable Transaction Block，可编程交易块 | PTB Preview | Sui transaction format combining multiple commands atomically. |
+| Redeem PTB Preview | 赎回 PTB 预览 | Manager/account summary | Read-only skeleton for future redeem execution; signing is disabled. |
 | Transaction Instance | Transaction 实例 | Wallet execution | The app passes a real SDK `Transaction` to the wallet. |
 | signAndExecuteTransaction | 钱包签名并执行交易 | Wallet execution code | Wallet-owned approval path for the Predict mint. |
 | SuiVision Digest | SuiVision 交易哈希链接 | Mint confirmed, report | External explorer proof that the testnet transaction happened. |
@@ -149,6 +150,7 @@ Chinese-English map. Use it before reading the full glossary in
 | Execution-Adjusted Risk | 执行后校正风险 | PTB | Compares recommendation with actual executed quantity/cost. |
 | Manager/account Summary | Manager/账户摘要 | PTB | Shows direct manager inventory and decoded positions. |
 | Lifecycle / Redeem Readiness | 生命周期/赎回准备状态 | Manager/account summary | Explains post-expiry follow-up without enabling unsafe redeem actions. |
+| Redeem PTB Preview | 赎回 PTB 预览 | Manager/account summary | Shows future redeem call shape and required guardrails. |
 | Sui SDK Transaction | Sui SDK 交易代码 | PTB | Human-readable transaction skeleton. |
 | Risk Report | 风险报告 | Report | Exportable Markdown evidence for the demo. |
 

@@ -37,6 +37,25 @@ export function buildMarkdownReport(input: {
       quoteExplanation?: string;
     };
   };
+  redeemPreviewPlan?: {
+    target: string;
+    mode: string;
+    readiness: {
+      status: string;
+      canSign: boolean;
+      missing: string[];
+      warnings: string[];
+    };
+    inputs: {
+      managerObjectId?: string;
+      oracleObjectId?: string;
+      oracleExpiryMs?: string;
+      strike?: number;
+      side?: string;
+      quantityDusdc?: number;
+      lifecycle?: string;
+    };
+  };
 }): string {
   const {
     market,
@@ -52,6 +71,7 @@ export function buildMarkdownReport(input: {
     managerInventoryReadback,
     executedStressSummary,
     ptbPlan,
+    redeemPreviewPlan,
   } = input;
 
   return [
@@ -234,6 +254,26 @@ export function buildMarkdownReport(input: {
           "- No PositionRedeemed evidence has been captured in this browser session.",
           "- Current lifecycle readiness is read-only and based on manager position status.",
         ]),
+    "",
+    "### Redeem PTB Preview",
+    "",
+    ...(redeemPreviewPlan
+      ? [
+          `- Target: ${redeemPreviewPlan.target}`,
+          `- Mode: ${redeemPreviewPlan.mode}`,
+          `- Readiness: ${redeemPreviewPlan.readiness.status}`,
+          `- Signing enabled: ${redeemPreviewPlan.readiness.canSign ? "yes" : "no"}`,
+          `- Position: ${redeemPreviewPlan.inputs.side ?? "N/A"} ${redeemPreviewPlan.inputs.strike?.toLocaleString("en-US") ?? "N/A"}`,
+          `- Quantity: ${formatDusdc(redeemPreviewPlan.inputs.quantityDusdc)}`,
+          `- Lifecycle: ${redeemPreviewPlan.inputs.lifecycle ?? "N/A"}`,
+          `- Manager: ${redeemPreviewPlan.inputs.managerObjectId ?? "N/A"}`,
+          `- Oracle: ${redeemPreviewPlan.inputs.oracleObjectId ?? "N/A"}`,
+          ...(redeemPreviewPlan.readiness.missing.length > 0
+            ? [`- Missing: ${redeemPreviewPlan.readiness.missing.join(", ")}`]
+            : []),
+          "- Note: redeem preview is intentionally read-only until redeemability checks and live validation are complete.",
+        ]
+      : ["- Redeem PTB preview not available."]),
     "",
     "## Assumptions",
     "",

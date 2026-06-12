@@ -14,6 +14,8 @@ The project should be useful even before full testnet execution works. Build in 
 Current implementation status:
 
 - `src/lib/ptb/hedgeTransaction.ts` builds a typed Predict hedge mint transaction preview using `@mysten/sui/transactions`.
+- `src/lib/ptb/redeemTransaction.ts` builds a read-only redeem PTB preview and
+  SDK skeleton from decoded manager positions.
 - The UI shows readiness state, missing inputs, guardrails, live oracle candidate, and the target `package::module::function`.
 - The builder is aligned with `predict-testnet-4-16`: `predict_manager::deposit<dUSDC>`, `market_key::new`, then `predict::mint<dUSDC>`.
 - The builder can return a `Transaction` only when hedge, `PredictManager`, `OracleSVI`, oracle expiry, and dUSDC coin object inputs are present.
@@ -21,6 +23,8 @@ Current implementation status:
 - A live testnet mint probe has succeeded on-chain.
 - Current execution deliberately uses a small probe size while quote-aware hedge
   sizing remains future work.
+- Redeem signing is not enabled. The redeem preview is intentionally read-only
+  until redeemability checks and a live redeemable test path are verified.
 
 Verified live mint probe:
 
@@ -130,6 +134,47 @@ public fun mint<Quote>(
 )
 ```
 
+Redeem signatures verified from `predict-testnet-4-16`:
+
+```move
+public fun redeem<Quote>(
+    predict: &mut Predict,
+    manager: &mut PredictManager,
+    oracle: &OracleSVI,
+    key: MarketKey,
+    quantity: u64,
+    clock: &Clock,
+    ctx: &mut TxContext,
+)
+
+public fun redeem_permissionless<Quote>(
+    predict: &mut Predict,
+    manager: &mut PredictManager,
+    oracle: &OracleSVI,
+    key: MarketKey,
+    quantity: u64,
+    clock: &Clock,
+    ctx: &mut TxContext,
+)
+```
+
+Preview-only redeem flow:
+
+```text
+manager readback
+  -> select decoded non-zero position
+  -> rebuild MarketKey
+  -> preview predict::redeem or predict::redeem_permissionless
+  -> keep wallet signing disabled
+```
+
+Reason for blocking signing:
+
+- `redeem_permissionless` requires a settled oracle.
+- safe redeemability requires oracle quoteable/settled state and vault
+  settlement state checks.
+- no live redeemable test path has been validated yet.
+
 ## Real Execution Stretch Checklist
 
 Completed:
@@ -142,9 +187,11 @@ Completed:
 
 Still needed:
 
-- Read back minted position and manager balances after execution.
-- Replace fixed probe sizing with quote-aware hedge sizing.
-- Link transaction and position evidence into the risk report.
+- Validate a live redeemable position path.
+- Implement guarded redeem signing only after read-only preview and source
+  verification are stable.
+- Add full settlement accounting from `PositionRedeemed` history plus
+  oracle/vault settlement readback.
 
 ## Fallback For Future Testnet Breakage
 

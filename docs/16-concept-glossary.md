@@ -1531,6 +1531,27 @@ more than manager position status:
 Until those checks are implemented, PredictGuard uses read-only lifecycle
 readiness instead of enabling wallet-signed redeem.
 
+### Redeem PTB Preview
+
+Chinese: 赎回 PTB 预览。
+
+`Redeem PTB preview` is a read-only transaction skeleton showing how
+PredictGuard would call `predict::redeem` or `predict::redeem_permissionless`
+for a decoded manager position.
+
+The preview includes:
+
+- target function
+- manager object
+- oracle object
+- rebuilt `MarketKey`
+- quantity
+- lifecycle state
+- guardrails explaining why signing is disabled
+
+This is not wallet execution. It is a safe intermediate step before implementing
+real redeem signing.
+
 ### Active Position Quantity
 
 Chinese: 活跃仓位数量。

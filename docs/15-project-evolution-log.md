@@ -1750,6 +1750,46 @@ Next implementation step:
 - Investigate redeem PTB preview from official source, but keep wallet-signed
   redeem disabled until a live redeemable test path is clear.
 
+### Round AE: Redeem PTB Preview V1
+
+Status: completed.
+
+Goal:
+
+- Show the future redeem transaction shape without enabling wallet signing.
+
+Implementation outcome:
+
+- Added `src/lib/ptb/redeemTransaction.ts`.
+- Verified official `predict-testnet-4-16` signatures for:
+  - `predict::redeem<Quote>`
+  - `predict::redeem_permissionless<Quote>`
+- Added a read-only redeem preview plan from decoded manager inventory.
+- The preview selects a decoded non-zero position candidate, rebuilds
+  `MarketKey`, shows target function, manager, oracle, expiry, strike, side,
+  quantity, and lifecycle state.
+- Added a guarded SDK skeleton for the redeem PTB.
+- Added a `Redeem PTB preview` panel under manager/account readback.
+- Added redeem preview evidence to Markdown reports.
+- Updated PTB integration docs, glossary, concept map, and lifecycle extension
+  plan.
+
+Concept note:
+
+- Redeem preview is not wallet execution. It documents the call shape and
+  guardrails while keeping signing disabled until oracle/vault settlement checks
+  and a live redeemable test path are available.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `97-98%`.
+- Lifecycle extension target: about `65%`.
+
+Next implementation step:
+
+- Investigate how to prove live redeemability from oracle/vault state or find a
+  real redeemable testnet position for validation.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:
