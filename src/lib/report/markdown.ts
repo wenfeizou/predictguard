@@ -32,6 +32,21 @@ export function buildMarkdownReport(input: {
     evidence: PredictRedeemExecutionSummary;
     confidence: string;
   }[];
+  settlementAccounting?: {
+    totalPositions: number;
+    activePositions: number;
+    expiredPositions: number;
+    zeroQuantityPositions: number;
+    redeemedPositions: number;
+    evidenceMissingPositions: number;
+    totalCurrentQuantityDusdc: number;
+    totalRedeemedQuantityDusdc: number;
+    totalPayoutDusdc: number;
+    totalUnresolvedQuantityDusdc: number;
+    externalExecutorRedeems: number;
+    status: string;
+    explanation: string;
+  };
   executedStressSummary?: ExecutedStressSummary;
   ptbPlan?: {
     inputs: {
@@ -95,6 +110,7 @@ export function buildMarkdownReport(input: {
     managerHistorySummary,
     managerInventoryReadback,
     redeemEvidenceLinks,
+    settlementAccounting,
     executedStressSummary,
     ptbPlan,
     redeemPreviewPlan,
@@ -263,6 +279,27 @@ export function buildMarkdownReport(input: {
           "- Note: this is a local event-history estimate until direct manager inventory readback is implemented.",
         ]
       : ["- No local manager execution history available."]),
+    "",
+    "## Settlement Accounting",
+    "",
+    ...(settlementAccounting
+      ? [
+          `- Status: ${settlementAccounting.status}`,
+          `- Explanation: ${settlementAccounting.explanation}`,
+          `- Total positions: ${settlementAccounting.totalPositions}`,
+          `- Active positions: ${settlementAccounting.activePositions}`,
+          `- Expired positions: ${settlementAccounting.expiredPositions}`,
+          `- Zero-quantity positions: ${settlementAccounting.zeroQuantityPositions}`,
+          `- Redeemed positions with linked evidence: ${settlementAccounting.redeemedPositions}`,
+          `- Positions missing evidence: ${settlementAccounting.evidenceMissingPositions}`,
+          `- Current quantity: ${formatDusdc(settlementAccounting.totalCurrentQuantityDusdc)}`,
+          `- Redeemed quantity: ${formatDusdc(settlementAccounting.totalRedeemedQuantityDusdc)}`,
+          `- Redeemed payout: ${formatDusdc(settlementAccounting.totalPayoutDusdc)}`,
+          `- Unresolved quantity: ${formatDusdc(settlementAccounting.totalUnresolvedQuantityDusdc)}`,
+          `- External executor redeems: ${settlementAccounting.externalExecutorRedeems}`,
+          "- Note: settlement accounting v1 only links currently loaded redeem evidence; it is not a full historical indexer.",
+        ]
+      : ["- Settlement accounting is not available."]),
     "",
     "## Lifecycle / Redeem Evidence",
     "",

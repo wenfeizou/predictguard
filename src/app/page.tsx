@@ -106,6 +106,22 @@ type RedeemEvidenceLink = {
   confidence: "matched-manager-oracle-side-strike";
 };
 
+type SettlementAccountingSummary = {
+  totalPositions: number;
+  activePositions: number;
+  expiredPositions: number;
+  zeroQuantityPositions: number;
+  redeemedPositions: number;
+  evidenceMissingPositions: number;
+  totalCurrentQuantityDusdc: number;
+  totalRedeemedQuantityDusdc: number;
+  totalPayoutDusdc: number;
+  totalUnresolvedQuantityDusdc: number;
+  externalExecutorRedeems: number;
+  status: "no-manager" | "needs-evidence" | "partial-evidence" | "evidence-linked";
+  explanation: string;
+};
+
 function overrideHedgeSide(
   hedge: HedgeCandidate | undefined,
   side: Side,
@@ -220,6 +236,10 @@ export default function Home() {
     () => buildRedeemEvidenceLinks(managerInventoryReadback, redeemEvidenceReadback),
     [managerInventoryReadback, redeemEvidenceReadback],
   );
+  const settlementAccounting = useMemo(
+    () => buildSettlementAccountingSummary(managerInventoryReadback, redeemEvidenceLinks),
+    [managerInventoryReadback, redeemEvidenceLinks],
+  );
   const redeemOracleIds = useMemo(
     () =>
       Array.from(
@@ -282,6 +302,7 @@ export default function Home() {
         managerHistorySummary,
         managerInventoryReadback,
         redeemEvidenceLinks,
+        settlementAccounting,
         redeemPreviewPlan,
         executedStressSummary,
         ptbPlan,
@@ -297,6 +318,7 @@ export default function Home() {
       managerHistorySummary,
       managerInventoryReadback,
       redeemEvidenceLinks,
+      settlementAccounting,
       redeemPreviewPlan,
       executedStressSummary,
       ptbPlan,
@@ -784,6 +806,7 @@ export default function Home() {
                 summary={managerHistorySummary}
                 inventory={managerInventoryReadback}
                 redeemLinks={redeemEvidenceLinks}
+                settlementAccounting={settlementAccounting}
               />
               <RedeemEvidencePanel readback={redeemEvidenceReadback} />
               <RedeemPreviewPanel plan={redeemPreviewPlan} />
@@ -1342,10 +1365,12 @@ function ManagerExecutionSummaryPanel({
   summary,
   inventory,
   redeemLinks,
+  settlementAccounting,
 }: {
   summary?: ManagerExecutionHistorySummary;
   inventory?: PredictManagerInventoryReadback;
   redeemLinks: RedeemEvidenceLink[];
+  settlementAccounting: SettlementAccountingSummary;
 }) {
   if (!summary && !inventory) {
     return (
@@ -1516,6 +1541,47 @@ function ManagerExecutionSummaryPanel({
               entries still need PositionRedeemed history plus oracle/vault
               settlement state before the app can prove payout or redeemability.
             </p>
+          </div>
+          <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-[#52615a]">
+                  Settlement accounting
+                </div>
+                <p className="mt-2 text-xs leading-5 text-[#52615a]">
+                  {settlementAccounting.explanation}
+                </p>
+              </div>
+              <div className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${getSettlementAccountingStatusClass(settlementAccounting.status)}`}>
+                {formatSettlementAccountingStatus(settlementAccounting.status)}
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <SummaryTile
+                label="Redeemed linked"
+                value={String(settlementAccounting.redeemedPositions)}
+              />
+              <SummaryTile
+                label="Evidence missing"
+                value={String(settlementAccounting.evidenceMissingPositions)}
+              />
+              <SummaryTile
+                label="Redeemed payout"
+                value={formatDusdcValue(settlementAccounting.totalPayoutDusdc)}
+              />
+              <SummaryTile
+                label="External redeems"
+                value={String(settlementAccounting.externalExecutorRedeems)}
+              />
+            </div>
+            <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+              <ConfigRow label="Active positions" value={String(settlementAccounting.activePositions)} />
+              <ConfigRow label="Expired positions" value={String(settlementAccounting.expiredPositions)} />
+              <ConfigRow label="Zero quantity" value={String(settlementAccounting.zeroQuantityPositions)} />
+              <ConfigRow label="Current quantity" value={formatDusdcValue(settlementAccounting.totalCurrentQuantityDusdc)} />
+              <ConfigRow label="Redeemed quantity" value={formatDusdcValue(settlementAccounting.totalRedeemedQuantityDusdc)} />
+              <ConfigRow label="Unresolved quantity" value={formatDusdcValue(settlementAccounting.totalUnresolvedQuantityDusdc)} />
+            </dl>
           </div>
           <p className="mt-3 text-xs leading-5 text-[#52615a]">
             Direct chain readback via Sui gRPC. MarketKey is decoded from Table
@@ -2162,6 +2228,116 @@ function buildRedeemEvidenceLinks(
   });
 }
 
+function buildSettlementAccountingSummary(
+  inventory?: PredictManagerInventoryReadback,
+  redeemLinks: RedeemEvidenceLink[] = [],
+): SettlementAccountingSummary {
+  if (!inventory) {
+    return {
+      totalPositions: 0,
+      activePositions: 0,
+      expiredPositions: 0,
+      zeroQuantityPositions: 0,
+      redeemedPositions: 0,
+      evidenceMissingPositions: 0,
+      totalCurrentQuantityDusdc: 0,
+      totalRedeemedQuantityDusdc: 0,
+      totalPayoutDusdc: 0,
+      totalUnresolvedQuantityDusdc: 0,
+      externalExecutorRedeems: 0,
+      status: "no-manager",
+      explanation: "Manager inventory has not been loaded yet.",
+    };
+  }
+
+  const linkedFieldIds = new Set(redeemLinks.map((link) => link.entryFieldId));
+  const totals = inventory.positionEntries.reduce(
+    (sum, entry) => {
+      const linked = linkedFieldIds.has(entry.fieldId);
+      const currentQuantity = entry.quantityDusdc ?? 0;
+      const needsEvidence =
+        !linked &&
+        (
+          entry.lifecycle.requiresRedeemEvidence ||
+          entry.status.code === "expired" ||
+          entry.status.code === "zero"
+        );
+
+      return {
+        active: sum.active + (entry.status.code === "active" ? 1 : 0),
+        expired: sum.expired + (entry.status.code === "expired" ? 1 : 0),
+        zero: sum.zero + (entry.status.code === "zero" ? 1 : 0),
+        redeemed: sum.redeemed + (linked ? 1 : 0),
+        evidenceMissing: sum.evidenceMissing + (needsEvidence ? 1 : 0),
+        currentQuantity: sum.currentQuantity + currentQuantity,
+        unresolvedQuantity: sum.unresolvedQuantity + (needsEvidence ? currentQuantity : 0),
+      };
+    },
+    {
+      active: 0,
+      expired: 0,
+      zero: 0,
+      redeemed: 0,
+      evidenceMissing: 0,
+      currentQuantity: 0,
+      unresolvedQuantity: 0,
+    },
+  );
+  const redeemedTotals = redeemLinks.reduce(
+    (sum, link) => ({
+      quantity: sum.quantity + (link.evidence.quantityDusdc ?? 0),
+      payout: sum.payout + (link.evidence.payoutDusdc ?? 0),
+      externalExecutors: sum.externalExecutors + (
+        link.evidence.owner &&
+        link.evidence.executor &&
+        !sameObjectId(link.evidence.owner, link.evidence.executor)
+          ? 1
+          : 0
+      ),
+    }),
+    { quantity: 0, payout: 0, externalExecutors: 0 },
+  );
+  const status = totals.evidenceMissing > 0
+    ? redeemLinks.length > 0
+      ? "partial-evidence"
+      : "needs-evidence"
+    : redeemLinks.length > 0
+      ? "evidence-linked"
+      : "needs-evidence";
+
+  return {
+    totalPositions: inventory.positionEntries.length,
+    activePositions: totals.active,
+    expiredPositions: totals.expired,
+    zeroQuantityPositions: totals.zero,
+    redeemedPositions: totals.redeemed,
+    evidenceMissingPositions: totals.evidenceMissing,
+    totalCurrentQuantityDusdc: totals.currentQuantity,
+    totalRedeemedQuantityDusdc: redeemedTotals.quantity,
+    totalPayoutDusdc: redeemedTotals.payout,
+    totalUnresolvedQuantityDusdc: totals.unresolvedQuantity,
+    externalExecutorRedeems: redeemedTotals.externalExecutors,
+    status,
+    explanation: buildSettlementAccountingExplanation(status),
+  };
+}
+
+function buildSettlementAccountingExplanation(status: SettlementAccountingSummary["status"]) {
+  if (status === "evidence-linked") {
+    return "Loaded manager positions have matching redeem evidence where follow-up evidence is required.";
+  }
+
+  if (status === "partial-evidence") {
+    return "Some manager positions are linked to redeem evidence, while others still need broader history discovery.";
+  }
+
+  if (status === "needs-evidence") {
+    return "Manager positions are loaded, but settlement/redeem evidence is incomplete.";
+  }
+
+  return "Manager inventory has not been loaded yet.";
+}
+
 function findRedeemEvidenceForEntry(
   inventory: PredictManagerInventoryReadback,
   entry: PredictManagerPositionEntry,
@@ -2237,6 +2413,38 @@ function getLifecycleStatusClass(status: string) {
   }
 
   return "border-[#dce3dd] bg-white text-[#52615a]";
+}
+
+function getSettlementAccountingStatusClass(status: SettlementAccountingSummary["status"]) {
+  if (status === "evidence-linked") {
+    return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+  }
+
+  if (status === "partial-evidence") {
+    return "border-[#d0a13a] bg-[#fff8e7] text-[#8a6416]";
+  }
+
+  if (status === "needs-evidence") {
+    return "border-[#c78b2d] bg-[#fff7e6] text-[#8b5d14]";
+  }
+
+  return "border-[#dce3dd] bg-white text-[#52615a]";
+}
+
+function formatSettlementAccountingStatus(status: SettlementAccountingSummary["status"]) {
+  if (status === "evidence-linked") {
+    return "Evidence linked";
+  }
+
+  if (status === "partial-evidence") {
+    return "Partial evidence";
+  }
+
+  if (status === "needs-evidence") {
+    return "Needs evidence";
+  }
+
+  return "No manager";
 }
 
 function getGuardStatusClass(status: string) {

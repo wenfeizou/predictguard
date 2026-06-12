@@ -2147,6 +2147,71 @@ Remaining task plan:
 - Keep wallet-signed redeem as a stretch path if a suitable live redeemable
   position is available before an external executor redeems it.
 
+### Round AN: Redeem Strategy Tradeoff And Settlement Accounting V1
+
+Status: completed.
+
+Goal:
+
+- Record the decision to stop treating wallet-signed redeem as a blocking
+  milestone.
+- Push lifecycle extension progress toward `95%` by adding settlement
+  accounting v1.
+
+Tradeoff recorded:
+
+- Added `docs/25-redeem-strategy-tradeoff.md`.
+- Wallet-signed redeem is now a stretch goal because external executors can
+  redeem settled positions through `predict::redeem_permissionless` before the
+  user manually signs.
+- Mainline product value now focuses on lifecycle evidence:
+  - manager readback
+  - expiry / settlement state
+  - `PositionRedeemed` evidence
+  - external executor explanation
+  - payout accounting
+  - reportable result
+
+Implementation outcome:
+
+- Added settlement accounting summary from manager inventory plus loaded redeem
+  evidence links.
+- Added counts for:
+  - active positions
+  - expired positions
+  - zero-quantity positions
+  - redeemed positions with linked evidence
+  - positions missing evidence
+  - external executor redeems
+- Added totals for:
+  - current quantity
+  - redeemed quantity
+  - redeemed payout
+  - unresolved quantity
+- Added a `Settlement accounting` panel under manager/account summary.
+- Added a `Settlement Accounting` section to exported Markdown reports.
+- Updated concept glossary and concept map.
+
+Concept note:
+
+- `Settlement Accounting` / 结算核算 is the product summary of active,
+  expired, redeemed, payout-known, and evidence-missing lifecycle state.
+- `Evidence Missing` / 缺少证据 means manager state suggests follow-up is
+  needed, but the matching event or settlement proof is not loaded.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `95%`.
+
+Next implementation step:
+
+- Prepare for two days of human code review:
+  - check settlement accounting assumptions
+  - inspect parser and matching logic
+  - verify UI copy around external executor and permissionless redeem
+  - decide whether broader history discovery is required before final demo
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

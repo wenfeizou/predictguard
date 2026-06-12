@@ -1609,6 +1609,45 @@ executor, and digest.
 Important limitation: this is not a complete indexer yet. PredictGuard can only
 link redeem evidence that it has already loaded.
 
+### Settlement Accounting
+
+Chinese: 结算核算。
+
+`Settlement accounting` is the product view that summarizes what happened after
+a hedge position was minted.
+
+In PredictGuard v1, settlement accounting tracks:
+
+- active positions
+- expired positions
+- zero-quantity positions
+- positions linked to redeem evidence
+- positions still missing evidence
+- redeemed quantity
+- redeemed payout
+- external executor redeem count
+
+This helps users answer whether the hedge lifecycle is complete or still needs
+follow-up.
+
+Important limitation: settlement accounting v1 is evidence-based. It only uses
+manager readback and loaded `PositionRedeemed` evidence. A production version
+would need broader redeem history discovery or an indexer.
+
+### Evidence Missing
+
+Chinese: 缺少证据。
+
+`Evidence missing` means PredictGuard has enough manager state to know a
+position needs follow-up, but it does not yet have the matching event or
+settlement evidence to prove the final result.
+
+Examples:
+
+- a zero-quantity position without a matched `PositionRedeemed` event
+- an expired position without oracle/vault settlement evidence
+- a manager position whose payout cannot be reconstructed from loaded history
+
 ### Redeemability
 
 Chinese: 可赎回性。
