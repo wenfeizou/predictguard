@@ -93,3 +93,35 @@ Next actions:
    oracle/vault settlement 是否满足 redeem。
 3. 如果时间不合适，就 mint 一个更短 expiry 的小额仓位，等它结算后走完整
    wallet-signed redeem 验证。
+
+## 2026-06-12 Short-Expiry Mint For Redeem Validation
+
+User-created short-expiry test position:
+
+```text
+Position: YES 63,317
+Quantity: 1.880164 dUSDC
+Actual cost: 1.155218 dUSDC
+Ask price: 0.614424521
+dUSDC wallet change: -1 dUSDC
+Expiry: 2026-06-12 10:00:00 Beijing time
+Manager: 0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2
+```
+
+Direct manager readback confirmed the position:
+
+```text
+Latest manager transaction: 2YpU6kWodtkh1tnm6zwQLLZGX2z1bPLeW7rWPYj2spBL
+Oracle: 0x5ff5bc47f6f97c440316862e33e40d6c328b67f180a6aa280b60223e953db880
+Expiry ISO: 2026-06-12T02:00:00.000Z
+Strike: 63,317
+Side: YES
+Quantity: 1.880164 dUSDC
+Status: active at readback time
+Lifecycle: active
+```
+
+Next action:
+
+- After expiry and oracle/vault settlement evidence are available, use this
+  position to validate guarded redeem readiness and then wallet-signed redeem.

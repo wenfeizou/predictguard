@@ -2011,6 +2011,49 @@ Next implementation step:
 - Use the new controls to mint a small short-expiry position, wait for expiry
   and settlement evidence, then validate guarded redeem execution.
 
+### Round AK: Wallet Execution Feedback V1
+
+Status: completed.
+
+Goal:
+
+- Make the `Sign PTB` feedback path explicit enough that the user can tell
+  whether a transaction is waiting for wallet approval, submitted, confirmed, or
+  failed.
+
+Implementation outcome:
+
+- Added a persistent execution message card to `Wallet execution`.
+- Added execution stages:
+  - `idle`
+  - `building`
+  - `wallet-review`
+  - `submitted`
+  - `confirmed`
+  - `failed`
+- Display digest as soon as the wallet returns a submitted transaction.
+- Keep the final `Mint confirmed` detail card after event parsing.
+- Recorded the short-expiry `YES 63,317` test position in
+  `docs/24-redeem-investigation-log.md`.
+
+Concept note:
+
+- The feedback path now separates wallet approval from Sui fullnode
+  confirmation. A digest means the wallet submitted a transaction; `Mint
+  confirmed` means the fullnode returned a successful transaction with parsed
+  `PositionMinted` evidence.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `80-82%`.
+
+Next implementation step:
+
+- After the `YES 63,317` position expires, check oracle/vault settlement
+  evidence and use the guard checklist to decide whether redeem signing can be
+  tested.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

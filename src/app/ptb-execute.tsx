@@ -2,7 +2,7 @@
 
 import { useCurrentAccount, useCurrentClient, useDAppKit } from "@mysten/dapp-kit-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Send } from "lucide-react";
+import { CheckCircle2, ExternalLink, LoaderCircle, Send, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -18,6 +18,21 @@ import {
 } from "@/lib/ptb/hedgeTransaction";
 import type { NormalizedPredictLiveContext } from "@/lib/predict/normalize";
 import type { Side } from "@/lib/types";
+
+type ExecutionStage =
+  | "idle"
+  | "building"
+  | "wallet-review"
+  | "submitted"
+  | "confirmed"
+  | "failed";
+
+type ExecutionMessage = {
+  stage: ExecutionStage;
+  title: string;
+  detail: string;
+  digest?: string;
+};
 
 export function PtbExecuteClient({
   input,
@@ -53,6 +68,11 @@ export function PtbExecuteClient({
   const [pending, setPending] = useState(false);
   const [execution, setExecution] = useState<PredictMintExecutionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<ExecutionMessage>({
+    stage: "idle",
+    title: "Ready to sign",
+    detail: "No wallet transaction has been submitted in this browser session.",
+  });
 
   const disabled = pending || !account || !plan.readiness.canBuildTransaction;
 
@@ -64,6 +84,11 @@ export function PtbExecuteClient({
     setPending(true);
     setExecution(null);
     setError(null);
+    setMessage({
+      stage: "building",
+      title: "Building transaction",
+      detail: "PredictGuard is preparing the selected oracle, side, quantity, and dUSDC deposit.",
+    });
 
     try {
       const freshInput = await refreshPtbInputWithLiveOracle(input);
@@ -71,6 +96,12 @@ export function PtbExecuteClient({
       if (!preview.transaction) {
         throw new Error("Transaction is not ready. Check missing PTB inputs.");
       }
+
+      setMessage({
+        stage: "wallet-review",
+        title: "Waiting for wallet approval",
+        detail: "Review the Slush wallet request. The transaction is not submitted until you approve it.",
+      });
 
       const result = await dAppKit.signAndExecuteTransaction({
         transaction: preview.transaction,
@@ -83,6 +114,12 @@ export function PtbExecuteClient({
       }
 
       const txDigest = result.Transaction.digest;
+      setMessage({
+        stage: "submitted",
+        title: "Transaction submitted",
+        detail: "Wallet approval succeeded. PredictGuard is waiting for Sui fullnode confirmation and events.",
+        digest: txDigest,
+      });
       const transaction = await client.core.waitForTransaction({
         digest: txDigest,
         include: {
@@ -100,11 +137,23 @@ export function PtbExecuteClient({
 
       const summary = summarizePredictMintExecution(transaction.Transaction);
       setExecution(summary);
+      setMessage({
+        stage: "confirmed",
+        title: "Mint confirmed",
+        detail: `${summary.side ?? "Position"} ${summary.strike?.toLocaleString("en-US") ?? ""} was confirmed on-chain.`,
+        digest: summary.digest,
+      });
       onExecution?.(summary);
       await queryClient.invalidateQueries({ queryKey: ["dusdc-coins", account.address] });
       await queryClient.invalidateQueries({ queryKey: ["predict-manager", account.address] });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unknown transaction error");
+      const messageText = caught instanceof Error ? caught.message : "Unknown transaction error";
+      setError(messageText);
+      setMessage({
+        stage: "failed",
+        title: "Transaction not confirmed",
+        detail: messageText,
+      });
     } finally {
       setPending(false);
     }
@@ -130,6 +179,8 @@ export function PtbExecuteClient({
           {pending ? "Waiting" : plan.readiness.canBuildTransaction ? "Sign PTB" : "Blocked"}
         </button>
       </div>
+
+      <ExecutionMessageCard message={message} />
 
       <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
         <div className="flex flex-col gap-1">
@@ -355,6 +406,51 @@ export function PtbExecuteClient({
           </a>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function ExecutionMessageCard({ message }: { message: ExecutionMessage }) {
+  const iconClass = "mt-0.5 h-4 w-4 shrink-0";
+  const icon =
+    message.stage === "failed" ? (
+      <TriangleAlert className={`${iconClass} text-[#c75c48]`} />
+    ) : message.stage === "confirmed" ? (
+      <CheckCircle2 className={`${iconClass} text-[#1f8a70]`} />
+    ) : message.stage === "idle" ? (
+      <Send className={`${iconClass} text-[#52615a]`} />
+    ) : (
+      <LoaderCircle className={`${iconClass} animate-spin text-[#d0a13a]`} />
+    );
+  const toneClass =
+    message.stage === "failed"
+      ? "border-[#c75c48] bg-[#fff1ed]"
+      : message.stage === "confirmed"
+        ? "border-[#1f8a70] bg-[#e8f4ef]"
+        : message.stage === "idle"
+          ? "border-[#dce3dd] bg-[#f5f7f4]"
+          : "border-[#d0a13a] bg-[#fff8e7]";
+
+  return (
+    <div className={`mt-3 rounded-md border p-3 ${toneClass}`}>
+      <div className="flex gap-2">
+        {icon}
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-[#17211d]">{message.title}</div>
+          <p className="mt-1 text-xs leading-5 text-[#52615a]">{message.detail}</p>
+          {message.digest ? (
+            <a
+              href={`https://testnet.suivision.xyz/txblock/${message.digest}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex max-w-full items-center gap-1 break-all text-xs font-semibold text-[#1f8a70] underline-offset-4 hover:underline"
+            >
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              {message.digest}
+            </a>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
