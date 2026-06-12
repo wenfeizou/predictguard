@@ -130,7 +130,7 @@ Chinese-English map. Use it before reading the full glossary in
 | Redeem Evidence | 赎回证据 | Report, lifecycle roadmap | Confirmed PositionRedeemed data used to prove payout and realized result. |
 | Redeemability | 可赎回性 | Lifecycle roadmap | Stronger future claim that a position can safely be redeemed now. |
 | Oracle Evidence | 预言机证据 | Redeem PTB preview | Current API evidence for oracle status and settlement price. |
-| Vault Settled Evidence | 金库结算证据 | Redeem PTB preview | Missing proof needed before enabling safe signed redeem. |
+| Vault Settled Evidence | 金库结算证据 | Redeem PTB preview | Direct Sui gRPC proof from `vault.settled_oracles` for the candidate oracle. |
 
 ## Page Sections
 

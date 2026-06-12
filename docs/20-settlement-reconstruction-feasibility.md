@@ -61,6 +61,10 @@ Feasible with current reads:
 - match decoded position oracle ID against Predict public API oracle summaries
 - show oracle `status`, `settlement_price`, and `settled_at` evidence when the
   oracle is present in the current API snapshot
+- read the live Predict object's `vault.settled_oracles` Table ID
+- scan `vault.settled_oracles` dynamic fields for target oracle IDs
+- show whether the candidate position's oracle has direct vault settled-oracle
+  evidence
 
 Feasible with additional event/indexer work:
 
@@ -74,7 +78,9 @@ Feasible with deeper oracle/vault readback:
 - read oracle settled state; public API summary now gives partial evidence
 - read settlement price
 - infer whether YES/NO won
-- prove whether the Predict vault compacted settled oracle state
+- prove whether the Predict vault compacted settled oracle state; target-oracle
+  proof is now implemented through `vault.settled_oracles` dynamic-field
+  scanning
 - compute theoretical payout for remaining quantity
 - compare theoretical claimable amount with actual redeemed events
 
@@ -88,15 +94,17 @@ PredictGuard does not yet compute:
 - claimed amount
 - unclaimed amount
 - full historical position lifecycle
-- vault compacted-settlement proof
+- wallet-signed redeem execution
 
 ## Product Decision
 
 For the current competition MVP, PredictGuard should present this honestly:
 
 > Settlement-aware v1 classifies manager positions as active, expired, zero, or
-> unknown. Full settlement accounting requires redeemed-event history and deeper
-> oracle/vault settlement readback.
+> unknown. Redeem preview now combines public oracle evidence with direct
+> `vault.settled_oracles` proof for target oracle IDs. Full settlement
+> accounting still requires redeemed-event history, claimable payout
+> computation, and live redeem validation.
 
 This is strong enough for judge-demo readiness because the app already proves:
 
@@ -105,14 +113,15 @@ This is strong enough for judge-demo readiness because the app already proves:
 - decoded `MarketKey`
 - active coverage accounting
 - explicit limits around full settlement
-- oracle evidence for redeem preview, while clearly marking vault evidence as
-  unavailable
+- oracle evidence plus direct vault settled-oracle evidence for redeem preview,
+  while keeping wallet-signed redeem disabled until a live redeemable path is
+  verified
 
 ## Next Implementation Path
 
-1. Add `PositionRedeemed` event parsing for the latest redeem transaction.
-2. Add historical event lookup for manager ID when an indexer/API path is
+1. Add historical event lookup for manager ID when an indexer/API path is
    available.
-3. Add oracle settled-state readback and settlement price display.
-4. Compute theoretical payout for remaining active/expired positions.
-5. Reconcile theoretical payout with actual redeemed payout history.
+2. Add final settlement price / winning-side display for expired positions.
+3. Compute theoretical payout for remaining active/expired positions.
+4. Reconcile theoretical payout with actual redeemed payout history.
+5. Enable wallet-signed redeem only after a live redeemable test path is proven.

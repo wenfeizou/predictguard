@@ -1442,8 +1442,8 @@ state of a position:
 - redeemed transaction history
 
 PredictGuard does not implement full settlement accounting yet. The current MVP
-implements settlement-aware status classification and documents the remaining
-data requirements.
+implements settlement-aware status classification, direct vault settled-oracle
+evidence for target oracle IDs, and documents the remaining data requirements.
 
 ### PositionRedeemed Event
 
@@ -1536,9 +1536,51 @@ Current evidence status:
 - PredictGuard can match a decoded position's oracle ID against the Predict
   public API oracle summary.
 - The app can display oracle status and settlement price evidence when present.
-- The app still cannot prove `vault.has_settled_oracle(oracle_id)` from the
-  current readback path.
-- Because of that missing vault evidence, wallet-signed redeem remains disabled.
+- The app can read the live Predict object, find the vault's
+  `settled_oracles` Table, and scan it for the candidate oracle ID.
+- This can prove target-oracle `vault settled evidence` as `present`, `absent`,
+  `unknown`, or `unavailable`.
+- Wallet-signed redeem remains disabled because the project still needs a live
+  redeemable test path, final guarded PTB checks, and `PositionRedeemed`
+  validation.
+
+### Vault Settled Evidence
+
+Chinese: 金库结算证据。
+
+`Vault settled evidence` means evidence that the DeepBook Predict vault has
+recorded settled state for a specific oracle.
+
+In protocol terms, this is related to the check commonly discussed as:
+
+```text
+vault.has_settled_oracle(oracle_id)
+```
+
+In PredictGuard, this is now read directly from the live Predict object:
+
+1. Read the Predict object through Sui gRPC.
+2. Extract `vault.settled_oracles.id`.
+3. Scan that Table's dynamic fields.
+4. Decode each dynamic-field name as an oracle object ID.
+5. Match the decoded IDs against the selected position's oracle.
+
+UI meanings:
+
+- `present`: the candidate oracle ID exists in `vault.settled_oracles`.
+- `absent`: the table was scanned and the candidate oracle ID was not found.
+- `unknown`: the scan hit the page limit before proving absence.
+- `unavailable`: the app has not loaded vault settlement readback for this
+  candidate.
+
+Why it matters: a settled oracle summary alone tells us the oracle has a
+settlement state. Vault settled evidence tells us the Predict vault has also
+recorded settled state for that oracle, which is a stronger precondition before
+moving toward redeem execution.
+
+Important limitation: this is still not full settlement accounting. It does not
+compute claimable payout, prove a redeem transaction succeeded, or enable wallet
+signing by itself.
 
 ### Redeem PTB Preview
 
@@ -1557,7 +1599,7 @@ The preview includes:
 - quantity
 - lifecycle state
 - oracle status and settlement evidence
-- missing vault settlement evidence
+- direct vault settled-oracle evidence when available
 - guardrails explaining why signing is disabled
 
 This is not wallet execution. It is a safe intermediate step before implementing

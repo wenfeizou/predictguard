@@ -1832,6 +1832,60 @@ Next implementation step:
 - Investigate whether direct Predict object/vault readback or public API data
   can prove `vault.has_settled_oracle(oracle_id)`.
 
+### Round AG: Vault Settled Evidence Readback V1
+
+Status: completed.
+
+Goal:
+
+- Replace the redeem preview's fixed `vaultSettledEvidence: unavailable` gap
+  with direct target-oracle readback from the live Predict vault.
+
+Implementation outcome:
+
+- Added `src/lib/predict/vaultSettlementReadback.ts`.
+- Added `/api/predict/vault-settlement`.
+- Read the live Predict object through Sui gRPC.
+- Extracted `vault.settled_oracles.id` from the Predict object JSON.
+- Scanned the settled-oracle Table dynamic fields and decoded dynamic-field
+  names as oracle object IDs.
+- Matched candidate manager position oracle IDs against the vault table.
+- Updated redeem preview evidence:
+  - `present`
+  - `absent`
+  - `unknown`
+  - `unavailable`
+- Updated redeemability labels:
+  - `preview-live-oracle`
+  - `preview-settled-vault-proven`
+  - `needs-vault-evidence`
+  - `blocked`
+- Kept wallet-signed redeem disabled.
+- Updated settlement feasibility, glossary, concept map, and lifecycle plan.
+
+Concept note:
+
+- `Vault Settled Evidence` / 金库结算证据 means direct evidence that
+  `vault.settled_oracles` contains the candidate oracle ID. This is stronger
+  than only reading oracle status from the public API, but it still does not
+  compute claimable payout or prove that a redeem transaction succeeded.
+
+Validation note:
+
+- Live gRPC test found the previously used oracle
+  `0x7681a180a95fd9957cf581941a08f9e4a4b6a182c1f5d1f05e9333ed47023c43`
+  inside `vault.settled_oracles`.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `98-99%`.
+- Lifecycle extension target: about `70-75%`.
+
+Next implementation step:
+
+- Find or create a safe live redeemable testnet path, then validate
+  wallet-signed redeem and `PositionRedeemed` parsing end to end.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

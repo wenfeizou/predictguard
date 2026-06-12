@@ -43,6 +43,7 @@ import {
   type PredictMintExecutionSummary,
 } from "@/lib/predict/execution";
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
+import type { PredictVaultSettlementReadback } from "@/lib/predict/vaultSettlementReadback";
 import { buildPredictHedgePtbPlan, buildPredictHedgeSdkSkeleton } from "@/lib/ptb/hedgeTransaction";
 import {
   buildPredictRedeemPreviewPlan,
@@ -104,6 +105,8 @@ export default function Home() {
   const [mintExecutionHistory, setMintExecutionHistory] = useState<
     PredictMintExecutionSummary[]
   >([]);
+  const [vaultSettlementReadback, setVaultSettlementReadback] =
+    useState<PredictVaultSettlementReadback | null>(null);
   const [maxHedgeBudgetDusdc, setMaxHedgeBudgetDusdc] = useState(2);
   const [activeSectionId, setActiveSectionId] = useState("workflow");
   const selectedScenario =
@@ -170,13 +173,28 @@ export default function Home() {
     [mintExecutionHistory],
   );
   const managerInventoryReadback = walletReadiness.account?.managerInventory;
+  const redeemOracleIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          managerInventoryReadback?.positionEntries
+            .map((entry) => entry.marketKey?.oracleId)
+            .filter((oracleId): oracleId is string => Boolean(oracleId)) ?? [],
+        ),
+      ),
+    [managerInventoryReadback],
+  );
+  const redeemOracleIdsKey = redeemOracleIds.join(",");
   const redeemPreviewPlan = useMemo(
     () =>
       buildPredictRedeemPreviewPlan({
         inventory: managerInventoryReadback,
         oracles: liveSnapshot?.oracles,
+        vaultSettlement: redeemOracleIds.length > 0
+          ? vaultSettlementReadback ?? undefined
+          : undefined,
       }),
-    [managerInventoryReadback, liveSnapshot?.oracles],
+    [managerInventoryReadback, liveSnapshot?.oracles, redeemOracleIds.length, vaultSettlementReadback],
   );
   const demoFlowSteps = useMemo(
     () => buildDemoFlowSteps({
@@ -314,6 +332,48 @@ export default function Home() {
       window.clearInterval(refreshTimer);
     };
   }, []);
+
+  useEffect(() => {
+    if (redeemOracleIds.length === 0) {
+      const frame = window.requestAnimationFrame(() => {
+        setVaultSettlementReadback(null);
+      });
+
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    const controller = new AbortController();
+
+    async function loadVaultSettlementReadback() {
+      try {
+        const response = await fetch(
+          `/api/predict/vault-settlement?oracles=${encodeURIComponent(redeemOracleIdsKey)}`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Vault settlement readback returned ${response.status}`);
+        }
+
+        setVaultSettlementReadback(
+          (await response.json()) as PredictVaultSettlementReadback,
+        );
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setVaultSettlementReadback(null);
+      }
+    }
+
+    void loadVaultSettlementReadback();
+
+    return () => controller.abort();
+  }, [redeemOracleIds.length, redeemOracleIdsKey]);
 
   function handleExecution(execution: PredictMintExecutionSummary) {
     setMintExecution(execution);

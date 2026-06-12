@@ -4,12 +4,14 @@ import type {
   PredictManagerInventoryReadback,
   PredictManagerPositionEntry,
 } from "@/lib/predict/managerReadback";
+import type { PredictVaultSettlementReadback } from "@/lib/predict/vaultSettlementReadback";
 
 export type PredictRedeemPreviewMode = "owner-redeem" | "permissionless-redeem";
 
 export type PredictRedeemPreviewInput = {
   inventory?: PredictManagerInventoryReadback;
   oracles?: PredictOracleSummary[];
+  vaultSettlement?: PredictVaultSettlementReadback;
   mode?: PredictRedeemPreviewMode;
   config?: PredictTestnetConfig;
 };
@@ -38,8 +40,8 @@ export type PredictRedeemPreviewPlan = {
     oracleMatched: boolean;
     oracleQuoteable: boolean;
     oracleSettled: boolean;
-    vaultSettledEvidence: "unavailable";
-    redeemability: "blocked" | "needs-vault-evidence";
+    vaultSettledEvidence: "present" | "absent" | "unknown" | "unavailable";
+    redeemability: "blocked" | "preview-live-oracle" | "preview-settled-vault-proven" | "needs-vault-evidence";
     notes: string[];
   };
   readiness: {
@@ -62,8 +64,10 @@ export function buildPredictRedeemPreviewPlan(
   }`;
   const candidate = selectRedeemCandidate(input.inventory);
   const oracleEvidence = getOracleEvidence(candidate, input.oracles);
+  const vaultEvidence = getVaultSettlementEvidence(candidate, input.vaultSettlement);
   const missing = getMissingInputs(input.inventory, candidate);
   const canPreview = missing.length === 0;
+  const redeemability = getRedeemability({ oracleEvidence, vaultEvidence });
 
   return {
     target,
@@ -95,9 +99,9 @@ export function buildPredictRedeemPreviewPlan(
       oracleMatched: Boolean(oracleEvidence.oracle),
       oracleQuoteable: oracleEvidence.quoteable,
       oracleSettled: oracleEvidence.settled,
-      vaultSettledEvidence: "unavailable",
-      redeemability: oracleEvidence.quoteable ? "needs-vault-evidence" : "blocked",
-      notes: buildEvidenceNotes({ mode, oracleEvidence }),
+      vaultSettledEvidence: vaultEvidence.status,
+      redeemability,
+      notes: buildEvidenceNotes({ mode, oracleEvidence, vaultEvidence }),
     },
     readiness: {
       status: canPreview ? "preview-ready" : "blocked",
@@ -108,7 +112,7 @@ export function buildPredictRedeemPreviewPlan(
         "Redeem preview is read-only. Wallet-signed redeem stays disabled until oracle/vault settlement checks are implemented.",
         "Owner redeem can work for quoteable or settled oracles, but PredictGuard has not yet built the final guarded transaction path.",
         "Permissionless redeem requires the oracle to be settled; use it only after settled-state verification.",
-        "The Predict public API exposes oracle status, but this preview still lacks direct vault compacted-settlement evidence.",
+        "The preview now reads vault.settled_oracles evidence, but it still needs a live redeem test before enabling wallet signing.",
       ],
     },
     steps: buildRedeemSteps(mode, canPreview),
@@ -160,6 +164,7 @@ tx.moveCall({
 // Oracle status: ${plan.inputs.oracleStatus ?? "Unavailable"}.
 // Oracle quoteable evidence: ${plan.evidence.oracleQuoteable ? "yes" : "no"}.
 // Vault settled evidence: ${plan.evidence.vaultSettledEvidence}.
+// Redeemability evidence: ${plan.evidence.redeemability}.
 // Quantity: ${plan.inputs.quantityDusdc?.toLocaleString("en-US") ?? "Unavailable"} dUSDC.
 // Wallet-signed redeem remains blocked until redeemability is proven.`;
 }
@@ -237,9 +242,66 @@ function getOracleEvidence(
   };
 }
 
+function getVaultSettlementEvidence(
+  candidate?: PredictManagerPositionEntry,
+  readback?: PredictVaultSettlementReadback,
+) {
+  const oracleId = normalizeObjectId(candidate?.marketKey?.oracleId);
+
+  if (!oracleId || !readback) {
+    return {
+      status: "unavailable" as const,
+      scannedEntryCount: readback?.scannedEntryCount,
+      tableId: readback?.settledOraclesTableId,
+      tableSize: readback?.settledOracleTableSize,
+      scanLimitReached: readback?.scanLimitReached,
+    };
+  }
+
+  const evidence = readback.evidence.find((item) => normalizeObjectId(item.oracleId) === oracleId);
+
+  if (evidence?.present) {
+    return {
+      status: "present" as const,
+      scannedEntryCount: readback.scannedEntryCount,
+      tableId: readback.settledOraclesTableId,
+      tableSize: readback.settledOracleTableSize,
+      scanLimitReached: readback.scanLimitReached,
+      fieldId: evidence.fieldId,
+      valueType: evidence.valueType,
+    };
+  }
+
+  return {
+    status: readback.scanLimitReached ? "unknown" as const : "absent" as const,
+    scannedEntryCount: readback.scannedEntryCount,
+    tableId: readback.settledOraclesTableId,
+    tableSize: readback.settledOracleTableSize,
+    scanLimitReached: readback.scanLimitReached,
+  };
+}
+
+function getRedeemability(input: {
+  oracleEvidence: ReturnType<typeof getOracleEvidence>;
+  vaultEvidence: ReturnType<typeof getVaultSettlementEvidence>;
+}) {
+  if (!input.oracleEvidence.quoteable) {
+    return "blocked";
+  }
+
+  if (input.oracleEvidence.settled) {
+    return input.vaultEvidence.status === "present"
+      ? "preview-settled-vault-proven"
+      : "needs-vault-evidence";
+  }
+
+  return "preview-live-oracle";
+}
+
 function buildEvidenceNotes(input: {
   mode: PredictRedeemPreviewMode;
   oracleEvidence: ReturnType<typeof getOracleEvidence>;
+  vaultEvidence: ReturnType<typeof getVaultSettlementEvidence>;
 }) {
   const notes: string[] = [];
 
@@ -259,7 +321,22 @@ function buildEvidenceNotes(input: {
     notes.push("Permissionless redeem requires a settled oracle.");
   }
 
-  notes.push("Vault compacted-settlement evidence is not available in the current public API/readback path.");
+  if (input.vaultEvidence.status === "present") {
+    notes.push("Vault settled-oracle table contains the candidate oracle ID.");
+  } else if (input.vaultEvidence.status === "absent") {
+    notes.push("Vault settled-oracle table was scanned and did not contain the candidate oracle ID.");
+  } else if (input.vaultEvidence.status === "unknown") {
+    notes.push("Vault settled-oracle scan reached its page limit before proving the candidate absent.");
+  } else {
+    notes.push("Vault settled-oracle evidence has not been loaded for the candidate position yet.");
+  }
+
+  if (input.vaultEvidence.tableId) {
+    notes.push(
+      `Vault settlement table ${input.vaultEvidence.tableId} scanned ${input.vaultEvidence.scannedEntryCount ?? 0} entries.`,
+    );
+  }
+
   return notes;
 }
 

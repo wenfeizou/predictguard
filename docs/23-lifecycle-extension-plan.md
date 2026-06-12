@@ -82,16 +82,18 @@ Competition MVP / judge-demo target:
 
 Lifecycle extension target:
 
-- Current completion: about `35-40%`
+- Current completion: about `70-75%`
 - Already completed:
   - manager position readback
   - `MarketKey` decoding
   - active / expired / zero / unknown status reconstruction
   - settlement feasibility analysis
+  - `PositionRedeemed` parser v1
+  - redeem PTB preview v1
+  - oracle evidence matching
+  - direct `vault.settled_oracles` readback for candidate oracle IDs
 - Missing:
-  - redeemable status inference
-  - `PositionRedeemed` parsing
-  - redeem PTB preview
+  - final guarded redeemable status inference
   - wallet-signed redeem
   - post-settlement realized result report
 
@@ -187,7 +189,8 @@ Expected completion gain:
 
 ### Round 3: Redeem PTB Preview
 
-Status: completed as read-only, evidence-aware preview v1.
+Status: completed as read-only, evidence-aware preview v1 plus direct vault
+settled-oracle readback.
 
 Goal:
 
@@ -206,8 +209,12 @@ Build:
   - `Clock`
   - show why signing is blocked while redeemability is uncertain
   - match the candidate oracle against the public Predict API oracle snapshot
-  - show oracle status, settlement evidence, and the remaining vault evidence
-    gap
+  - show oracle status and settlement evidence
+  - read the live Predict object's `vault.settled_oracles` Table through Sui
+    gRPC
+  - scan dynamic-field names for the candidate oracle ID
+  - classify vault evidence as `present`, `absent`, `unknown`, or
+    `unavailable`
 
 Acceptance:
 
@@ -217,13 +224,14 @@ Acceptance:
 
 Risk:
 
-- Reduced from medium to low-medium for preview. Still high for real execution
-  because redeemability and live testnet validation are unresolved.
+- Reduced from medium to low for preview. Still medium-high for real execution
+  because wallet-signed redeem needs a live redeemable position and final
+  transaction validation.
 
 Expected completion gain:
 
 - Competition MVP: `97% -> 98%`
-- Lifecycle extension: `55% -> 65%`
+- Lifecycle extension: `55% -> 70-75%`
 
 ### Round 4: Wallet-Signed Redeem
 
@@ -255,7 +263,7 @@ Expected completion gain:
 
 - Competition MVP: `98% -> 99%` if verified live, otherwise still useful as
   guarded depth.
-- Lifecycle extension: `65% -> 80%`
+- Lifecycle extension: `70-75% -> 85%`
 
 ### Round 5: Post-Settlement Risk Report
 
@@ -290,7 +298,8 @@ Expected completion gain:
 
 ## Current Implementation Checkpoint
 
-Round 1 and Round 2 have started as conservative v1 work.
+Round 1 through the read-only vault settlement evidence path are completed as
+conservative v1 work.
 
 Completed:
 
@@ -301,12 +310,15 @@ Completed:
 3. Completed: add a defensive `PositionRedeemed` parser.
 4. Completed: extend Markdown report with lifecycle readiness and redeem
    evidence when present.
+5. Completed: add redeem PTB preview.
+6. Completed: add oracle evidence matching.
+7. Completed: add direct `vault.settled_oracles` readback for candidate oracle
+   IDs.
 
 Next:
 
-- Investigate how to prove `vault.has_settled_oracle(oracle_id)` or otherwise
-  validate a realistic redeemable-position test path before enabling
-  wallet-signed redeem.
+- Find or create a safe live redeemable testnet path, then validate
+  wallet-signed redeem and `PositionRedeemed` parsing end to end.
 - Run:
 
 ```bash
