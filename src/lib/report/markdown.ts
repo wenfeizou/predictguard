@@ -269,10 +269,17 @@ export function buildMarkdownReport(input: {
           `- Payout: ${formatDusdc(redeemExecution.payoutDusdc)}`,
           `- Bid price: ${redeemExecution.bidPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 }) ?? "N/A"}`,
           `- Is settled: ${redeemExecution.isSettled === undefined ? "N/A" : redeemExecution.isSettled ? "yes" : "no"}`,
+          `- Event sequence: ${redeemExecution.eventSequence ?? "N/A"}`,
           `- Manager: ${redeemExecution.managerId ?? "N/A"}`,
           `- Oracle: ${redeemExecution.oracleId ?? "N/A"}`,
           `- Owner: ${redeemExecution.owner ?? "N/A"}`,
           `- Executor: ${redeemExecution.executor ?? "N/A"}`,
+          `- Permissionless executor: ${isExternalRedeemExecutor(redeemExecution) ? "yes" : "no"}`,
+          ...(isExternalRedeemExecutor(redeemExecution)
+            ? [
+                "- Note: owner and executor differ, which means an external executor submitted the permissionless redeem while payout remains credited to the owner's PredictManager.",
+              ]
+            : []),
         ]
       : [
           "- No PositionRedeemed evidence has been captured in this browser session.",
@@ -320,6 +327,18 @@ function formatDusdc(value?: number) {
   return value === undefined
     ? "N/A"
     : `${value.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC`;
+}
+
+function isExternalRedeemExecutor(redeemExecution: PredictRedeemExecutionSummary) {
+  return Boolean(
+    redeemExecution.owner &&
+    redeemExecution.executor &&
+    normalizeObjectId(redeemExecution.owner) !== normalizeObjectId(redeemExecution.executor),
+  );
+}
+
+function normalizeObjectId(value: string) {
+  return value.startsWith("0x") ? value.slice(2).toLowerCase() : value.toLowerCase();
 }
 
 function formatDecodedPositions(readback: PredictManagerInventoryReadback) {

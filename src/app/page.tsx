@@ -769,7 +769,7 @@ export default function Home() {
                 summary={managerHistorySummary}
                 inventory={managerInventoryReadback}
               />
-              <RedeemEvidencePanel evidence={redeemExecution} />
+              <RedeemEvidencePanel readback={redeemEvidenceReadback} />
               <RedeemPreviewPanel plan={redeemPreviewPlan} />
             </div>
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
@@ -1526,7 +1526,9 @@ function ManagerExecutionSummaryPanel({
   );
 }
 
-function RedeemEvidencePanel({ evidence }: { evidence?: PredictRedeemExecutionSummary | null }) {
+function RedeemEvidencePanel({ readback }: { readback?: PredictRedeemEvidenceReadback | null }) {
+  const evidence = readback?.summary ?? null;
+
   if (!evidence) {
     return (
       <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
@@ -1538,9 +1540,20 @@ function RedeemEvidencePanel({ evidence }: { evidence?: PredictRedeemExecutionSu
           current active position still needs expiry and settlement checks before
           live redeem execution.
         </p>
+        {readback ? (
+          <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
+            <ConfigRow label="Digest" value={readback.digest} />
+            <ConfigRow label="Events found" value={readback.eventCount.toString()} />
+            <ConfigRow label="Match status" value={readback.matchStatus} />
+          </dl>
+        ) : null}
       </div>
     );
   }
+
+  const permissionlessLabel = readback?.permissionlessExecution
+    ? "External executor"
+    : "Owner executor";
 
   return (
     <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
@@ -1553,9 +1566,21 @@ function RedeemEvidencePanel({ evidence }: { evidence?: PredictRedeemExecutionSu
             Historical DeepBook Predict redeem transaction parsed from the
             official PositionRedeemed event.
           </p>
+          {readback?.permissionlessExecution ? (
+            <p className="mt-2 text-sm leading-6 text-[#52615a]">
+              This is a permissionless redeem: an external executor submitted
+              the transaction, while the payout is credited to the owner&apos;s
+              PredictManager.
+            </p>
+          ) : null}
         </div>
-        <div className="w-fit rounded-full border border-[#1f8a70] bg-[#e8f4ef] px-3 py-1 text-xs font-semibold text-[#1f8a70]">
-          {evidence.status}
+        <div className="flex flex-wrap gap-2">
+          <div className="w-fit rounded-full border border-[#1f8a70] bg-[#e8f4ef] px-3 py-1 text-xs font-semibold text-[#1f8a70]">
+            {evidence.status}
+          </div>
+          <div className="w-fit rounded-full border border-[#d0a13a] bg-[#fff8e7] px-3 py-1 text-xs font-semibold text-[#8a6416]">
+            {permissionlessLabel}
+          </div>
         </div>
       </div>
 
@@ -1592,6 +1617,9 @@ function RedeemEvidencePanel({ evidence }: { evidence?: PredictRedeemExecutionSu
 
       <dl className="mt-3 grid gap-2 text-xs text-[#52615a] sm:grid-cols-2">
         <ConfigRow label="Bid price" value={evidence.bidPrice?.toLocaleString("en-US", { maximumFractionDigits: 9 })} />
+        <ConfigRow label="Events in tx" value={readback?.eventCount.toString()} />
+        <ConfigRow label="Match status" value={readback?.matchStatus} />
+        <ConfigRow label="Event sequence" value={evidence.eventSequence} />
         <ConfigRow
           label="Expiry"
           value={
@@ -1615,6 +1643,26 @@ function RedeemEvidencePanel({ evidence }: { evidence?: PredictRedeemExecutionSu
           <ConfigRow label="Executor" value={evidence.executor} />
         </div>
       </dl>
+
+      {readback?.summaries && readback.summaries.length > 1 ? (
+        <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f6f8f5] p-3">
+          <div className="text-xs font-semibold text-[#17211d]">
+            Other redeem events in this transaction
+          </div>
+          <ul className="mt-2 space-y-1 text-xs leading-5 text-[#52615a]">
+            {readback.summaries
+              .filter((summary) => summary.eventSequence !== evidence.eventSequence)
+              .slice(0, 4)
+              .map((summary) => (
+                <li key={`${summary.digest}-${summary.eventSequence ?? summary.eventIndex}`}>
+                  {summary.side ?? "N/A"} {summary.strike?.toLocaleString("en-US") ?? "N/A"} /
+                  {" "}{formatDusdcValue(summary.quantityDusdc)} /
+                  manager {shortObjectId(summary.managerId)}
+                </li>
+              ))}
+          </ul>
+        </div>
+      ) : null}
 
       <a
         href={`https://testnet.suivision.xyz/txblock/${evidence.digest}`}
@@ -2037,6 +2085,16 @@ function formatNumber(value: number) {
 
 function formatPct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatDusdcValue(value?: number) {
+  return value === undefined
+    ? "N/A"
+    : `${value.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC`;
+}
+
+function shortObjectId(value?: string) {
+  return value && value.length > 12 ? `${value.slice(0, 6)}...${value.slice(-4)}` : value ?? "N/A";
 }
 
 function formatIsoDateTime(value: string) {

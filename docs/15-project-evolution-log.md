@@ -2054,6 +2054,56 @@ Next implementation step:
   evidence and use the guard checklist to decide whether redeem signing can be
   tested.
 
+### Round AL: Permissionless Redeem Evidence V1
+
+Status: completed.
+
+Goal:
+
+- Turn the observed `YES 63,317` external redeem into product evidence instead
+  of treating it as a blocker.
+- Make redeem parsing robust when one transaction emits multiple
+  `PositionRedeemed` events.
+
+Implementation outcome:
+
+- Changed default redeem evidence digest to the latest `YES 63,317` redeem:
+  `FxhZD6PLrPKDhgsiJAXZBvoTrMVS6YhWVZC7D5drvhps`.
+- Added multi-event redeem parsing through
+  `summarizePredictRedeemExecutions()`.
+- Added target matching by manager/oracle/side/strike for redeem evidence
+  readback.
+- Added API query parameters for redeem evidence matching:
+  `manager`, `oracle`, `side`, and `strike`.
+- Updated `Redeem evidence readback` UI to show:
+  - event count
+  - match status
+  - event sequence
+  - external executor badge
+  - other redeem events in the same transaction
+- Updated Markdown reports to explain `owner != executor` as permissionless
+  redeem evidence.
+- Updated concept glossary, concept map, and redeem investigation log.
+
+Concept note:
+
+- `Permissionless Redeem` / 无需持有人签名的赎回 means a settled position can be
+  redeemed by someone other than the owner.
+- `External Executor` / 外部执行者 is the address that submitted the redeem
+  transaction; it can differ from the manager owner.
+- `Multi-Event Redeem Matching` / 多赎回事件匹配 is needed because a single
+  transaction can redeem positions for multiple managers.
+
+Current progress assessment:
+
+- Competition MVP / judge-demo target: about `99%`.
+- Lifecycle extension target: about `85%`.
+
+Next implementation step:
+
+- Use the richer redeem readback to connect manager zero-quantity entries to
+  matched `PositionRedeemed` evidence in the manager/account summary.
+
 ## Documentation Maintenance Rule
 
 After each meaningful implementation or planning round:

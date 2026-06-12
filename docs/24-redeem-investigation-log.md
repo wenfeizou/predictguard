@@ -125,3 +125,76 @@ Next action:
 
 - After expiry and oracle/vault settlement evidence are available, use this
   position to validate guarded redeem readiness and then wallet-signed redeem.
+
+## 2026-06-12 Permissionless Redeem Of YES 63,317
+
+Follow-up verification showed that the short-expiry test position was already
+redeemed by an external executor through `predict::redeem_permissionless`.
+
+Transaction:
+
+```text
+FxhZD6PLrPKDhgsiJAXZBvoTrMVS6YhWVZC7D5drvhps
+```
+
+SuiVision:
+
+```text
+https://testnet.suivision.xyz/txblock/FxhZD6PLrPKDhgsiJAXZBvoTrMVS6YhWVZC7D5drvhps
+```
+
+Matched event:
+
+```text
+event sequence: 0
+function evidence: predict::PositionRedeemed
+status: success
+position: YES 63,317
+quantity: 3.100818 dUSDC
+payout: 3.100818 dUSDC
+bid price: 1
+is_settled: true
+owner: 0x5e2a28ff382ab6858588dba9d5ed8e21fc59908c295ced2124f87b1cdb4cefb6
+executor: 0x49c56cac0bc31ba361c546aaa0289e45b82e9cf108ac73fde136fad4fbfc8e55
+manager: 0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2
+oracle: 0x5ff5bc47f6f97c440316862e33e40d6c328b67f180a6aa280b60223e953db880
+```
+
+Important interpretation:
+
+```text
+owner != executor
+```
+
+This does not mean the position was stolen. It means DeepBook Predict's
+permissionless redeem path allowed an external executor to submit the settled
+redeem transaction. The owner remains the manager owner, and the payout is
+recorded for the owner/manager lifecycle.
+
+The same transaction also emitted another `PositionRedeemed` event for a
+different manager:
+
+```text
+event sequence: 2
+manager: 0x870882...
+position: NO 63,362
+quantity: 5 dUSDC
+payout: 0 dUSDC
+```
+
+Parser requirement discovered:
+
+```text
+A redeem transaction can contain multiple PositionRedeemed events.
+PredictGuard must match by manager/oracle/side/strike instead of blindly using
+the first event.
+```
+
+Product conclusion:
+
+```text
+Wallet-signed redeem validation is not blocked, but it is timing-sensitive
+because external keepers can redeem settled positions quickly. PredictGuard
+should productize this as "permissionless redeemed by external executor" and
+show it as valid lifecycle evidence.
+```

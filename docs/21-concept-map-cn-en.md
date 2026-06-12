@@ -128,6 +128,9 @@ Chinese-English map. Use it before reading the full glossary in
 | Claimed / Unclaimed | 已领取/未领取 | Settlement roadmap | Needed after redeem history and settlement state are available. |
 | Lifecycle Readiness | 生命周期准备状态 | Manager/account summary, report | Read-only state explaining whether a position is active, expired, zero, or needs redeem evidence. |
 | Redeem Evidence | 赎回证据 | Report, lifecycle roadmap | Confirmed PositionRedeemed data used to prove payout and realized result. |
+| Permissionless Redeem | 无需持有人签名的赎回 | Redeem evidence readback | Settled position can be redeemed by an external executor while payout remains tied to the manager owner. |
+| External Executor | 外部执行者 | Redeem evidence readback | Address that submitted the redeem transaction; can differ from the manager owner. |
+| Multi-Event Redeem Matching | 多赎回事件匹配 | Redeem evidence readback | Match event by manager/oracle/side/strike when one transaction emits multiple PositionRedeemed events. |
 | Redeemability | 可赎回性 | Lifecycle roadmap | Stronger future claim that a position can safely be redeemed now. |
 | Oracle Evidence | 预言机证据 | Redeem PTB preview | Current API evidence for oracle status and settlement price. |
 | Vault Settled Evidence | 金库结算证据 | Redeem PTB preview | Direct Sui gRPC proof from `vault.settled_oracles` for the candidate oracle. |

@@ -37,6 +37,9 @@ export type PredictRedeemExecutionSummary = {
   digest: string;
   status: "success" | "failed";
   error?: string;
+  eventIndex?: number;
+  eventSequence?: string;
+  eventType?: string;
   owner?: string;
   executor?: string;
   managerId?: string;
@@ -52,6 +55,13 @@ export type PredictRedeemExecutionSummary = {
   isSettled?: boolean;
   dusdcBalanceChange?: number;
   gasMist?: string;
+};
+
+export type PredictRedeemEvidenceMatch = {
+  managerId?: string;
+  oracleId?: string;
+  side?: "YES" | "NO";
+  strike?: number;
 };
 
 export type ExecutionAdjustedRiskSummary = {
@@ -247,41 +257,76 @@ export function summarizePredictMintExecution(
 
 export function summarizePredictRedeemExecution(
   transaction: TransactionWithExecutionData,
+  match?: PredictRedeemEvidenceMatch,
 ): PredictRedeemExecutionSummary | undefined {
-  const positionEvent = transaction.events?.find((event) =>
-    event.eventType.endsWith("::predict::PositionRedeemed"),
-  );
+  const summaries = summarizePredictRedeemExecutions(transaction);
 
-  if (!positionEvent) {
-    return undefined;
-  }
+  return match ? findMatchingRedeemExecution(summaries, match) : summaries[0];
+}
 
-  const fields = positionEvent.json ?? {};
+export function summarizePredictRedeemExecutions(
+  transaction: TransactionWithExecutionData,
+): PredictRedeemExecutionSummary[] {
+  const positionEvents = (transaction.events ?? [])
+    .map((event, eventIndex) => ({ event, eventIndex }))
+    .filter(({ event }) => event.eventType.endsWith("::predict::PositionRedeemed"));
 
-  return {
-    digest: transaction.digest,
-    status: transaction.status.success ? "success" : "failed",
-    error: transaction.status.error?.message,
-    owner: readString(fields.owner),
-    executor: readString(fields.executor),
-    managerId: readString(fields.manager_id),
-    oracleId: readString(fields.oracle_id),
-    predictId: readString(fields.predict_id),
-    quoteAsset: readString(fields.quote_asset),
-    side: readBoolean(fields.is_up) === undefined
-      ? undefined
-      : readBoolean(fields.is_up)
-        ? "YES"
-        : "NO",
-    expiryMs: readString(fields.expiry),
-    strike: scaleNumber(fields.strike, ORACLE_PRICE_DECIMALS),
-    quantityDusdc: scaleNumber(fields.quantity, DUSDC_DECIMALS),
-    payoutDusdc: scaleNumber(fields.payout, DUSDC_DECIMALS),
-    bidPrice: scaleNumber(fields.bid_price, ORACLE_PRICE_DECIMALS),
-    isSettled: readBoolean(fields.is_settled),
-    dusdcBalanceChange: getDusdcBalanceChange(transaction.balanceChanges),
-    gasMist: getGasMist(transaction.effects?.gasUsed),
-  };
+  return positionEvents.map(({ event, eventIndex }) => {
+    const fields = event.json ?? {};
+
+    return {
+      digest: transaction.digest,
+      status: transaction.status.success ? "success" : "failed",
+      error: transaction.status.error?.message,
+      eventIndex,
+      eventSequence: readEventSequence(event),
+      eventType: event.eventType,
+      owner: readString(fields.owner),
+      executor: readString(fields.executor),
+      managerId: readString(fields.manager_id),
+      oracleId: readString(fields.oracle_id),
+      predictId: readString(fields.predict_id),
+      quoteAsset: readString(fields.quote_asset),
+      side: readBoolean(fields.is_up) === undefined
+        ? undefined
+        : readBoolean(fields.is_up)
+          ? "YES"
+          : "NO",
+      expiryMs: readString(fields.expiry),
+      strike: scaleNumber(fields.strike, ORACLE_PRICE_DECIMALS),
+      quantityDusdc: scaleNumber(fields.quantity, DUSDC_DECIMALS),
+      payoutDusdc: scaleNumber(fields.payout, DUSDC_DECIMALS),
+      bidPrice: scaleNumber(fields.bid_price, ORACLE_PRICE_DECIMALS),
+      isSettled: readBoolean(fields.is_settled),
+      dusdcBalanceChange: getDusdcBalanceChange(transaction.balanceChanges),
+      gasMist: getGasMist(transaction.effects?.gasUsed),
+    };
+  });
+}
+
+export function findMatchingRedeemExecution(
+  summaries: PredictRedeemExecutionSummary[],
+  match: PredictRedeemEvidenceMatch,
+) {
+  return summaries.find((summary) => {
+    if (match.managerId && !sameObjectId(summary.managerId, match.managerId)) {
+      return false;
+    }
+
+    if (match.oracleId && !sameObjectId(summary.oracleId, match.oracleId)) {
+      return false;
+    }
+
+    if (match.side && summary.side !== match.side) {
+      return false;
+    }
+
+    if (match.strike !== undefined && summary.strike !== match.strike) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 function getDusdcBalanceChange(balanceChanges?: SuiClientTypes.BalanceChange[]) {
@@ -328,4 +373,22 @@ function readBoolean(value: unknown) {
 
 function normalizeType(value: string) {
   return value.startsWith("0x") ? value.slice(2) : value;
+}
+
+function sameObjectId(left?: string, right?: string) {
+  if (!left || !right) {
+    return false;
+  }
+
+  return normalizeType(left).toLowerCase() === normalizeType(right).toLowerCase();
+}
+
+function readEventSequence(event: SuiClientTypes.Event) {
+  const candidate = event as SuiClientTypes.Event & {
+    eventSeq?: string;
+    eventSequence?: string;
+    sequenceNumber?: string;
+  };
+
+  return candidate.eventSeq ?? candidate.eventSequence ?? candidate.sequenceNumber;
 }

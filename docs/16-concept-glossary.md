@@ -1532,6 +1532,62 @@ Important fields:
 
 Redeem evidence is needed to calculate realized hedge result after expiry.
 
+### Permissionless Redeem
+
+Chinese: 无需持有人签名的赎回、开放式赎回。
+
+`Permissionless redeem` means someone other than the manager owner can submit
+the redeem transaction after the oracle is settled.
+
+In DeepBook Predict this is exposed as `predict::redeem_permissionless`. The
+executor submits the transaction, but the position belongs to the
+`PredictManager`, so the payout is credited through the manager owner flow
+rather than becoming the executor's asset.
+
+Why this matters for PredictGuard:
+
+- an expired position can disappear from non-zero manager inventory before the
+  user clicks a redeem button
+- owner and executor can be different addresses in `PositionRedeemed`
+- this is lifecycle evidence, not proof that the owner was hacked
+- the UI must explain the difference between "who owns the manager" and "who
+  submitted the redeem transaction"
+
+### External Executor
+
+Chinese: 外部执行者、代为提交交易的人。
+
+An `external executor` is the address that submits a transaction for a
+permissionless protocol action. In a `PositionRedeemed` event:
+
+- `owner` is the manager owner
+- `executor` is the transaction submitter
+
+When `owner != executor`, PredictGuard treats the evidence as an external
+permissionless redeem. This means another address paid gas and triggered the
+redeem, while the manager owner remains the economic owner of the redeemed
+position.
+
+### Multi-Event Redeem Matching
+
+Chinese: 多赎回事件匹配。
+
+A single Sui transaction can emit more than one `PositionRedeemed` event. For
+example, a permissionless keeper can redeem multiple positions in one
+transaction.
+
+PredictGuard therefore cannot safely read only the first redeem event forever.
+It must match redeem evidence by fields such as:
+
+- manager ID
+- oracle ID
+- side
+- strike
+- event sequence
+
+This prevents the UI from attributing another manager's redeemed position to
+the current user.
+
 ### Redeemability
 
 Chinese: 可赎回性。
