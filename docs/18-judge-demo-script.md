@@ -76,16 +76,25 @@ risk identification
 
 ## Current Verified Chain Evidence
 
-The local test wallet has demonstrated:
+The final submission demo evidence was captured on 2026-06-19 with Slush wallet
+on Sui testnet:
 
 - a connected Sui testnet wallet
 - dUSDC manager deposit
 - wallet-approved Predict mint
-- SuiVision digest links
+- SuiVision digest link:
+  `61A8wjnTkdjxTsonobvDzmQcnQ5eXwF2hTKZ9V7JT6Sx`
 - direct `PredictManager` object readback through Sui gRPC
-- decoded positions:
-  - `YES 62,151`, quantity `0 dUSDC`, status `Zero quantity`
-  - `YES 63,187`, quantity `10.31435 dUSDC`, status `Active`
+- owner wallet:
+  `0xbecd4d29007221dea8e2e9c533c6255259226509bda18ca65c1e0d537d3cce0d`
+- manager:
+  `0x6ad31bd894103c4087920d460b3d4360f40bb96175012b405b69cec0fc1ce43f`
+- decoded position:
+  - `YES 62,543`, quantity `1 dUSDC`, status `Active`
+- actual cost:
+  - `0.044707 dUSDC`
+- manager remaining dUSDC:
+  - `1.955293 dUSDC`
 
 The exact values may change as new testnet mints are executed.
 
@@ -121,4 +130,5 @@ infrastructure is always stable.
 2. Replace deterministic exposure inputs with deeper live Predict exposure
    reconstruction or a focused custom indexer.
 3. Add historical replay or stress-test presets for several market regimes.
-4. Polish final submission video and screenshots.
+4. Replace deterministic exposure inputs with a live exposure source when the
+   protocol data surface is stable enough.

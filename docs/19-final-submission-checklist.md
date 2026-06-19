@@ -1,8 +1,8 @@
 # Final Submission Checklist
 
-PredictGuard is around `90%` complete for the competition MVP / judge-demo
-target. The remaining work is mostly final submission packaging, manual
-verification, and selective depth polish.
+PredictGuard is final-submission ready for the competition MVP / judge-demo
+target. The remaining work is mostly upload/submission packaging and late
+verification of external testnet surfaces.
 
 ## Required Before Submission
 
@@ -33,8 +33,10 @@ verification, and selective depth polish.
 5. Confirm there are no browser console errors that affect the demo.
 6. Export a fresh Markdown risk report.
 7. Capture screenshots.
-8. Record a 5-7 minute demo video.
-9. Prepare final submission text from the README and judge demo script.
+8. Confirm the prepared about 4-minute demo video still matches the latest
+   README evidence and demo path.
+9. Confirm the prepared PDF demo deck still matches the latest README evidence.
+10. Prepare final submission text from the README and judge demo script.
 
 ## Screenshot List
 

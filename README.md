@@ -12,9 +12,15 @@ PredictGuard targets the **DeepBook Predict** track. The project combines protoc
 
 Current status:
 
-- Judge-demo / competition MVP: about `99%` complete.
+- Judge-demo / competition MVP: final submission-ready.
 - DeepBook Predict lifecycle extension: about `98%` complete.
 - Commercial production product: about `55-65%` complete.
+
+Final submission assets prepared outside this repository:
+
+- about 4-minute demo video with English voiceover and sentence-level captions
+- PDF demo deck
+- live mint evidence notes and screenshots
 
 ### What Is Completed
 
@@ -57,16 +63,28 @@ Implemented capabilities:
 
 ### Live Testnet Evidence
 
-Known testnet objects and evidence used during development:
+Latest final-demo evidence, captured on 2026-06-19 with Slush wallet on Sui
+testnet:
 
-- Manager: `0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2`
-- Owner wallet: `0x5e2a28ff382ab6858588dba9d5ed8e21fc59908c295ced2124f87b1cdb4cefb6`
+- Owner wallet: `0xbecd4d29007221dea8e2e9c533c6255259226509bda18ca65c1e0d537d3cce0d`
+- Manager: `0x6ad31bd894103c4087920d460b3d4360f40bb96175012b405b69cec0fc1ce43f`
+- Transaction digest: `61A8wjnTkdjxTsonobvDzmQcnQ5eXwF2hTKZ9V7JT6Sx`
+- Mint result: `YES 62,543`
+- Quantity: `1 dUSDC`
+- Actual cost: `0.044707 dUSDC`
+- Ask price: `0.044707452`
+- Manager remaining dUSDC after readback: `1.955293 dUSDC`
+- Lifecycle status: active hedge coverage, not redeem-ready
+
+Earlier development evidence:
+
 - Predict object: `0xc8736204d12f0a7277c86388a68bf8a194b0a14c5538ad13f22cbd8e2a38028a`
 - Redeem digest for `YES 63,317`: `FxhZD6PLrPKDhgsiJAXZBvoTrMVS6YhWVZC7D5drvhps`
 - Redeem digest for `YES 62,151`: `57uSyj5qZNpeQwNWrjzuFh7Dwhc7u3atfmi1bjSfata5`
 
 SuiVision links:
 
+- <https://testnet.suivision.xyz/txblock/61A8wjnTkdjxTsonobvDzmQcnQ5eXwF2hTKZ9V7JT6Sx>
 - <https://testnet.suivision.xyz/txblock/FxhZD6PLrPKDhgsiJAXZBvoTrMVS6YhWVZC7D5drvhps>
 - <https://testnet.suivision.xyz/txblock/57uSyj5qZNpeQwNWrjzuFh7Dwhc7u3atfmi1bjSfata5>
 
@@ -136,7 +154,7 @@ bun run build
 
 ### Judge Demo Path
 
-Recommended 5-minute path:
+Recommended 4-5 minute path:
 
 1. Open the app and show `Demo Flow`.
 2. Explain PLP risk, exposure, volatility surface, and stress scenarios.
@@ -186,9 +204,15 @@ PredictGuard 面向 **DeepBook Predict** 赛道。项目把协议集成、风险
 
 当前状态：
 
-- 评审演示 / 比赛 MVP：约 `99%` 完成。
+- 评审演示 / 比赛 MVP：已准备为最终提交版本。
 - DeepBook Predict 生命周期扩展：约 `98%` 完成。
 - 商业级生产产品：约 `55-65%` 完成。
+
+最终提交材料已在本仓库外的比赛材料目录准备：
+
+- 约 4 分钟 demo 视频，包含英文旁白和句级字幕
+- PDF demo deck
+- 真实 mint 证据记录和截图
 
 ### 已完成功能
 
@@ -231,16 +255,27 @@ PredictGuard 面向 **DeepBook Predict** 赛道。项目把协议集成、风险
 
 ### 真实 Testnet 证据
 
-开发过程中使用和验证过的 testnet 对象与交易：
+最终演示使用的最新证据，2026-06-19 通过 Slush 钱包在 Sui testnet 捕获：
 
-- Manager: `0x3cfb9e6c6f1102ef28d20e3beed73ac20bbe0e1451eeb86cecd28e52e3fc77e2`
-- Owner wallet: `0x5e2a28ff382ab6858588dba9d5ed8e21fc59908c295ced2124f87b1cdb4cefb6`
+- Owner wallet: `0xbecd4d29007221dea8e2e9c533c6255259226509bda18ca65c1e0d537d3cce0d`
+- Manager: `0x6ad31bd894103c4087920d460b3d4360f40bb96175012b405b69cec0fc1ce43f`
+- Transaction digest: `61A8wjnTkdjxTsonobvDzmQcnQ5eXwF2hTKZ9V7JT6Sx`
+- Mint result: `YES 62,543`
+- Quantity: `1 dUSDC`
+- Actual cost: `0.044707 dUSDC`
+- Ask price: `0.044707452`
+- Manager readback remaining dUSDC: `1.955293 dUSDC`
+- Lifecycle status: active hedge coverage, not redeem-ready
+
+开发过程中还验证过的历史证据：
+
 - Predict object: `0xc8736204d12f0a7277c86388a68bf8a194b0a14c5538ad13f22cbd8e2a38028a`
 - `YES 63,317` redeem digest: `FxhZD6PLrPKDhgsiJAXZBvoTrMVS6YhWVZC7D5drvhps`
 - `YES 62,151` redeem digest: `57uSyj5qZNpeQwNWrjzuFh7Dwhc7u3atfmi1bjSfata5`
 
 SuiVision 链接：
 
+- <https://testnet.suivision.xyz/txblock/61A8wjnTkdjxTsonobvDzmQcnQ5eXwF2hTKZ9V7JT6Sx>
 - <https://testnet.suivision.xyz/txblock/FxhZD6PLrPKDhgsiJAXZBvoTrMVS6YhWVZC7D5drvhps>
 - <https://testnet.suivision.xyz/txblock/57uSyj5qZNpeQwNWrjzuFh7Dwhc7u3atfmi1bjSfata5>
 
@@ -310,7 +345,7 @@ bun run build
 
 ### 评审演示路径
 
-建议 5 分钟演示路径：
+建议 4-5 分钟演示路径：
 
 1. 打开应用，先讲 `Demo Flow`。
 2. 解释 PLP risk、exposure、volatility surface、stress scenarios。
