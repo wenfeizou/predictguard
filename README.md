@@ -22,6 +22,13 @@ Final submission assets prepared outside this repository:
 - PDF demo deck
 - live mint evidence notes and screenshots
 
+Submission links:
+
+- Website: <https://predictguard.xyz>
+- Demo video: <https://youtu.be/uWlxX22DnEQ>
+- Demo deck: [docs/submission/predictguard-demo-deck.pdf](docs/submission/predictguard-demo-deck.pdf)
+- DeepSurge: <https://www.deepsurge.xyz/projects/6286f8e9-e868-4cdc-87c4-3ea27a08a582>
+
 ### What Is Completed
 
 Core product workflow:
