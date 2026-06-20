@@ -1,0 +1,17 @@
+services:
+  predictguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: predictguard
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    expose:
+      - "3000"
+    networks:
+      - app
+
+networks:
+  app:
+    external: true
