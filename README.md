@@ -152,6 +152,28 @@ bun run typecheck
 bun run build
 ```
 
+### Production Docker Deployment
+
+The live deployment at <https://predictguard.xyz> runs the Next.js standalone
+server in Docker behind an existing nginx reverse proxy.
+
+Build and run on a Docker host:
+
+```bash
+cp .env.production.example .env.production
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+The compose file expects an external Docker network named `app` so the existing
+nginx container can proxy to `http://predictguard:3000`.
+
+Reference nginx behavior:
+
+- `https://predictguard.xyz` serves the app.
+- `https://www.predictguard.xyz` permanently redirects to the apex domain.
+- HTTP requests redirect to HTTPS, while `/.well-known/acme-challenge/` remains
+  available for certbot webroot renewal.
+
 ### Judge Demo Path
 
 Recommended 4-5 minute path:
@@ -342,6 +364,28 @@ bun run lint
 bun run typecheck
 bun run build
 ```
+
+### 生产 Docker 部署
+
+线上站点 <https://predictguard.xyz> 使用 Docker 运行 Next.js standalone
+server，并由现有 nginx 容器做反向代理。
+
+在 Docker 服务器上构建和启动：
+
+```bash
+cp .env.production.example .env.production
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+`docker-compose.prod.yml` 默认使用名为 `app` 的外部 Docker network，方便现有
+nginx 容器反代到 `http://predictguard:3000`。
+
+参考 nginx 行为：
+
+- `https://predictguard.xyz` 访问应用。
+- `https://www.predictguard.xyz` 永久跳转到裸域。
+- HTTP 请求跳转到 HTTPS，但 `/.well-known/acme-challenge/` 保持可访问，用于
+  certbot webroot 续签。
 
 ### 评审演示路径
 
