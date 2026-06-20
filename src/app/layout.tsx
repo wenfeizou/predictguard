@@ -5,6 +5,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "PredictGuard",
   description: "PredictGuard: The Risk Layer for DeepBook Predict",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/logo.png"
+  },
 };
 
 export default function RootLayout({

@@ -561,9 +561,16 @@ export default function Home() {
                   ? "Mixed: live testnet context + simulated exposure"
                   : "Simulated market data"}
               </div>
-              <h1 className="text-4xl font-semibold tracking-normal text-[#17211d] md:text-6xl">
-                PredictGuard
-              </h1>
+              <div className="flex items-center gap-4">
+                <img
+                  src="/logo.png"
+                  alt="PredictGuard logo"
+                  className="h-16 w-16 shrink-0 rounded-2xl border border-[#dce3dd] bg-[#17211d] object-cover shadow-[0_12px_28px_rgba(23,33,29,0.14)] md:h-20 md:w-20"
+                />
+                <h1 className="text-4xl font-semibold tracking-normal text-[#17211d] md:text-6xl">
+                  PredictGuard
+                </h1>
+              </div>
               <p className="mt-4 max-w-2xl text-base leading-7 text-[#52615a] md:text-lg">
                 The PLP risk and hedge workflow for DeepBook Predict. Inspect
                 exposure, stress tail moves, compare hedged outcomes, and preview
