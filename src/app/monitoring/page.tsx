@@ -1,23 +1,37 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { BellRing, ShieldCheck, Signal } from "lucide-react";
 
 import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
 import { evaluateMonitoringRules } from "@/lib/risk/monitoring";
+import {
+  monitoringPresets,
+  type MonitoringPresetId,
+} from "@/lib/risk/monitoringPresets";
 import { computeRiskMetrics } from "@/lib/risk/engine";
 
 const market = seedMarketState;
 const metrics = computeRiskMetrics(market, scenarios);
 const recommendation = buildHedgeRecommendation(market, scenarios);
-const rules = evaluateMonitoringRules({
-  market,
-  metrics,
-  recommendation,
-});
 
 export default function MonitoringPage() {
+  const [presetId, setPresetId] = useState<MonitoringPresetId>("balanced");
+  const rules = useMemo(
+    () =>
+      evaluateMonitoringRules({
+        market,
+        metrics,
+        recommendation,
+        presetId,
+      }),
+    [presetId],
+  );
   const watchCount = rules.filter((rule) => rule.status === "watch").length;
   const breachCount = rules.filter((rule) => rule.status === "breach").length;
+  const activePreset = monitoringPresets.find((preset) => preset.id === presetId) ?? monitoringPresets[1];
 
   return (
     <main className="min-h-screen bg-[#f5f7f4] text-[#17211d]">
@@ -48,13 +62,47 @@ export default function MonitoringPage() {
               <Metric label="Rules" value={String(rules.length)} />
               <Metric label="Watch" value={String(watchCount)} />
               <Metric label="Breaches" value={String(breachCount)} danger={breachCount > 0} />
-              <Metric label="Mode" value={market.dataSource} />
+              <Metric label="Policy" value={activePreset.label} />
             </div>
           </div>
         </div>
       </section>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
+        <section className="rounded-md border border-[#dce3dd] bg-white p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">
+          <div className="flex items-center gap-2 text-lg font-semibold">
+            <ShieldCheck className="h-5 w-5 text-[#1f8a70]" />
+            Monitoring policy
+          </div>
+          <p className="mt-2 text-sm leading-6 text-[#52615a]">
+            Presets model how different vault teams might tune early warning
+            thresholds before production alert delivery is added.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {monitoringPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => setPresetId(preset.id)}
+                className={`rounded-md border p-4 text-left transition ${
+                  presetId === preset.id
+                    ? "border-[#1f8a70] bg-[#e8f4ef]"
+                    : "border-[#dce3dd] bg-[#f5f7f4] hover:border-[#1f8a70]"
+                }`}
+              >
+                <div className="text-sm font-semibold">{preset.label}</div>
+                <p className="mt-2 text-sm leading-6 text-[#52615a]">{preset.description}</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#52615a]">
+                  <span>Util watch {preset.utilizationWatchPct}%</span>
+                  <span>Util breach {preset.utilizationBreachPct}%</span>
+                  <span>Liability watch {preset.liabilityWatchPct}%</span>
+                  <span>Liability breach {preset.liabilityBreachPct}%</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section className="grid gap-4 lg:grid-cols-2">
           {rules.map((rule) => (
             <article key={rule.id} className="rounded-md border border-[#dce3dd] bg-white p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">
@@ -82,18 +130,6 @@ export default function MonitoringPage() {
             </article>
           ))}
         </section>
-
-        <section className="rounded-md border border-[#dce3dd] bg-white p-5">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <ShieldCheck className="h-5 w-5 text-[#1f8a70]" />
-            Configuration roadmap
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <RoadmapItem title="Threshold presets" detail="Conservative, balanced, and aggressive policies per vault." />
-            <RoadmapItem title="Notification routes" detail="Email, webhook, Telegram, or Discord delivery after production auth." />
-            <RoadmapItem title="Review ownership" detail="Assign alerts to vault operators or risk reviewers in a team workspace." />
-          </div>
-        </section>
       </div>
     </main>
   );
@@ -114,15 +150,6 @@ function Metric({
       <div className={`mt-2 break-words text-base font-semibold ${danger ? "text-[#c75c48]" : "text-[#17211d]"}`}>
         {value}
       </div>
-    </div>
-  );
-}
-
-function RoadmapItem({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4">
-      <div className="text-sm font-semibold">{title}</div>
-      <p className="mt-2 text-sm leading-6 text-[#52615a]">{detail}</p>
     </div>
   );
 }

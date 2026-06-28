@@ -1,6 +1,7 @@
 import type { NormalizedPredictLiveContext } from "@/lib/predict/normalize";
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import type { HedgeRecommendation, MarketState, RiskMetrics } from "@/lib/types";
+import { getMonitoringPreset, type MonitoringPresetId } from "@/lib/risk/monitoringPresets";
 
 export type MonitoringRuleSeverity = "info" | "warning" | "critical";
 export type MonitoringRuleStatus = "pass" | "watch" | "breach" | "unknown";
@@ -22,8 +23,10 @@ export function evaluateMonitoringRules(input: {
   recommendation: HedgeRecommendation;
   liveContext?: NormalizedPredictLiveContext;
   inventory?: PredictManagerInventoryReadback;
+  presetId?: MonitoringPresetId;
 }) {
   const { market, metrics, recommendation, liveContext, inventory } = input;
+  const preset = getMonitoringPreset(input.presetId ?? "balanced");
   const maxLiabilityPct = metrics.maxPayoutLiability / Math.max(1, metrics.tvl);
   const activeQuantity = inventory?.directActivePositionQuantityDusdc;
   const hedgeGap = recommendation.recommendedHedge
@@ -34,28 +37,28 @@ export function evaluateMonitoringRules(input: {
     {
       id: "utilization",
       label: "PLP utilization",
-      status: metrics.utilization >= 0.75
+      status: metrics.utilization >= preset.utilizationBreachPct / 100
         ? "breach"
-        : metrics.utilization >= 0.55
+        : metrics.utilization >= preset.utilizationWatchPct / 100
           ? "watch"
           : "pass",
-      severity: metrics.utilization >= 0.75 ? "critical" : "warning",
+      severity: metrics.utilization >= preset.utilizationBreachPct / 100 ? "critical" : "warning",
       value: `${(metrics.utilization * 100).toFixed(1)}%`,
-      threshold: "Watch >= 55%, breach >= 75%",
+      threshold: `Watch >= ${preset.utilizationWatchPct}%, breach >= ${preset.utilizationBreachPct}%`,
       detail: "High utilization reduces the liquidity buffer available for payout shocks.",
       commercialUse: "Alert LPs before vault utilization becomes uncomfortable.",
     },
     {
       id: "tail-liability",
       label: "Max payout liability",
-      status: maxLiabilityPct >= 0.35
+      status: maxLiabilityPct >= preset.liabilityBreachPct / 100
         ? "breach"
-        : maxLiabilityPct >= 0.2
+        : maxLiabilityPct >= preset.liabilityWatchPct / 100
           ? "watch"
           : "pass",
-      severity: maxLiabilityPct >= 0.35 ? "critical" : "warning",
+      severity: maxLiabilityPct >= preset.liabilityBreachPct / 100 ? "critical" : "warning",
       value: `${(maxLiabilityPct * 100).toFixed(1)}% of TVL`,
-      threshold: "Watch >= 20%, breach >= 35%",
+      threshold: `Watch >= ${preset.liabilityWatchPct}%, breach >= ${preset.liabilityBreachPct}%`,
       detail: "Gross payout liability is compared with TVL to identify concentrated vault risk.",
       commercialUse: "Help vault teams set risk limits before accepting more flow.",
     },
@@ -91,7 +94,7 @@ export function evaluateMonitoringRules(input: {
       id: "hedge-drift",
       label: "Hedge drift",
       status: recommendation.recommendedHedge
-        ? hedgeGap > recommendation.recommendedHedge.notional * 0.5
+        ? hedgeGap > recommendation.recommendedHedge.notional * (preset.hedgeGapWatchPct / 100)
           ? "watch"
           : "pass"
         : "unknown",
@@ -99,7 +102,7 @@ export function evaluateMonitoringRules(input: {
       value: recommendation.recommendedHedge
         ? `${hedgeGap.toLocaleString("en-US", { maximumFractionDigits: 6 })} dUSDC gap`
         : "No hedge target",
-      threshold: "Watch when executed active quantity is less than 50% of target",
+      threshold: `Watch when executed active quantity is less than ${100 - preset.hedgeGapWatchPct}% of target`,
       detail: "Compares recommended hedge notional with manager active position quantity when readback exists.",
       commercialUse: "Flag when a vault's executed protection no longer matches the policy target.",
     },
