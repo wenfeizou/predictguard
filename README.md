@@ -156,6 +156,19 @@ First product packages:
 - Team: shared vault dashboard, branded reports, API access, and monitoring.
 - Enterprise / ecosystem: custom adapters, integrations, and managed risk dashboards.
 
+### Product Pages
+
+The post-hackathon product now has multiple commercial surfaces:
+
+- `/` - live dashboard, wallet workflow, monitoring rules, lifecycle queue, exports
+- `/report/sample` - wallet-free sample commercial risk report
+- `/reports` - locally saved snapshot history and snapshot comparison
+- `/monitoring` - monitoring rule library and policy presets
+- `/portfolio` - multi-manager and adapter workspace preview
+- `/adapters` - adapter strategy for DeepBook Predict and future venues
+- `/copilot` - AI risk copilot guardrails
+- `/pricing` - Free / Pro / Team / Enterprise packaging draft
+
 ### Local Development
 
 Requirements:
