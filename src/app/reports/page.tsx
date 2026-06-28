@@ -21,6 +21,11 @@ export default function ReportsPage() {
     () => cleared ? [] : externalSnapshots,
     [cleared, externalSnapshots],
   );
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
+  const selectedSnapshot = useMemo(
+    () => snapshots.find((snapshot) => snapshot.id === selectedSnapshotId) ?? snapshots[0],
+    [selectedSnapshotId, snapshots],
+  );
 
   const summary = useMemo(() => summarizeSnapshots(snapshots), [snapshots]);
 
@@ -93,23 +98,42 @@ export default function ReportsPage() {
           ) : (
             <div className="mt-6 grid gap-4">
               {snapshots.map((snapshot) => (
-                <SnapshotCard key={snapshot.id} snapshot={snapshot} />
+                <SnapshotCard
+                  key={snapshot.id}
+                  snapshot={snapshot}
+                  selected={selectedSnapshot?.id === snapshot.id}
+                  onSelect={() => setSelectedSnapshotId(snapshot.id)}
+                />
               ))}
             </div>
           )}
         </section>
+
+        {selectedSnapshot ? (
+          <SnapshotDetail snapshot={selectedSnapshot} />
+        ) : null}
       </div>
     </main>
   );
 }
 
-function SnapshotCard({ snapshot }: { snapshot: ProductSnapshot }) {
+function SnapshotCard({
+  snapshot,
+  selected,
+  onSelect,
+}: {
+  snapshot: ProductSnapshot;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const watchCount = snapshot.monitoring.filter((rule) => rule.status === "watch").length;
   const breachCount = snapshot.monitoring.filter((rule) => rule.status === "breach").length;
   const queueCount = snapshot.lifecycleQueue.reduce((total, item) => total + item.count, 0);
 
   return (
-    <article className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4">
+    <article className={`rounded-md border p-4 ${
+      selected ? "border-[#1f8a70] bg-[#e8f4ef]" : "border-[#dce3dd] bg-[#f5f7f4]"
+    }`}>
       <div className="grid gap-4 lg:grid-cols-[1fr_420px]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -125,6 +149,13 @@ function SnapshotCard({ snapshot }: { snapshot: ProductSnapshot }) {
           <p className="mt-2 text-sm leading-6 text-[#52615a]">
             {snapshot.nextActions[0] ?? "Review saved risk state and monitoring evidence."}
           </p>
+          <button
+            type="button"
+            onClick={onSelect}
+            className="mt-3 inline-flex rounded-md border border-[#1f8a70] bg-white px-3 py-2 text-xs font-semibold text-[#1f8a70] transition hover:bg-[#e8f4ef]"
+          >
+            Review detail
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
           <Metric label="Risk score" value={snapshot.riskScore ?? "N/A"} />
@@ -164,6 +195,91 @@ function SnapshotCard({ snapshot }: { snapshot: ProductSnapshot }) {
         </div>
       </div>
     </article>
+  );
+}
+
+function SnapshotDetail({ snapshot }: { snapshot: ProductSnapshot }) {
+  return (
+    <section className="rounded-md border border-[#dce3dd] bg-white p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Selected snapshot detail</h2>
+          <p className="mt-1 text-sm leading-6 text-[#52615a]">
+            {new Date(snapshot.exportedAt).toLocaleString()} · {snapshot.schemaVersion}
+          </p>
+        </div>
+        <span className="w-fit rounded-full border border-[#1f8a70] bg-[#e8f4ef] px-3 py-1 text-xs font-semibold text-[#1f8a70]">
+          {snapshot.dataMode}
+        </span>
+      </div>
+
+      <div className="mt-5 grid gap-6 lg:grid-cols-2">
+        <DetailPanel title="Risk Snapshot">
+          <Rows rows={snapshot.riskSnapshot} />
+        </DetailPanel>
+        <DetailPanel title="Workflow Status">
+          <Rows rows={snapshot.workflowStatus} />
+        </DetailPanel>
+        <DetailPanel title="Monitoring Rules">
+          <div className="space-y-2">
+            {snapshot.monitoring.map((rule) => (
+              <div key={rule.id} className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-semibold">{rule.label}</span>
+                  <span>{rule.status}</span>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-[#52615a]">{rule.commercialUse}</p>
+              </div>
+            ))}
+          </div>
+        </DetailPanel>
+        <DetailPanel title="Lifecycle Queue">
+          <div className="space-y-2">
+            {snapshot.lifecycleQueue.map((item) => (
+              <div key={item.id} className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-semibold">{item.label}</span>
+                  <span>{item.count}</span>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-[#52615a]">{item.operatorAction}</p>
+              </div>
+            ))}
+          </div>
+        </DetailPanel>
+      </div>
+    </section>
+  );
+}
+
+function DetailPanel({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md border border-[#dce3dd] bg-white p-4">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="mt-3">{children}</div>
+    </div>
+  );
+}
+
+function Rows({
+  rows,
+}: {
+  rows: ProductSnapshot["riskSnapshot"];
+}) {
+  return (
+    <dl className="divide-y divide-[#edf1ee]">
+      {rows.map((row) => (
+        <div key={`${row.label}-${row.value}`} className="grid gap-1 py-2 sm:grid-cols-[160px_1fr]">
+          <dt className="text-xs font-medium text-[#52615a]">{row.label}</dt>
+          <dd className="break-words text-xs font-semibold text-[#17211d]">{row.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
