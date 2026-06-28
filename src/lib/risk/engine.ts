@@ -148,11 +148,47 @@ export function computeRiskMetrics(
       Math.max(1, maxPayoutLiability),
   );
 
+  const riskScoreComponents = [
+    {
+      id: "utilization",
+      label: "PLP utilization",
+      score: utilizationScore,
+      weight: 40,
+      contribution: 40 * utilizationScore,
+      explanation:
+        "Higher utilization leaves less liquidity buffer when prediction positions pay out.",
+    },
+    {
+      id: "concentration",
+      label: "Strike concentration",
+      score: concentrationScore,
+      weight: 30,
+      contribution: 30 * concentrationScore,
+      explanation:
+        "Risk rises when liability is concentrated in one strike and expiry bucket.",
+    },
+    {
+      id: "tail-loss",
+      label: "Scenario tail loss",
+      score: tailLossScore,
+      weight: 20,
+      contribution: 20 * tailLossScore,
+      explanation:
+        "Worst-case deterministic scenario loss contributes directly to the risk score.",
+    },
+    {
+      id: "near-expiry",
+      label: "Near-expiry exposure",
+      score: nearExpiryScore,
+      weight: 10,
+      contribution: 10 * nearExpiryScore,
+      explanation:
+        "Short-dated exposure receives extra weight because there is less time to rebalance.",
+    },
+  ];
+
   const riskScore = Math.round(
-    40 * utilizationScore +
-      30 * concentrationScore +
-      20 * tailLossScore +
-      10 * nearExpiryScore,
+    riskScoreComponents.reduce((total, component) => total + component.contribution, 0),
   );
 
   return {
@@ -163,6 +199,7 @@ export function computeRiskMetrics(
     largestRiskStrike: largestRiskCell.strike,
     largestRiskExpiryId: largestRiskCell.expiryId,
     riskScore,
+    riskScoreComponents,
   };
 }
 

@@ -94,6 +94,16 @@ export type RiskMetrics = {
   largestRiskStrike: number;
   largestRiskExpiryId: string;
   riskScore: number;
+  riskScoreComponents: RiskScoreComponent[];
+};
+
+export type RiskScoreComponent = {
+  id: string;
+  label: string;
+  score: number;
+  weight: number;
+  contribution: number;
+  explanation: string;
 };
 
 export type ExposureCell = {

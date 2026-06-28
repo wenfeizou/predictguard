@@ -3,8 +3,9 @@ import { Providers } from "@/app/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PredictGuard",
-  description: "PredictGuard: The Risk Layer for DeepBook Predict",
+  title: "PredictGuard | RiskOps for Prediction-Market Liquidity",
+  description:
+    "PredictGuard helps prediction-market LPs and vault builders inspect exposure, stress tail scenarios, simulate hedges, and produce evidence-backed risk reports.",
   icons: {
     icon: "/favicon.png",
     apple: "/logo.png"

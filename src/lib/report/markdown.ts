@@ -15,96 +15,9 @@ import type {
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import type { PredictRedeemHistoryReadback } from "@/lib/predict/redeemHistoryReadback";
 import type { ExecutedStressSummary } from "@/lib/risk/executedStress";
+import { buildCommercialReport, type CommercialReportInput } from "@/lib/report/commercial";
 
-export function buildMarkdownReport(input: {
-  market: MarketState;
-  metrics: RiskMetrics;
-  scenarios: Scenario[];
-  results: ScenarioResult[];
-  recommendation: HedgeRecommendation;
-  liveContext?: NormalizedPredictLiveContext;
-  mintExecution?: PredictMintExecutionSummary | null;
-  redeemExecution?: PredictRedeemExecutionSummary | null;
-  redeemHistoryReadback?: PredictRedeemHistoryReadback | null;
-  executionRiskSummary?: ExecutionAdjustedRiskSummary;
-  managerHistorySummary?: ManagerExecutionHistorySummary;
-  managerInventoryReadback?: PredictManagerInventoryReadback;
-  redeemEvidenceLinks?: {
-    entryFieldId: string;
-    evidence: PredictRedeemExecutionSummary;
-    confidence: string;
-  }[];
-  settlementAccounting?: {
-    totalPositions: number;
-    activePositions: number;
-    expiredPositions: number;
-    zeroQuantityPositions: number;
-    redeemedPositions: number;
-    evidenceMissingPositions: number;
-    totalCurrentQuantityDusdc: number;
-    totalRedeemedQuantityDusdc: number;
-    totalPayoutDusdc: number;
-    totalUnresolvedQuantityDusdc: number;
-    externalExecutorRedeems: number;
-    totalMintedQuantityDusdc: number;
-    totalMintCostDusdc: number;
-    realizedHedgePnlDusdc?: number;
-    claimedPayoutDusdc: number;
-    unclaimedPayoutDusdc?: number;
-    accountingScope: string;
-    status: string;
-    explanation: string;
-  };
-  executedStressSummary?: ExecutedStressSummary;
-  ptbPlan?: {
-    inputs: {
-      sizingMode?: string;
-      side?: string;
-      oracleObjectId?: string;
-      oracleExpiryMs?: number;
-      quoteSource?: string;
-      quoteFreshness?: string;
-      quoteAskPrice?: number;
-      quoteExplanation?: string;
-    };
-  };
-  redeemPreviewPlan?: {
-    target: string;
-    mode: string;
-    readiness: {
-      status: string;
-      canSign: boolean;
-      missing: string[];
-      guards?: {
-        id: string;
-        label: string;
-        status: string;
-        detail: string;
-      }[];
-      warnings: string[];
-    };
-    inputs: {
-      managerObjectId?: string;
-      oracleObjectId?: string;
-      oracleExpiryMs?: string;
-      strike?: number;
-      side?: string;
-      quantityDusdc?: number;
-      lifecycle?: string;
-      oracleStatus?: string;
-      settlementPrice?: number;
-      settledAt?: number;
-    };
-    evidence: {
-      oracleMatched: boolean;
-      oracleQuoteable: boolean;
-      oracleSettled: boolean;
-      vaultSettledEvidence: string;
-      redeemability: string;
-      notes: string[];
-    };
-  };
-}): string {
+export function buildMarkdownReport(input: CommercialReportInput): string {
   const {
     market,
     metrics,
@@ -124,44 +37,58 @@ export function buildMarkdownReport(input: {
     ptbPlan,
     redeemPreviewPlan,
   } = input;
+  const commercialReport = buildCommercialReport(input);
 
   return [
-    "# PredictGuard Risk Report",
+    `# ${commercialReport.title}`,
     "",
-    `Generated: ${new Date(market.timestamp).toISOString()}`,
-    `Data source: ${liveContext?.dataSource ?? market.dataSource}`,
+    `Generated: ${commercialReport.generatedAt}`,
+    `Data source: ${commercialReport.mode}`,
     `Spot: ${market.spotPrice.toLocaleString("en-US")} ${market.quoteAsset}`,
     liveContext?.reachable
       ? `Live Predict server: ${liveContext.serverStatus ?? "unknown"}`
       : "Live Predict server: unavailable",
     "",
-    "## Summary",
+    "## Executive Summary",
     "",
-    recommendation.plainEnglishExplanation,
-    "",
+    ...commercialReport.executiveSummary.map((paragraph) => `${paragraph}\n`),
     "## Workflow Status",
     "",
-    `- Risk identification: ${metrics.riskScore > 0 ? "complete" : "blocked"} (${metrics.riskScore}/100)`,
-    `- Hedge recommendation: ${recommendation.recommendedHedge ? "complete" : "blocked"}`,
-    `- Demo execution side: ${ptbPlan?.inputs.side ?? "N/A"}`,
-    `- Demo oracle: ${ptbPlan?.inputs.oracleObjectId ?? "N/A"}`,
-    `- Demo oracle expiry: ${ptbPlan?.inputs.oracleExpiryMs ?? "N/A"}`,
-    `- Demo sizing mode: ${ptbPlan?.inputs.sizingMode ?? "N/A"}`,
-    `- Wallet execution: ${mintExecution ? "complete" : "pending"}`,
-    `- Manager readback: ${managerInventoryReadback ? "complete" : "pending"}`,
-    `- Lifecycle readiness: ${managerInventoryReadback ? "read-only" : "pending"}`,
-    `- Redeem evidence: ${redeemExecution ? "available" : "not captured"}`,
-    `- Redeem history discovery: ${redeemHistoryReadback ? "bounded scan complete" : "single evidence fallback"}`,
-    `- Active position quantity: ${formatDusdc(managerInventoryReadback?.directActivePositionQuantityDusdc)}`,
+    "| Area | Status | Note |",
+    "| --- | --- | --- |",
+    ...commercialReport.workflowStatus.map((item) =>
+      `| ${item.label} | ${item.value} | ${item.note ?? ""} |`
+    ),
     "",
-    "## Metrics",
+    "## Risk Snapshot",
     "",
-    `- TVL: ${metrics.tvl.toLocaleString("en-US")} dUSDC`,
-    `- Utilization: ${(metrics.utilization * 100).toFixed(1)}%`,
-    `- Risk score: ${metrics.riskScore}/100`,
-    `- Max payout liability: ${metrics.maxPayoutLiability.toFixed(2)} dUSDC`,
-    `- Worst scenario PnL: ${metrics.worstScenarioPnl.toFixed(2)} dUSDC`,
-    `- Largest risk: BTC > ${metrics.largestRiskStrike.toLocaleString("en-US")} / ${metrics.largestRiskExpiryId}`,
+    "| Metric | Value | Note |",
+    "| --- | ---: | --- |",
+    ...commercialReport.riskSnapshot.map((item) =>
+      `| ${item.label} | ${item.value} | ${item.note ?? ""} |`
+    ),
+    "",
+    "### Risk Score Drivers",
+    "",
+    "| Driver | Contribution | Explanation |",
+    "| --- | ---: | --- |",
+    ...commercialReport.riskScoreRows.map((item) =>
+      `| ${item.label} | ${item.value} | ${item.note ?? ""} |`
+    ),
+    "",
+    "## Hedge Recommendation",
+    "",
+    "| Field | Value |",
+    "| --- | --- |",
+    ...commercialReport.hedgeRows.map((item) => `| ${item.label} | ${item.value} |`),
+    "",
+    "## Scenario Results",
+    "",
+    "| Scenario | Unhedged PnL | Hedged PnL | Tail-loss reduction |",
+    "| --- | ---: | ---: | ---: |",
+    ...commercialReport.scenarioRows.map((item) =>
+      `| ${item.scenario} | ${item.unhedgedPnl} | ${item.hedgedPnl} | ${item.reduction} |`
+    ),
     "",
     "## Live Testnet Context",
     "",

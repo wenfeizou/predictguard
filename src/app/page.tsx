@@ -5,14 +5,20 @@ import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
+  BellRing,
   Bot,
+  BriefcaseBusiness,
   ClipboardList,
   CheckCircle2,
   Download,
   FileText,
   Layers,
+  LineChart as LineChartIcon,
+  Network,
+  Rocket,
   ShieldCheck,
   Signal,
+  Users,
   WalletCards,
 } from "lucide-react";
 import {
@@ -93,12 +99,57 @@ const WalletReadinessClient = dynamic(
 );
 
 const workflowNavItems = [
+  { label: "Product", href: "#product", sectionId: "product" },
   { label: "Demo", href: "#workflow", sectionId: "workflow" },
   { label: "Risk", href: "#overview", sectionId: "overview" },
   { label: "Hedge", href: "#hedge", sectionId: "hedge" },
   { label: "Execute", href: "#ptb", sectionId: "ptb" },
   { label: "Readback", href: "#readback", sectionId: "readback" },
   { label: "Report", href: "#report", sectionId: "report" },
+];
+
+const commercialSignals = [
+  {
+    label: "Primary user",
+    value: "Predict LPs and vault builders",
+    detail: "Teams that need to explain tail risk before allocating capital.",
+    icon: <Users className="h-5 w-5" />,
+  },
+  {
+    label: "Core workflow",
+    value: "Exposure -> hedge -> evidence",
+    detail: "A risk operations loop, not a directional trading assistant.",
+    icon: <Network className="h-5 w-5" />,
+  },
+  {
+    label: "Commercial wedge",
+    value: "Risk reports and monitoring",
+    detail: "Exportable evidence, alerts, and team dashboards are the first paid surface.",
+    icon: <BriefcaseBusiness className="h-5 w-5" />,
+  },
+];
+
+const productRoadmapItems = [
+  {
+    title: "Risk dashboard",
+    detail: "Multi-manager exposure, max payout liability, active/expired positions, and scenario PnL.",
+    icon: <LineChartIcon className="h-5 w-5" />,
+  },
+  {
+    title: "Risk copilot",
+    detail: "Plain-English explanations, assumptions, residual risk, and LP-facing report copy.",
+    icon: <Bot className="h-5 w-5" />,
+  },
+  {
+    title: "Monitoring",
+    detail: "Oracle freshness, utilization, lifecycle, settlement, and hedge threshold alerts.",
+    icon: <BellRing className="h-5 w-5" />,
+  },
+  {
+    title: "Execution evidence",
+    detail: "Wallet-confirmed PTBs, digest tracking, manager readback, and settlement reconciliation.",
+    icon: <ShieldCheck className="h-5 w-5" />,
+  },
 ];
 
 type RedeemEvidenceLink = {
@@ -572,10 +623,26 @@ export default function Home() {
                 </h1>
               </div>
               <p className="mt-4 max-w-2xl text-base leading-7 text-[#52615a] md:text-lg">
-                The PLP risk and hedge workflow for DeepBook Predict. Inspect
-                exposure, stress tail moves, compare hedged outcomes, and preview
-                the PTB that would mint the hedge.
+                RiskOps for prediction-market liquidity. Inspect exposure, stress
+                tail events, simulate hedges, and produce evidence-backed risk
+                reports for DeepBook Predict and future prediction-market adapters.
               </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <a
+                  href="#workflow"
+                  className="inline-flex items-center gap-2 rounded-md bg-[#17211d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f8a70]"
+                >
+                  <Rocket className="h-4 w-4" />
+                  Open live workflow
+                </a>
+                <a
+                  href="/report/sample"
+                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                >
+                  <FileText className="h-4 w-4" />
+                  Review sample report
+                </a>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[560px]">
               <MetricCard label="BTC spot" value={formatUsd(market.spotPrice)} />
@@ -613,6 +680,53 @@ export default function Home() {
       </nav>
 
       <div className="mx-auto grid max-w-7xl min-w-0 gap-6 px-5 py-6 lg:px-8">
+        <section id="product" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <Panel title="Commercial Product Direction" icon={<BriefcaseBusiness className="h-5 w-5" />}>
+            <div className="grid gap-3">
+              {commercialSignals.map((signal) => (
+                <div
+                  key={signal.label}
+                  className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4"
+                >
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase text-[#52615a]">
+                    <span className="text-[#1f8a70]">{signal.icon}</span>
+                    {signal.label}
+                  </div>
+                  <div className="mt-2 text-base font-semibold text-[#17211d]">
+                    {signal.value}
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-[#52615a]">
+                    {signal.detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Panel>
+          <Panel title="Productized Roadmap" icon={<Rocket className="h-5 w-5" />}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {productRoadmapItems.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-md border border-[#dce3dd] bg-white p-4"
+                >
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[#17211d]">
+                    <span className="text-[#1f8a70]">{item.icon}</span>
+                    {item.title}
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[#52615a]">
+                    {item.detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4 text-sm leading-6 text-[#52615a]">
+              PredictGuard remains non-custodial and evidence-first. It prepares
+              risk analysis and transaction shapes, while the connected wallet owns
+              signing, gas selection, and final execution.
+            </div>
+          </Panel>
+        </section>
+
         <section id="overview" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Panel title="PLP Overview" icon={<Activity className="h-5 w-5" />}>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -656,6 +770,37 @@ export default function Home() {
                 </div>
               </div>
             ) : null}
+          </Panel>
+        </section>
+
+        <section id="risk-score" className="scroll-mt-24 min-w-0">
+          <Panel title="Risk Score Drivers" icon={<Signal className="h-5 w-5" />}>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {metrics.riskScoreComponents.map((component) => (
+                <div
+                  key={component.id}
+                  className="rounded-md border border-[#dce3dd] bg-white p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-[#17211d]">
+                      {component.label}
+                    </div>
+                    <div className="text-sm font-semibold text-[#1f8a70]">
+                      {component.contribution.toFixed(1)} / {component.weight}
+                    </div>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e8f4ef]">
+                    <div
+                      className="h-full rounded-full bg-[#1f8a70]"
+                      style={{ width: `${Math.min(100, component.score * 100)}%` }}
+                    />
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[#52615a]">
+                    {component.explanation}
+                  </p>
+                </div>
+              ))}
+            </div>
           </Panel>
         </section>
 

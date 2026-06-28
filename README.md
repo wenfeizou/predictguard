@@ -2,9 +2,18 @@
 
 ## English
 
-**PredictGuard is the risk and hedge lifecycle workflow for DeepBook Predict PLPs, LPs, and vault builders.**
+**PredictGuard is RiskOps for prediction-market liquidity.**
 
-It is not a generic prediction market dashboard. PredictGuard helps a liquidity provider understand tail risk, choose a hedge, execute a DeepBook Predict position, read the manager state back from Sui, discover redeem evidence, and explain whether the hedge lifecycle improved risk.
+It started as a DeepBook Predict risk and hedge lifecycle workflow for PLPs,
+LPs, and vault builders. The product direction is broader: help prediction
+market and structured DeFi teams inspect exposure, stress tail scenarios,
+simulate hedges, and produce evidence-backed risk reports.
+
+It is not a generic prediction market dashboard and it is not a black-box
+trading bot. PredictGuard helps a liquidity provider understand tail risk,
+choose a hedge, execute a wallet-confirmed Predict position, read the manager
+state back from Sui, discover redeem evidence, and explain whether the hedge
+lifecycle improved risk.
 
 ### Competition Summary
 
@@ -123,7 +132,12 @@ These boundaries are intentional and should be clear to judges and reviewers:
 
 ### Commercial Product Roadmap
 
-A commercial PredictGuard could become the risk layer for DeepBook Predict capital allocators:
+PredictGuard's commercial wedge is risk reporting and monitoring for
+prediction-market liquidity. DeepBook Predict is the first adapter and proof
+point.
+
+A commercial PredictGuard could become the risk layer for prediction-market
+capital allocators:
 
 - Full historical indexer for all manager mints, redeems, supplies, withdrawals, and PLP changes.
 - Multi-manager and multi-account portfolio view.
@@ -133,6 +147,14 @@ A commercial PredictGuard could become the risk layer for DeepBook Predict capit
 - Automated hedge policy engine with approval controls.
 - Keeper integration for monitoring and redeem automation.
 - Team and institutional reporting workflows.
+- Adapter architecture for additional prediction-market or options-like venues.
+
+First product packages:
+
+- Free: single wallet demo, sample risk report, limited scenario set.
+- Pro: saved reports, multi-manager tracking, alert rules, and advanced scenarios.
+- Team: shared vault dashboard, branded reports, API access, and monitoring.
+- Enterprise / ecosystem: custom adapters, integrations, and managed risk dashboards.
 
 ### Local Development
 
@@ -206,6 +228,10 @@ Read these first:
 - [Technical Deep Dive](docs/22-technical-deep-dive.md)
 - [Redeem Strategy Tradeoff](docs/25-redeem-strategy-tradeoff.md)
 - [Code Review Handoff](docs/26-code-review-handoff.md)
+- [Commercialization Upgrade Plan](docs/27-commercialization-upgrade-plan.md)
+- [Sample Risk Report](docs/28-sample-risk-report.md)
+- [Next Commercialization Backlog](docs/29-next-commercialization-backlog.md)
+- [Commercial Product Design Principles](docs/30-commercial-product-design-principles.md)
 - [Project Evolution Log](docs/15-project-evolution-log.md)
 - [Final Submission Checklist](docs/19-final-submission-checklist.md)
 
