@@ -26,6 +26,13 @@ export default function ReportsPage() {
     () => snapshots.find((snapshot) => snapshot.id === selectedSnapshotId) ?? snapshots[0],
     [selectedSnapshotId, snapshots],
   );
+  const previousSnapshot = useMemo(
+    () =>
+      selectedSnapshot
+        ? snapshots.find((snapshot) => snapshot.id !== selectedSnapshot.id)
+        : undefined,
+    [selectedSnapshot, snapshots],
+  );
 
   const summary = useMemo(() => summarizeSnapshots(snapshots), [snapshots]);
 
@@ -110,10 +117,87 @@ export default function ReportsPage() {
         </section>
 
         {selectedSnapshot ? (
-          <SnapshotDetail snapshot={selectedSnapshot} />
+          <>
+            <SnapshotDetail snapshot={selectedSnapshot} />
+            <SnapshotCompare current={selectedSnapshot} previous={previousSnapshot} />
+          </>
         ) : null}
       </div>
     </main>
+  );
+}
+
+function SnapshotCompare({
+  current,
+  previous,
+}: {
+  current: ProductSnapshot;
+  previous?: ProductSnapshot;
+}) {
+  const currentRisk = parseRiskScore(current.riskScore);
+  const previousRisk = parseRiskScore(previous?.riskScore);
+  const currentBreaches = current.monitoring.filter((rule) => rule.status === "breach").length;
+  const previousBreaches = previous?.monitoring.filter((rule) => rule.status === "breach").length;
+  const currentQueue = current.lifecycleQueue.reduce((total, item) => total + item.count, 0);
+  const previousQueue = previous?.lifecycleQueue.reduce((total, item) => total + item.count, 0);
+
+  return (
+    <section className="rounded-md border border-[#dce3dd] bg-white p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">
+      <h2 className="text-lg font-semibold">Snapshot comparison</h2>
+      <p className="mt-1 text-sm leading-6 text-[#52615a]">
+        Compare the selected snapshot against the next saved snapshot in local
+        history. This is the local prototype for report-to-report risk drift.
+      </p>
+      {previous ? (
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <CompareMetric
+            label="Risk score"
+            current={current.riskScore ?? "N/A"}
+            previous={previous.riskScore ?? "N/A"}
+            delta={formatDelta(currentRisk, previousRisk)}
+          />
+          <CompareMetric
+            label="Breaches"
+            current={String(currentBreaches)}
+            previous={String(previousBreaches ?? 0)}
+            delta={formatDelta(currentBreaches, previousBreaches)}
+          />
+          <CompareMetric
+            label="Lifecycle queue"
+            current={String(currentQueue)}
+            previous={String(previousQueue ?? 0)}
+            delta={formatDelta(currentQueue, previousQueue)}
+          />
+        </div>
+      ) : (
+        <div className="mt-5 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4 text-sm leading-6 text-[#52615a]">
+          Save at least two snapshots to compare risk drift over time.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CompareMetric({
+  label,
+  current,
+  previous,
+  delta,
+}: {
+  label: string;
+  current: string;
+  previous: string;
+  delta: string;
+}) {
+  return (
+    <div className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4">
+      <div className="text-xs font-semibold uppercase text-[#52615a]">{label}</div>
+      <div className="mt-2 text-base font-semibold">{current}</div>
+      <div className="mt-1 text-xs text-[#52615a]">Previous: {previous}</div>
+      <div className="mt-3 w-fit rounded-full border border-[#dce3dd] bg-white px-2 py-0.5 text-xs font-semibold text-[#52615a]">
+        Delta {delta}
+      </div>
+    </div>
   );
 }
 
@@ -317,6 +401,27 @@ function summarizeSnapshots(snapshots: ProductSnapshot[]) {
     }),
     { watchRules: 0, breaches: 0, lifecycleItems: 0 },
   );
+}
+
+function parseRiskScore(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  const [score] = value.split("/");
+  const parsed = Number(score);
+
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function formatDelta(current?: number, previous?: number) {
+  if (current === undefined || previous === undefined) {
+    return "N/A";
+  }
+
+  const delta = current - previous;
+
+  return `${delta > 0 ? "+" : ""}${delta.toFixed(1)}`;
 }
 
 function subscribeSnapshotHistory(onStoreChange: () => void) {
