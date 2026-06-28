@@ -5,8 +5,12 @@ import { ClipboardList, FileText, ShieldCheck, Trash2 } from "lucide-react";
 
 import {
   clearSnapshotHistory,
+  deleteSnapshotFromHistory,
   loadSnapshotHistory,
+  parseSnapshotHistoryJson,
+  replaceSnapshotHistory,
   SNAPSHOT_HISTORY_EVENT,
+  stringifySnapshot,
   type ProductSnapshot,
 } from "@/lib/report/snapshot";
 import { ProductNav } from "@/app/product-nav";
@@ -20,6 +24,7 @@ export default function ReportsPage() {
     getServerSnapshotHistory,
   );
   const [cleared, setCleared] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
   const snapshots = useMemo(
     () => cleared ? [] : externalSnapshots,
     [cleared, externalSnapshots],
@@ -42,6 +47,47 @@ export default function ReportsPage() {
   function clearHistory() {
     clearSnapshotHistory();
     setCleared(true);
+    setSelectedSnapshotId(null);
+  }
+
+  function exportHistory() {
+    const blob = new Blob([JSON.stringify(snapshots, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "predictguard-snapshot-history.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importHistory(file: File | undefined) {
+    if (!file) {
+      return;
+    }
+
+    try {
+      const imported = parseSnapshotHistoryJson(await file.text());
+      const merged = [
+        ...imported,
+        ...snapshots.filter(
+          (snapshot) => !imported.some((item) => item.id === snapshot.id),
+        ),
+      ];
+      replaceSnapshotHistory(merged);
+      setCleared(false);
+      setImportStatus(`Imported ${imported.length} snapshot${imported.length === 1 ? "" : "s"}.`);
+    } catch {
+      setImportStatus("Import failed. Use a PredictGuard snapshot JSON file.");
+    }
+  }
+
+  function deleteSnapshot(id: string) {
+    deleteSnapshotFromHistory(id);
+    if (selectedSnapshotId === id) {
+      setSelectedSnapshotId(null);
+    }
   }
 
   return (
@@ -90,15 +136,44 @@ export default function ReportsPage() {
                 a team workspace with permissions and audit history.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={clearHistory}
-              className="inline-flex w-fit items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#c75c48] hover:text-[#c75c48]"
-            >
-              <Trash2 className="h-4 w-4" />
-              Clear history
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]">
+                <FileText className="h-4 w-4" />
+                Import JSON
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(event) => {
+                    void importHistory(event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={exportHistory}
+                disabled={snapshots.length === 0}
+                className="inline-flex w-fit items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FileText className="h-4 w-4" />
+                Export all
+              </button>
+              <button
+                type="button"
+                onClick={clearHistory}
+                className="inline-flex w-fit items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#c75c48] hover:text-[#c75c48]"
+              >
+                <Trash2 className="h-4 w-4" />
+                Clear history
+              </button>
+            </div>
           </div>
+          {importStatus ? (
+            <div className="mt-4 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-sm text-[#52615a]">
+              {importStatus}
+            </div>
+          ) : null}
 
           {snapshots.length === 0 ? (
             <div className="mt-6 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-5 text-sm leading-6 text-[#52615a]">
@@ -114,6 +189,7 @@ export default function ReportsPage() {
                   snapshot={snapshot}
                   selected={selectedSnapshot?.id === snapshot.id}
                   onSelect={() => setSelectedSnapshotId(snapshot.id)}
+                  onDelete={() => deleteSnapshot(snapshot.id)}
                 />
               ))}
             </div>
@@ -209,10 +285,12 @@ function SnapshotCard({
   snapshot,
   selected,
   onSelect,
+  onDelete,
 }: {
   snapshot: ProductSnapshot;
   selected: boolean;
   onSelect: () => void;
+  onDelete: () => void;
 }) {
   const watchCount = snapshot.monitoring.filter((rule) => rule.status === "watch").length;
   const breachCount = snapshot.monitoring.filter((rule) => rule.status === "breach").length;
@@ -243,6 +321,20 @@ function SnapshotCard({
             className="mt-3 inline-flex rounded-md border border-[#1f8a70] bg-white px-3 py-2 text-xs font-semibold text-[#1f8a70] transition hover:bg-[#e8f4ef]"
           >
             Review detail
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="ml-2 mt-3 inline-flex rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-xs font-semibold text-[#52615a] transition hover:border-[#c75c48] hover:text-[#c75c48]"
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            onClick={() => exportSingleSnapshot(snapshot)}
+            className="ml-2 mt-3 inline-flex rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-xs font-semibold text-[#52615a] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+          >
+            Export
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
@@ -284,6 +376,16 @@ function SnapshotCard({
       </div>
     </article>
   );
+}
+
+function exportSingleSnapshot(snapshot: ProductSnapshot) {
+  const blob = new Blob([stringifySnapshot(snapshot)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${snapshot.id}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function SnapshotDetail({ snapshot }: { snapshot: ProductSnapshot }) {

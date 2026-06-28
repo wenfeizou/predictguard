@@ -87,6 +87,30 @@ export function saveSnapshotToHistory(snapshot: ProductSnapshot) {
   return next;
 }
 
+export function replaceSnapshotHistory(snapshots: ProductSnapshot[]) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const next = snapshots.filter(isProductSnapshot).slice(0, SNAPSHOT_HISTORY_LIMIT);
+  window.localStorage.setItem(SNAPSHOT_HISTORY_KEY, JSON.stringify(next));
+  window.dispatchEvent(new Event(SNAPSHOT_HISTORY_EVENT));
+
+  return next;
+}
+
+export function deleteSnapshotFromHistory(id: string) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const next = loadSnapshotHistory().filter((snapshot) => snapshot.id !== id);
+  window.localStorage.setItem(SNAPSHOT_HISTORY_KEY, JSON.stringify(next));
+  window.dispatchEvent(new Event(SNAPSHOT_HISTORY_EVENT));
+
+  return next;
+}
+
 export function clearSnapshotHistory() {
   if (typeof window === "undefined") {
     return;
@@ -94,6 +118,13 @@ export function clearSnapshotHistory() {
 
   window.localStorage.removeItem(SNAPSHOT_HISTORY_KEY);
   window.dispatchEvent(new Event(SNAPSHOT_HISTORY_EVENT));
+}
+
+export function parseSnapshotHistoryJson(raw: string): ProductSnapshot[] {
+  const parsed = JSON.parse(raw);
+  const candidates = Array.isArray(parsed) ? parsed : [parsed];
+
+  return candidates.filter(isProductSnapshot);
 }
 
 function isProductSnapshot(value: unknown): value is ProductSnapshot {
