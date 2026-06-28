@@ -67,7 +67,11 @@ import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
 import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
 import { buildMarkdownReport } from "@/lib/report/markdown";
 import { buildCommercialReport } from "@/lib/report/commercial";
-import { buildProductSnapshot, stringifySnapshot } from "@/lib/report/snapshot";
+import {
+  buildProductSnapshot,
+  saveSnapshotToHistory,
+  stringifySnapshot,
+} from "@/lib/report/snapshot";
 import { buildLifecycleReviewQueue } from "@/lib/risk/lifecycle";
 import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
 import {
@@ -681,6 +685,15 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }
 
+  function saveSnapshot() {
+    const snapshot = buildProductSnapshot({
+      report: commercialReport,
+      monitoring: monitoringRules,
+      lifecycleQueue,
+    });
+    saveSnapshotToHistory(snapshot);
+  }
+
   return (
     <main className="min-h-screen">
       <section className="border-b border-[#dce3dd] bg-white">
@@ -722,6 +735,20 @@ export default function Home() {
                 >
                   <FileText className="h-4 w-4" />
                   Review sample report
+                </a>
+                <a
+                  href="/reports"
+                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Saved reports
+                </a>
+                <a
+                  href="/monitoring"
+                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                >
+                  <BellRing className="h-4 w-4" />
+                  Monitoring
                 </a>
               </div>
             </div>
@@ -1210,6 +1237,14 @@ export default function Home() {
                 >
                   <Download className="h-4 w-4" />
                   Export Snapshot
+                </button>
+                <button
+                  type="button"
+                  onClick={saveSnapshot}
+                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Save Snapshot
                 </button>
                 <button
                   type="button"
