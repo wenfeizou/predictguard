@@ -34,6 +34,23 @@ export default function MonitoringPage() {
   const breachCount = rules.filter((rule) => rule.status === "breach").length;
   const activePreset = monitoringPresets.find((preset) => preset.id === presetId) ?? monitoringPresets[1];
 
+  function exportPolicy() {
+    const blob = new Blob([
+      JSON.stringify({
+        schemaVersion: "predictguard.monitoring-policy.v1",
+        exportedAt: new Date().toISOString(),
+        preset: activePreset,
+        rules,
+      }, null, 2),
+    ], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `predictguard-monitoring-${presetId}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <main className="min-h-screen bg-[#f5f7f4] text-[#17211d]">
       <section className="border-b border-[#dce3dd] bg-white">
@@ -76,10 +93,19 @@ export default function MonitoringPage() {
             <ShieldCheck className="h-5 w-5 text-[#1f8a70]" />
             Monitoring policy
           </div>
-          <p className="mt-2 text-sm leading-6 text-[#52615a]">
-            Presets model how different vault teams might tune early warning
-            thresholds before production alert delivery is added.
-          </p>
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <p className="max-w-3xl text-sm leading-6 text-[#52615a]">
+              Presets model how different vault teams might tune early warning
+              thresholds before production alert delivery is added.
+            </p>
+            <button
+              type="button"
+              onClick={exportPolicy}
+              className="inline-flex w-fit rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+            >
+              Export policy
+            </button>
+          </div>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {monitoringPresets.map((preset) => (
               <button
