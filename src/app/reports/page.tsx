@@ -10,11 +10,13 @@ import {
   type ProductSnapshot,
 } from "@/lib/report/snapshot";
 
+const emptySnapshots: ProductSnapshot[] = [];
+
 export default function ReportsPage() {
   const externalSnapshots = useSyncExternalStore(
     subscribeSnapshotHistory,
     loadSnapshotHistory,
-    () => [],
+    getServerSnapshotHistory,
   );
   const [cleared, setCleared] = useState(false);
   const snapshots = useMemo(
@@ -432,4 +434,8 @@ function subscribeSnapshotHistory(onStoreChange: () => void) {
     window.removeEventListener("storage", onStoreChange);
     window.removeEventListener(SNAPSHOT_HISTORY_EVENT, onStoreChange);
   };
+}
+
+function getServerSnapshotHistory() {
+  return emptySnapshots;
 }
