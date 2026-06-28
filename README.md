@@ -168,6 +168,7 @@ The post-hackathon product now has multiple commercial surfaces:
 - `/adapters` - adapter strategy for DeepBook Predict and future venues
 - `/copilot` - AI risk copilot guardrails
 - `/pricing` - Free / Pro / Team / Enterprise packaging draft
+- `/readiness` - deployment and production-readiness checklist
 
 ### Local Development
 

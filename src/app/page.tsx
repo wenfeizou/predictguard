@@ -72,6 +72,7 @@ import {
   saveSnapshotToHistory,
   stringifySnapshot,
 } from "@/lib/report/snapshot";
+import { buildDeepBookPortfolio } from "@/lib/adapters/deepbook";
 import { buildLifecycleReviewQueue } from "@/lib/risk/lifecycle";
 import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
 import {
@@ -341,6 +342,15 @@ export default function Home() {
         inventory: managerInventoryReadback,
       }),
     [metrics, recommendation, liveSnapshot?.liveContext, managerInventoryReadback],
+  );
+  const normalizedPortfolio = useMemo(
+    () =>
+      buildDeepBookPortfolio({
+        owner: walletReadiness.address,
+        inventory: managerInventoryReadback,
+        executions: mintExecutionHistory,
+      }),
+    [walletReadiness.address, managerInventoryReadback, mintExecutionHistory],
   );
   const redeemOracleIds = useMemo(
     () =>
@@ -778,6 +788,13 @@ export default function Home() {
                   <Bot className="h-4 w-4" />
                   Copilot
                 </a>
+                <a
+                  href="/readiness"
+                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                >
+                  <Rocket className="h-4 w-4" />
+                  Readiness
+                </a>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[560px]">
@@ -1187,6 +1204,7 @@ export default function Home() {
             </div>
             <LifecycleQueuePanel items={lifecycleQueue} />
             <MonitoringRulesPanel rules={monitoringRules} />
+            <NormalizedPortfolioPanel portfolio={normalizedPortfolio} />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">
@@ -1508,6 +1526,49 @@ function MonitoringRulesPanel({
             <p className="mt-2 text-xs leading-5 text-[#1f8a70]">{rule.commercialUse}</p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function NormalizedPortfolioPanel({
+  portfolio,
+}: {
+  portfolio: ReturnType<typeof buildDeepBookPortfolio>;
+}) {
+  return (
+    <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[#17211d]">
+            Normalized portfolio
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[#52615a]">
+            DeepBook manager readback and local executions are mapped into the
+            shared adapter model used by portfolio, reporting, and future venues.
+          </p>
+        </div>
+        <a
+          href="/portfolio"
+          className="inline-flex w-fit rounded-md border border-[#1f8a70] px-3 py-2 text-xs font-semibold text-[#1f8a70] hover:bg-[#e8f4ef]"
+        >
+          Open workspace
+        </a>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <SummaryTile label="Accounts" value={String(portfolio.summary.accountCount)} />
+        <SummaryTile label="Positions" value={String(portfolio.summary.positionCount)} />
+        <SummaryTile
+          label="Active notional"
+          value={formatDusdcValue(portfolio.summary.activeNotional)}
+        />
+        <SummaryTile
+          label="Evidence gaps"
+          value={String(portfolio.summary.evidenceMissingCount)}
+        />
+      </div>
+      <div className="mt-3 rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3 text-xs leading-5 text-[#52615a]">
+        Adapter: {portfolio.venue} · {portfolio.label}
       </div>
     </div>
   );
