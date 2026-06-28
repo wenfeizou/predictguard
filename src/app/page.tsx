@@ -108,6 +108,7 @@ const WalletReadinessClient = dynamic(
 );
 
 const workflowNavItems = [
+  { label: "Modules", href: "#modules", sectionId: "modules" },
   { label: "Product", href: "#product", sectionId: "product" },
   { label: "Demo", href: "#workflow", sectionId: "workflow" },
   { label: "Risk", href: "#overview", sectionId: "overview" },
@@ -158,6 +159,42 @@ const productRoadmapItems = [
     title: "Execution evidence",
     detail: "Wallet-confirmed PTBs, digest tracking, manager readback, and settlement reconciliation.",
     icon: <ShieldCheck className="h-5 w-5" />,
+  },
+];
+
+const productModuleGroups = [
+  {
+    title: "Core Workflow",
+    detail: "Operate the live risk, hedge, execution, readback, and export loop.",
+    links: [
+      { label: "Live dashboard", href: "#workflow", icon: <Rocket className="h-4 w-4" /> },
+      { label: "Sample report", href: "/report/sample", icon: <FileText className="h-4 w-4" /> },
+    ],
+  },
+  {
+    title: "Reports & Monitoring",
+    detail: "Review saved evidence, compare snapshots, and tune alert policies.",
+    links: [
+      { label: "Saved reports", href: "/reports", icon: <ClipboardList className="h-4 w-4" /> },
+      { label: "Monitoring", href: "/monitoring", icon: <BellRing className="h-4 w-4" /> },
+    ],
+  },
+  {
+    title: "Workspace",
+    detail: "Organize normalized portfolios and production readiness workflows.",
+    links: [
+      { label: "Portfolio", href: "/portfolio", icon: <BriefcaseBusiness className="h-4 w-4" /> },
+      { label: "Readiness", href: "/readiness", icon: <Rocket className="h-4 w-4" /> },
+    ],
+  },
+  {
+    title: "Strategy",
+    detail: "Plan commercialization, adapters, and AI explanation boundaries.",
+    links: [
+      { label: "Pricing", href: "/pricing", icon: <BriefcaseBusiness className="h-4 w-4" /> },
+      { label: "Adapters", href: "/adapters", icon: <Network className="h-4 w-4" /> },
+      { label: "Copilot", href: "/copilot", icon: <Bot className="h-4 w-4" /> },
+    ],
   },
 ];
 
@@ -740,60 +777,11 @@ export default function Home() {
                   Open live workflow
                 </a>
                 <a
-                  href="/report/sample"
+                  href="#modules"
                   className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
                 >
-                  <FileText className="h-4 w-4" />
-                  Review sample report
-                </a>
-                <a
-                  href="/reports"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-                >
-                  <ClipboardList className="h-4 w-4" />
-                  Saved reports
-                </a>
-                <a
-                  href="/monitoring"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-                >
-                  <BellRing className="h-4 w-4" />
-                  Monitoring
-                </a>
-                <a
-                  href="/portfolio"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-                >
-                  <BriefcaseBusiness className="h-4 w-4" />
-                  Portfolio
-                </a>
-                <a
-                  href="/pricing"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-                >
-                  <BriefcaseBusiness className="h-4 w-4" />
-                  Pricing
-                </a>
-                <a
-                  href="/adapters"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-                >
-                  <Network className="h-4 w-4" />
-                  Adapters
-                </a>
-                <a
-                  href="/copilot"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-                >
-                  <Bot className="h-4 w-4" />
-                  Copilot
-                </a>
-                <a
-                  href="/readiness"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
-                >
-                  <Rocket className="h-4 w-4" />
-                  Readiness
+                  <Layers className="h-4 w-4" />
+                  Browse modules
                 </a>
               </div>
             </div>
@@ -833,6 +821,41 @@ export default function Home() {
       </nav>
 
       <div className="mx-auto grid max-w-7xl min-w-0 gap-6 px-5 py-6 lg:px-8">
+        <section id="modules" className="scroll-mt-24 min-w-0">
+          <Panel title="Product Module Map" icon={<Layers className="h-5 w-5" />}>
+            <div className="grid gap-4 lg:grid-cols-4">
+              {productModuleGroups.map((group) => (
+                <div
+                  key={group.title}
+                  className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-4"
+                >
+                  <div className="text-base font-semibold text-[#17211d]">
+                    {group.title}
+                  </div>
+                  <p className="mt-2 min-h-[72px] text-sm leading-6 text-[#52615a]">
+                    {group.detail}
+                  </p>
+                  <div className="mt-4 grid gap-2">
+                    {group.links.map((link) => (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        className="inline-flex items-center justify-between gap-3 rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          {link.icon}
+                          {link.label}
+                        </span>
+                        <span className="text-[#52615a]">Open</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </section>
+
         <section id="product" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Panel title="Commercial Product Direction" icon={<BriefcaseBusiness className="h-5 w-5" />}>
             <div className="grid gap-3">
