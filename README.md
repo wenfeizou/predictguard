@@ -160,15 +160,29 @@ First product packages:
 
 The post-hackathon product now has multiple commercial surfaces:
 
+Core Workflow:
+
 - `/` - live dashboard, wallet workflow, monitoring rules, lifecycle queue, exports
 - `/report/sample` - wallet-free sample commercial risk report
+
+Reports & Monitoring:
+
 - `/reports` - locally saved snapshot history and snapshot comparison
 - `/monitoring` - monitoring rule library and policy presets
+
+Workspace:
+
 - `/portfolio` - multi-manager and adapter workspace preview
+- `/readiness` - deployment and production-readiness checklist
+
+Strategy:
+
+- `/pricing` - Free / Pro / Team / Enterprise packaging draft
 - `/adapters` - adapter strategy for DeepBook Predict and future venues
 - `/copilot` - AI risk copilot guardrails
-- `/pricing` - Free / Pro / Team / Enterprise packaging draft
-- `/readiness` - deployment and production-readiness checklist
+
+Secondary pages share a product navigation bar so reviewers can move across
+modules without returning to the dashboard.
 
 ### Local Development
 
