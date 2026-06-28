@@ -12,6 +12,7 @@ import {
   type MonitoringPresetId,
 } from "@/lib/risk/monitoringPresets";
 import { computeRiskMetrics } from "@/lib/risk/engine";
+import { ProductNav } from "@/app/product-nav";
 
 const market = seedMarketState;
 const metrics = computeRiskMetrics(market, scenarios);
@@ -67,6 +68,7 @@ export default function MonitoringPage() {
           </div>
         </div>
       </section>
+      <ProductNav active="Monitoring" />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
         <section className="rounded-md border border-[#dce3dd] bg-white p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">

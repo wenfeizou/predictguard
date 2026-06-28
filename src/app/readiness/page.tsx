@@ -1,5 +1,7 @@
 import { CheckCircle2, Rocket, ShieldCheck } from "lucide-react";
 
+import { ProductNav } from "@/app/product-nav";
+
 const checks = [
   {
     group: "Local quality",
@@ -46,6 +48,7 @@ export default function ReadinessPage() {
           </div>
         </div>
       </section>
+      <ProductNav active="Readiness" />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
         <section className="grid gap-4 lg:grid-cols-2">

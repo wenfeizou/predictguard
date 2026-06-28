@@ -9,6 +9,7 @@ import {
   SNAPSHOT_HISTORY_EVENT,
   type ProductSnapshot,
 } from "@/lib/report/snapshot";
+import { ProductNav } from "@/app/product-nav";
 
 const emptySnapshots: ProductSnapshot[] = [];
 
@@ -77,6 +78,7 @@ export default function ReportsPage() {
           </div>
         </div>
       </section>
+      <ProductNav active="Reports" />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
         <section className="rounded-md border border-[#dce3dd] bg-white p-5 shadow-[0_10px_30px_rgba(23,33,29,0.08)]">

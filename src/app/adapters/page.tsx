@@ -1,5 +1,7 @@
 import { Layers, Network, ShieldCheck } from "lucide-react";
 
+import { ProductNav } from "@/app/product-nav";
+
 const adapters = [
   {
     name: "DeepBook Predict",
@@ -52,6 +54,7 @@ export default function AdaptersPage() {
           </div>
         </div>
       </section>
+      <ProductNav active="Adapters" />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
         <section className="grid gap-4 lg:grid-cols-3">

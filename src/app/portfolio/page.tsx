@@ -1,6 +1,7 @@
 import { BriefcaseBusiness, Layers, Network, ShieldCheck } from "lucide-react";
 
 import { buildDeepBookPortfolio, buildDeepBookSampleMarkets } from "@/lib/adapters/deepbook";
+import { ProductNav } from "@/app/product-nav";
 
 const portfolio = buildDeepBookPortfolio({});
 const markets = buildDeepBookSampleMarkets();
@@ -40,6 +41,7 @@ export default function PortfolioPage() {
           </div>
         </div>
       </section>
+      <ProductNav active="Portfolio" />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:px-8">
         <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">

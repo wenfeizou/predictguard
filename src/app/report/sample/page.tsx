@@ -8,6 +8,7 @@ import { buildHedgeRecommendation } from "@/lib/risk/hedge";
 import { buildLifecycleReviewQueue } from "@/lib/risk/lifecycle";
 import { evaluateMonitoringRules } from "@/lib/risk/monitoring";
 import { computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
+import { ProductNav } from "@/app/product-nav";
 
 const market = seedMarketState;
 const metrics = computeRiskMetrics(market, scenarios);
@@ -92,6 +93,7 @@ export default function SampleReportPage() {
           </div>
         </div>
       </section>
+      <ProductNav />
 
       <div className="mx-auto grid max-w-6xl gap-6 px-5 py-6 lg:px-8">
         <ReportPanel title="Executive Summary" icon={<ShieldCheck className="h-5 w-5" />}>
