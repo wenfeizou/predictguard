@@ -13,6 +13,7 @@ const navItems = [
   { label: "Reports", href: "/reports", icon: <ClipboardList className="h-4 w-4" /> },
   { label: "Monitoring", href: "/monitoring", icon: <BellRing className="h-4 w-4" /> },
   { label: "Portfolio", href: "/portfolio", icon: <BriefcaseBusiness className="h-4 w-4" /> },
+  { label: "Team", href: "/team", icon: <BriefcaseBusiness className="h-4 w-4" /> },
   { label: "Adapters", href: "/adapters", icon: <Layers className="h-4 w-4" /> },
   { label: "Copilot", href: "/copilot", icon: <Bot className="h-4 w-4" /> },
   { label: "Pricing", href: "/pricing", icon: <BriefcaseBusiness className="h-4 w-4" /> },

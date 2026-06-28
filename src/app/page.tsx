@@ -184,6 +184,7 @@ const productModuleGroups = [
     detail: "Organize normalized portfolios and production readiness workflows.",
     links: [
       { label: "Portfolio", href: "/portfolio", icon: <BriefcaseBusiness className="h-4 w-4" /> },
+      { label: "Team", href: "/team", icon: <BriefcaseBusiness className="h-4 w-4" /> },
       { label: "Readiness", href: "/readiness", icon: <Rocket className="h-4 w-4" /> },
     ],
   },
