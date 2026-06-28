@@ -196,6 +196,7 @@ const productModuleGroups = [
       { label: "Adapters", href: "/adapters", icon: <Network className="h-4 w-4" /> },
       { label: "Copilot", href: "/copilot", icon: <Bot className="h-4 w-4" /> },
       { label: "Feedback", href: "/feedback", icon: <ClipboardList className="h-4 w-4" /> },
+      { label: "Integrations", href: "/integrations", icon: <Layers className="h-4 w-4" /> },
     ],
   },
 ];
