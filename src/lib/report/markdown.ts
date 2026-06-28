@@ -90,6 +90,26 @@ export function buildMarkdownReport(input: CommercialReportInput): string {
       `| ${item.scenario} | ${item.unhedgedPnl} | ${item.hedgedPnl} | ${item.reduction} |`
     ),
     "",
+    "## Monitoring Rules",
+    "",
+    "| Rule | Status | Commercial use |",
+    "| --- | --- | --- |",
+    ...(commercialReport.monitoringRows.length > 0
+      ? commercialReport.monitoringRows.map((item) =>
+          `| ${item.label} | ${item.value} | ${item.note ?? ""} |`
+        )
+      : ["| Monitoring rules | Not evaluated | Add live inputs or snapshot context. |"]),
+    "",
+    "## Lifecycle Review Queue",
+    "",
+    "| Queue | State | Operator action |",
+    "| --- | --- | --- |",
+    ...(commercialReport.lifecycleQueueRows.length > 0
+      ? commercialReport.lifecycleQueueRows.map((item) =>
+          `| ${item.label} | ${item.value} | ${item.note ?? ""} |`
+        )
+      : ["| Lifecycle queue | Not evaluated | Connect manager readback to classify positions. |"]),
+    "",
     "## Live Testnet Context",
     "",
     ...(liveContext

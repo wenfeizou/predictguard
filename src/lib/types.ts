@@ -59,9 +59,12 @@ export type PlpState = {
 export type Scenario = {
   id: string;
   name: string;
+  category: "baseline" | "tail" | "volatility" | "near-expiry";
+  severity: "medium" | "high" | "critical";
   spotMovePct: number;
   volShockPct?: number;
   description: string;
+  operationalUse: string;
 };
 
 export type HedgeCandidate = {

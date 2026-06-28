@@ -232,6 +232,7 @@ Read these first:
 - [Sample Risk Report](docs/28-sample-risk-report.md)
 - [Next Commercialization Backlog](docs/29-next-commercialization-backlog.md)
 - [Commercial Product Design Principles](docs/30-commercial-product-design-principles.md)
+- [Commercialization Progress Report](docs/31-commercialization-progress-2026-06-28.md)
 - [Project Evolution Log](docs/15-project-evolution-log.md)
 - [Final Submission Checklist](docs/19-final-submission-checklist.md)
 

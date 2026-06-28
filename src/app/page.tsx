@@ -66,12 +66,16 @@ import {
 import { formatPtbReadinessLabel } from "@/lib/ptb/preview";
 import type { PredictHedgePtbPlan, WalletReadinessInput } from "@/lib/ptb/hedgeTransaction";
 import { buildMarkdownReport } from "@/lib/report/markdown";
+import { buildCommercialReport } from "@/lib/report/commercial";
+import { buildProductSnapshot, stringifySnapshot } from "@/lib/report/snapshot";
+import { buildLifecycleReviewQueue } from "@/lib/risk/lifecycle";
 import { buildExposureMatrix, computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
 import {
   buildExecutedStressSummary,
   type ExecutedStressSummary,
 } from "@/lib/risk/executedStress";
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
+import { evaluateMonitoringRules } from "@/lib/risk/monitoring";
 import type { HedgeCandidate, Side } from "@/lib/types";
 
 const market = seedMarketState;
@@ -319,6 +323,21 @@ export default function Home() {
     ),
     [managerInventoryReadback, mintExecutionHistory, redeemEvidenceLinks],
   );
+  const lifecycleQueue = useMemo(
+    () => buildLifecycleReviewQueue(managerInventoryReadback),
+    [managerInventoryReadback],
+  );
+  const monitoringRules = useMemo(
+    () =>
+      evaluateMonitoringRules({
+        market,
+        metrics,
+        recommendation,
+        liveContext: liveSnapshot?.liveContext,
+        inventory: managerInventoryReadback,
+      }),
+    [metrics, recommendation, liveSnapshot?.liveContext, managerInventoryReadback],
+  );
   const redeemOracleIds = useMemo(
     () =>
       Array.from(
@@ -386,6 +405,8 @@ export default function Home() {
         redeemPreviewPlan,
         executedStressSummary,
         ptbPlan,
+        monitoringRules,
+        lifecycleQueue,
       }),
     [
       metrics,
@@ -403,6 +424,51 @@ export default function Home() {
       redeemPreviewPlan,
       executedStressSummary,
       ptbPlan,
+      monitoringRules,
+      lifecycleQueue,
+    ],
+  );
+  const commercialReport = useMemo(
+    () =>
+      buildCommercialReport({
+        market,
+        metrics,
+        scenarios,
+        results: allResults,
+        recommendation,
+        liveContext: liveSnapshot?.liveContext,
+        mintExecution,
+        redeemExecution,
+        redeemHistoryReadback,
+        executionRiskSummary,
+        managerHistorySummary,
+        managerInventoryReadback,
+        redeemEvidenceLinks,
+        settlementAccounting,
+        redeemPreviewPlan,
+        executedStressSummary,
+        ptbPlan,
+        monitoringRules,
+        lifecycleQueue,
+      }),
+    [
+      metrics,
+      allResults,
+      recommendation,
+      liveSnapshot?.liveContext,
+      mintExecution,
+      redeemExecution,
+      redeemHistoryReadback,
+      executionRiskSummary,
+      managerHistorySummary,
+      managerInventoryReadback,
+      redeemEvidenceLinks,
+      settlementAccounting,
+      redeemPreviewPlan,
+      executedStressSummary,
+      ptbPlan,
+      monitoringRules,
+      lifecycleQueue,
     ],
   );
 
@@ -596,6 +662,21 @@ export default function Home() {
     const link = document.createElement("a");
     link.href = url;
     link.download = "predictguard-risk-report.md";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportSnapshot() {
+    const snapshot = buildProductSnapshot({
+      report: commercialReport,
+      monitoring: monitoringRules,
+      lifecycleQueue,
+    });
+    const blob = new Blob([stringifySnapshot(snapshot)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "predictguard-risk-snapshot.json";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -875,6 +956,42 @@ export default function Home() {
           </Panel>
         </section>
 
+        <section id="scenario-library" className="scroll-mt-24 min-w-0">
+          <Panel title="Scenario Library" icon={<ClipboardList className="h-5 w-5" />}>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {scenarios.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  onClick={() => setSelectedScenarioId(scenario.id)}
+                  className={`rounded-md border p-4 text-left transition ${
+                    selectedScenarioId === scenario.id
+                      ? "border-[#1f8a70] bg-[#e8f4ef]"
+                      : "border-[#dce3dd] bg-white hover:border-[#1f8a70]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-[#17211d]">
+                        {scenario.name}
+                      </div>
+                      <div className="mt-1 text-xs uppercase text-[#52615a]">
+                        {scenario.category.replace("-", " ")}
+                      </div>
+                    </div>
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${getScenarioSeverityClass(scenario.severity)}`}>
+                      {scenario.severity}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[#52615a]">
+                    {scenario.operationalUse}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </Panel>
+        </section>
+
         <section id="simulator" className="scroll-mt-24 grid min-w-0 gap-6 lg:grid-cols-[360px_1fr]">
           <Panel title="Scenario Simulator" icon={<Activity className="h-5 w-5" />}>
             <div className="space-y-2">
@@ -1013,6 +1130,8 @@ export default function Home() {
               />
               <RedeemPreviewPanel plan={redeemPreviewPlan} />
             </div>
+            <LifecycleQueuePanel items={lifecycleQueue} />
+            <MonitoringRulesPanel rules={monitoringRules} />
             <ol className="mt-5 space-y-3 text-sm text-[#52615a]">
               {ptbPlan.steps.map((step, index) => (
                 <li key={step} className="flex gap-3">
@@ -1083,14 +1202,24 @@ export default function Home() {
             title="Risk Report"
             icon={<FileText className="h-5 w-5" />}
             action={
-              <button
-                type="button"
-                onClick={exportReport}
-                className="inline-flex items-center gap-2 rounded-md bg-[#17211d] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f8a70]"
-              >
-                <Download className="h-4 w-4" />
-                Export Markdown
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={exportSnapshot}
+                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-3 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                >
+                  <Download className="h-4 w-4" />
+                  Export Snapshot
+                </button>
+                <button
+                  type="button"
+                  onClick={exportReport}
+                  className="inline-flex items-center gap-2 rounded-md bg-[#17211d] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f8a70]"
+                >
+                  <Download className="h-4 w-4" />
+                  Export Markdown
+                </button>
+              </div>
             }
           >
             <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-md border border-[#dce3dd] bg-white p-4 text-sm leading-6 text-[#52615a]">
@@ -1254,6 +1383,70 @@ function DemoFlowPanel({ steps }: { steps: DemoFlowStep[] }) {
         ))}
       </div>
     </Panel>
+  );
+}
+
+function LifecycleQueuePanel({
+  items,
+}: {
+  items: ReturnType<typeof buildLifecycleReviewQueue>;
+}) {
+  return (
+    <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="text-sm font-semibold text-[#17211d]">
+        Lifecycle review queue
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {items.map((item) => (
+          <div key={item.id} className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-[#17211d]">{item.label}</div>
+                <div className="mt-1 text-xs text-[#52615a]">{item.detail}</div>
+              </div>
+              <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${getLifecycleQueueStatusClass(item.status)}`}>
+                {item.count}
+              </span>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-[#52615a]">
+              {item.operatorAction}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MonitoringRulesPanel({
+  rules,
+}: {
+  rules: ReturnType<typeof evaluateMonitoringRules>;
+}) {
+  return (
+    <div className="mt-4 rounded-md border border-[#dce3dd] bg-white p-4">
+      <div className="text-sm font-semibold text-[#17211d]">
+        Monitoring rules
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {rules.map((rule) => (
+          <div key={rule.id} className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-[#17211d]">{rule.label}</div>
+                <div className="mt-1 text-xs text-[#52615a]">{rule.threshold}</div>
+              </div>
+              <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${getMonitoringRuleStatusClass(rule.status)}`}>
+                {rule.status}
+              </span>
+            </div>
+            <div className="mt-3 text-sm font-semibold text-[#17211d]">{rule.value}</div>
+            <p className="mt-2 text-xs leading-5 text-[#52615a]">{rule.detail}</p>
+            <p className="mt-2 text-xs leading-5 text-[#1f8a70]">{rule.commercialUse}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1425,6 +1618,50 @@ function getDemoFlowStatusClass(status: DemoFlowStep["status"]) {
   }
 
   return "border-[#c94f4f] bg-[#fff1ed] text-[#c75c48]";
+}
+
+function getScenarioSeverityClass(severity: string) {
+  if (severity === "critical") {
+    return "border-[#c75c48] bg-[#fff1ed] text-[#c75c48]";
+  }
+
+  if (severity === "high") {
+    return "border-[#c98220] bg-[#fff7ea] text-[#9a5d0a]";
+  }
+
+  return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+}
+
+function getLifecycleQueueStatusClass(status: string) {
+  if (status === "complete") {
+    return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+  }
+
+  if (status === "active") {
+    return "border-[#1f8a70] bg-white text-[#1f8a70]";
+  }
+
+  if (status === "review") {
+    return "border-[#c98220] bg-[#fff7ea] text-[#9a5d0a]";
+  }
+
+  return "border-[#c75c48] bg-[#fff1ed] text-[#c75c48]";
+}
+
+function getMonitoringRuleStatusClass(status: string) {
+  if (status === "pass") {
+    return "border-[#1f8a70] bg-[#e8f4ef] text-[#1f8a70]";
+  }
+
+  if (status === "watch") {
+    return "border-[#c98220] bg-[#fff7ea] text-[#9a5d0a]";
+  }
+
+  if (status === "breach") {
+    return "border-[#c75c48] bg-[#fff1ed] text-[#c75c48]";
+  }
+
+  return "border-[#dce3dd] bg-white text-[#52615a]";
 }
 
 function PtbReadinessPanel({ plan }: { plan: PredictHedgePtbPlan }) {

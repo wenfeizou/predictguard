@@ -3,7 +3,10 @@ import { FileText, ShieldCheck, Signal, WalletCards } from "lucide-react";
 import { scenarios } from "@/lib/data/scenarios";
 import { seedMarketState } from "@/lib/data/seed";
 import { buildCommercialReport, type CommercialReport } from "@/lib/report/commercial";
+import { buildProductSnapshot } from "@/lib/report/snapshot";
 import { buildHedgeRecommendation } from "@/lib/risk/hedge";
+import { buildLifecycleReviewQueue } from "@/lib/risk/lifecycle";
+import { evaluateMonitoringRules } from "@/lib/risk/monitoring";
 import { computeRiskMetrics, runScenarioSet } from "@/lib/risk/engine";
 
 const market = seedMarketState;
@@ -30,6 +33,17 @@ const report = buildCommercialReport({
         "Sample report page uses deterministic demo data. Live reports should use wallet execution evidence and manager readback.",
     },
   },
+});
+const monitoringRules = evaluateMonitoringRules({
+  market,
+  metrics,
+  recommendation,
+});
+const lifecycleQueue = buildLifecycleReviewQueue();
+const snapshot = buildProductSnapshot({
+  report,
+  monitoring: monitoringRules,
+  lifecycleQueue,
 });
 
 export default function SampleReportPage() {
@@ -121,6 +135,28 @@ export default function SampleReportPage() {
           </ReportPanel>
         </div>
 
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ReportPanel title="Monitoring Rules" icon={<Signal className="h-5 w-5" />}>
+            <RuleRows rules={monitoringRules} />
+          </ReportPanel>
+          <ReportPanel title="Lifecycle Review Queue" icon={<ShieldCheck className="h-5 w-5" />}>
+            <QueueRows items={lifecycleQueue} />
+          </ReportPanel>
+        </div>
+
+        <ReportPanel title="Portable Snapshot" icon={<FileText className="h-5 w-5" />}>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <ReportMetric label="Schema" value={snapshot.schemaVersion} />
+            <ReportMetric label="Data mode" value={snapshot.dataMode} />
+            <ReportMetric label="Rules" value={String(snapshot.monitoring.length)} />
+          </div>
+          <p className="mt-4 text-sm leading-6 text-[#52615a]">
+            Product snapshots package workflow status, risk metrics, monitoring
+            rules, lifecycle queues, assumptions, residual risks, and next actions
+            into a portable JSON artifact for team review.
+          </p>
+        </ReportPanel>
+
         <div className="grid gap-6 lg:grid-cols-3">
           <ReportList title="Assumptions" items={report.assumptions} />
           <ReportList title="Residual Risks" items={report.residualRisks} />
@@ -128,6 +164,49 @@ export default function SampleReportPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function RuleRows({ rules }: { rules: typeof monitoringRules }) {
+  return (
+    <div className="space-y-3">
+      {rules.map((rule) => (
+        <div key={rule.id} className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-[#17211d]">{rule.label}</div>
+              <div className="mt-1 text-xs text-[#52615a]">{rule.threshold}</div>
+            </div>
+            <span className="rounded-full border border-[#dce3dd] bg-white px-2 py-0.5 text-xs font-semibold text-[#52615a]">
+              {rule.status}
+            </span>
+          </div>
+          <div className="mt-3 text-sm font-semibold text-[#17211d]">{rule.value}</div>
+          <p className="mt-2 text-xs leading-5 text-[#52615a]">{rule.commercialUse}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function QueueRows({ items }: { items: typeof lifecycleQueue }) {
+  return (
+    <div className="space-y-3">
+      {items.map((item) => (
+        <div key={item.id} className="rounded-md border border-[#dce3dd] bg-[#f5f7f4] p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-[#17211d]">{item.label}</div>
+              <div className="mt-1 text-xs text-[#52615a]">{item.detail}</div>
+            </div>
+            <span className="rounded-full border border-[#dce3dd] bg-white px-2 py-0.5 text-xs font-semibold text-[#52615a]">
+              {item.count}
+            </span>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-[#52615a]">{item.operatorAction}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -15,6 +15,8 @@ import type {
 import type { PredictManagerInventoryReadback } from "@/lib/predict/managerReadback";
 import type { PredictRedeemHistoryReadback } from "@/lib/predict/redeemHistoryReadback";
 import type { ExecutedStressSummary } from "@/lib/risk/executedStress";
+import type { LifecycleQueueItem } from "@/lib/risk/lifecycle";
+import type { MonitoringRuleResult } from "@/lib/risk/monitoring";
 
 export type CommercialReportInput = {
   market: MarketState;
@@ -56,6 +58,8 @@ export type CommercialReportInput = {
     explanation: string;
   };
   executedStressSummary?: ExecutedStressSummary;
+  monitoringRules?: MonitoringRuleResult[];
+  lifecycleQueue?: LifecycleQueueItem[];
   ptbPlan?: {
     inputs: {
       sizingMode?: string;
@@ -118,6 +122,8 @@ export type CommercialReport = {
   hedgeRows: ReportRow[];
   executionRows: ReportRow[];
   lifecycleRows: ReportRow[];
+  monitoringRows: ReportRow[];
+  lifecycleQueueRows: ReportRow[];
   assumptions: string[];
   residualRisks: string[];
   nextActions: string[];
@@ -279,6 +285,12 @@ export function buildCommercialReport(input: CommercialReportInput): CommercialR
           ]
         : []),
     ],
+    monitoringRows: input.monitoringRules?.map((rule) =>
+      row(rule.label, `${rule.status}: ${rule.value}`, rule.commercialUse)
+    ) ?? [],
+    lifecycleQueueRows: input.lifecycleQueue?.map((item) =>
+      row(item.label, `${item.status}: ${item.count}`, item.operatorAction)
+    ) ?? [],
     assumptions: [
       ...recommendation.assumptions,
       ...(liveContext?.assumptions ?? []),
