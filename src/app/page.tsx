@@ -750,6 +750,13 @@ export default function Home() {
                   <BellRing className="h-4 w-4" />
                   Monitoring
                 </a>
+                <a
+                  href="/portfolio"
+                  className="inline-flex items-center gap-2 rounded-md border border-[#dce3dd] bg-white px-4 py-2 text-sm font-semibold text-[#17211d] transition hover:border-[#1f8a70] hover:text-[#1f8a70]"
+                >
+                  <BriefcaseBusiness className="h-4 w-4" />
+                  Portfolio
+                </a>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[560px]">
