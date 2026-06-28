@@ -20,6 +20,7 @@ const navItems = [
   { label: "Integrations", href: "/integrations", icon: <Layers className="h-4 w-4" /> },
   { label: "Pricing", href: "/pricing", icon: <BriefcaseBusiness className="h-4 w-4" /> },
   { label: "Readiness", href: "/readiness", icon: <FileText className="h-4 w-4" /> },
+  { label: "Release", href: "/release", icon: <Rocket className="h-4 w-4" /> },
 ];
 
 export function ProductNav({ active }: { active?: string }) {
